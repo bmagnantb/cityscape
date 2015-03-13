@@ -1,0 +1,20 @@
+/* 8. CUSTOM LAYOUT & TYPOGRAPHY (Daddy bear)
+ * ---------------------------------------------------------------------------------------- */
+@import "bear_defaults";
+
+@media screen and (min-width: $baby_bear_max_width + 2 * $leading) {
+
+	#container {
+		padding: $leading;
+		margin: 0 auto;
+		max-width: $mummy_bear_max_width;
+	}
+}
+
+/* 9. CUSTOM LAYOUT & TYPOGRAPHY (Mummy bear)
+ * ---------------------------------------------------------------------------------------- */
+@media screen and (min-width: $daddy_bear_max_width) {
+	#container {
+		width: $daddy_bear_max_width;
+	}
+}
