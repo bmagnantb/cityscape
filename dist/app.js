@@ -72,7 +72,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				content_type: "1",
 
 				// extra retrieved properties
-				extras: ["url_m"].join(""),
+				extras: ["url_m", "owner_name"].join(","),
 
 				// entries per page/request
 				per_page: "30",
@@ -84,8 +84,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				tag_mode: "all",
 
 				// tags
-				tags: ["skyline", "city"].join("")
-		};
+				tags: ["skyline", "city"].join("") };
 
 		function url(settings) {
 				if (!settings.method || !settings.api_key) {
@@ -432,7 +431,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		var React = require("react");
 		var GalleryActions = require("../actions/GalleryActions").GalleryActions;
 		var GalleryStore = require("../stores/GalleryStore").GalleryStore;
-		// var SkylinesFC = require('../FlickrClient').FlickrClient
 
 		var HomeView = (function (_React$Component) {
 				function HomeView() {
@@ -461,7 +459,26 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						render: {
 								value: function render() {
 										var photos = this.state.photo.map(function (photo) {
-												return React.createElement("img", { src: photo.url_m });
+												var owner_url = "https://www.flickr.com/people/" + photo.owner;
+												return React.createElement(
+														"div",
+														null,
+														React.createElement("img", { src: photo.url_m }),
+														React.createElement(
+																"h4",
+																null,
+																photo.title
+														),
+														React.createElement(
+																"a",
+																{ href: owner_url },
+																React.createElement(
+																		"h4",
+																		null,
+																		photo.ownername
+																)
+														)
+												);
 										});
 										console.log(this.state);
 										return React.createElement(
@@ -478,18 +495,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		exports.HomeView = HomeView;
 })(typeof module === "object" ? module.exports : window);
-// SkylinesFC.getPhotos()
-// .then((data) => {
-// 		console.log(data)
-// 		var counter = 0;
-// 		while (counter < 50) {
-// 				this.setState({
-// 					photo: this.state.photo.concat(data.photos.photo[counter])
-// 				})
-// 				console.log(this.state)
-// 				counter++
-// 		}
-// })
 
 },{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/js/actions/GalleryActions.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/js/stores/GalleryStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/LoginView.jsx":[function(require,module,exports){
 "use strict";

@@ -3,7 +3,6 @@
 var React = require('react')
 var GalleryActions = require('../actions/GalleryActions').GalleryActions
 var GalleryStore = require('../stores/GalleryStore').GalleryStore
-// var SkylinesFC = require('../FlickrClient').FlickrClient
 
 class HomeView extends React.Component {
 		constructor() {
@@ -14,18 +13,6 @@ class HomeView extends React.Component {
 		componentWillMount() {
 				GalleryStore.listen(this.onChange.bind(this))
 				GalleryActions.getPhotos()
-				// SkylinesFC.getPhotos()
-				// .then((data) => {
-				// 		console.log(data)
-				// 		var counter = 0;
-				// 		while (counter < 50) {
-				// 				this.setState({
-				// 					photo: this.state.photo.concat(data.photos.photo[counter])
-				// 				})
-				// 				console.log(this.state)
-				// 				counter++
-				// 		}
-				// })
 		}
 
 		onChange() {
@@ -36,8 +23,15 @@ class HomeView extends React.Component {
 
 		render() {
 				var photos = this.state.photo.map((photo) => {
+						var owner_url = `https://www.flickr.com/people/${photo.owner}`
 						return (
-								<img src={photo.url_m} />
+								<div>
+										<img src={photo.url_m} />
+										<h4>{photo.title}</h4>
+										<a href={owner_url}>
+												<h4>{photo.ownername}</h4>
+										</a>
+								</div>
 						)
 				})
 				console.log(this.state)

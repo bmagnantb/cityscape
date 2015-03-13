@@ -21,8 +21,9 @@ var FlickrGallerySettings = {
 
 		// extra retrieved properties
 		extras: [
-				'url_m'
-		].join(''),
+				'url_m',
+				'owner_name'
+		].join(','),
 
 		// entries per page/request
 		per_page: '30',
@@ -37,7 +38,7 @@ var FlickrGallerySettings = {
 		tags: [
 				'skyline',
 				'city'
-		].join('')
+		].join(''),
 }
 
 
