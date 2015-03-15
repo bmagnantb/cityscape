@@ -1,15 +1,21 @@
+"use strict"
+
 // require files?
+var Parse = require('parse').Parse
 var React = require('react')
-var Router = require('react-router')
-var routes = require('./Routes').routes
 
 window.onload = app
 
 function app() {
 		console.log('app time')
 
-		Router.run(routes, function(Handler, state) {
+		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
+
+		var router = require('./Router').router
+
+
+		router.run(function(Handler, state) {
 				var params = state.params
-				React.render(<Handler params={params} />, document.getElementById('container'))
+				React.render(<Handler params={params} router={this}/>, document.getElementById('container'))
 		})
 }

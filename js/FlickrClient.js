@@ -21,7 +21,7 @@ class FlickrClient {
 						if (data.stat === 'ok') {
 								console.log(data.photos)
 						} else {
-								throw 'Flickr request failed'
+								console.log('Flickr request failed')
 						}
 				})
 		}

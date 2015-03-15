@@ -6,12 +6,10 @@ var SkylinesFC = require('../FlickrClient').FCGallery
 class GalleryActions {
 		getPhotos() {
 				SkylinesFC.getPhotos()
-				.then((data) => {
-						this.dispatch(data)
-				})
+				.then((data) => this.dispatch(data))
 		}
 }
 
-exports.GalleryActions = alt.createActions(GalleryActions)
+exports.galleryActions = alt.createActions(GalleryActions)
 
 })(typeof module === 'object' ? module.exports : window)

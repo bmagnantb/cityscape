@@ -12,10 +12,11 @@ class AppView extends React.Component {
 		}
 
 		render() {
+				console.log(this.props)
 				return (
 						<div>
 								<Header />
-								<RouteHandler />
+								<RouteHandler {...this.props} />
 								<Footer />
 						</div>
 				)

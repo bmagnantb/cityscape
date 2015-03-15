@@ -15,7 +15,7 @@
 		"watchify:js": "watchify ./js/app.js --extension=.jsx -t babelify -o ./dist/app.js -v",
 		"build:css": "node ./node_modules/.bin/node-sass ./scss/style.scss ./dist/style.css; csso ./dist/style.css ./dist/style.min.css; echo '------sassy------'",
 		"ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore",
-		"test": "mocha ./js/test; echo '------tested------'",
+		"test": "mocha --compilers js:babel/register ./js/test; echo '------tested------'",
 		"env": "env"
 		},
 	"dependencies": {
@@ -33,7 +33,6 @@
 		"react": "latest",
 		"react-tap-event-plugin": "latest",
 		"alt": "latest",
-		"react-router": "latest",
 
 		"mocha": "latest",
 		"chai": "latest",
