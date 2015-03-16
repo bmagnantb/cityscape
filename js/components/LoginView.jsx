@@ -2,7 +2,7 @@
 
 var React = require('react')
 var Parse = require('Parse')
-var Link = require('react-router').Link
+var Link = require('../react-router').Link
 var userActions = require('../actions/UserActions').userActions
 var userStore = require('../stores/UserStore').userStore
 
@@ -10,6 +10,7 @@ class LoginView extends React.Component {
 		constructor() {
 				super()
 				this.state = userStore.getState()
+
 		}
 
 		render() {
@@ -28,7 +29,6 @@ class LoginView extends React.Component {
 
 		login(e) {
 				e.preventDefault()
-				console.log('view login')
 				userActions.login(
 						this.refs.username.getDOMNode().value,
 						this.refs.password.getDOMNode().value,

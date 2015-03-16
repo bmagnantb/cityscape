@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var React = require('react')
-var Link = require('react-router').Link
+var Link = require('../react-router').Link
 var userActions = require('../actions/UserActions').userActions
 var userStore = require('../stores/UserStore').userStore
 

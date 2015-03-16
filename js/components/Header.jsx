@@ -1,8 +1,9 @@
 ;(function(exports) {
 
 var React = require('react')
-var Link = require('react-router').Link
+var Link = require('../react-router').Link
 var userStore = require('../stores/UserStore').userStore
+var userActions = require('../actions/UserActions').userActions
 
 class Header extends React.Component {
 		constructor() {
@@ -24,9 +25,13 @@ class Header extends React.Component {
 
 		render() {
 				var userinfo
-				console.log(this.state)
 				if (this.state.user) {
-						userinfo = <h6 className="header-user">{this.state.user.get('username')}</h6>
+						userinfo = (
+								<div className="header-user">
+										<h6>{this.state.user.get('username')}</h6>
+										<h6 onClick={this.logout}>Logout</h6>
+								</div>
+						)
 				} else {
 						userinfo = (
 								<div className="header-user">
@@ -46,6 +51,10 @@ class Header extends React.Component {
 								{userinfo}
 						</header>
 				)
+		}
+
+		logout() {
+				userActions.logout()
 		}
 }
 

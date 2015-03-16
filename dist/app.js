@@ -8,7 +8,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var $ = require("neo-zepto");
-		var FlickrGalleryURL = require("./FlickrSettings").GalleryURL;
+		var flickrMakeUrl = require("./FlickrSettings").flickrMakeUrl;
 
 		var FlickrClient = (function () {
 				// register with Flickr for api-key
@@ -21,21 +21,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				}
 
 				_createClass(FlickrClient, {
-						getPhotos: {
-								value: function getPhotos() {
+						request: {
+								value: function request(settings) {
+										if (this.url instanceof Function) {
+												return $.get(this.url(settings)());
+										}
 										return $.get(this.url);
-								}
-						},
-						searchPhotos: {
-								value: function searchPhotos(search) {
-										var query = "&tags=" + search;
-										$.get(this.url + query).then(function (data) {
-												if (data.stat === "ok") {
-														console.log(data.photos);
-												} else {
-														console.log("Flickr request failed");
-												}
-										});
 								}
 						}
 				});
@@ -43,8 +34,27 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				return FlickrClient;
 		})();
 
+		// settings for Flickr url maker
+		var gallerySettings = {
+				method: "flickr.photos.search",
+				content_type: "1",
+				extras: ["url_m", "owner_name"].join(","),
+				per_page: "30",
+				sort: "relevance",
+				tag_mode: "all",
+				tags: ["skyline", "city", "buildings"].join(",")
+		};
+
+		var detailSettings = {
+				method: "flickr.photos.getInfo",
+				extras: ["url_m"]
+		};
+
 		exports.FC = FlickrClient;
-		exports.FCGallery = new FlickrClient(FlickrGalleryURL);
+
+		exports.fcGallery = new FlickrClient(flickrMakeUrl(gallerySettings));
+
+		exports.fcDetail = new FlickrClient(flickrMakeUrl(detailSettings));
 })(typeof module === "object" ? module.exports : window);
 
 },{"./FlickrSettings":"/Users/ben/Github Projects/skylines/js/FlickrSettings.js","neo-zepto":"/Users/ben/Github Projects/skylines/node_modules/neo-zepto/index.js"}],"/Users/ben/Github Projects/skylines/js/FlickrSettings.js":[function(require,module,exports){
@@ -52,79 +62,58 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		// for multiple urls, export multiple settings objects and export multiple FlickrClients in FlickrClient.js
+		// Construct URL for Flickr API
+		// METHOD AND API_KEY ARE REQUIRED FOR ANY REQUEST
+		// other options may or may not be required based on chosen method, refer to Flickr API docs
 
-		// check Flickr's API docs for all possible settings
-		// DO NOT DELETE METHOD OR API_KEY -- any other setting is deleteable
-		var FlickrGallerySettings = {
-				// REQUIRED Flickr URI / method
-				method: "flickr.photos.search",
-
-				// REQUIRED register with Flickr
-				api_key: "eeacdafae711c1ae98c0342fa323569a",
-
-				format: "json",
-
-				// set to empty string if callback wanted or not using json
-				jsoncallback: "&nojsoncallback=1",
-
-				// 1 is photos only
-				content_type: "1",
-
-				// extra retrieved properties
-				extras: ["url_m", "owner_name"].join(","),
-
-				// entries per page/request
-				per_page: "30",
-
-				// sort type
-				sort: "relevance",
-
-				// all matches all tags entered, any matches any tag entered
-				tag_mode: "all",
-
-				// tags
-				tags: ["skyline", "city"].join("") };
+		// allows gradual build of request URL if settings are pulled from different areas of app
+		// first call must provide settings
+		// on subsequent calls, additional settings will be added and any repeat settings are overwritten
+		// passing no parameters builds and returns url as string
 
 		function url(settings) {
-				if (!settings.method || !settings.api_key) {
-						throw "method and api_key are required for Flickr requests";
+
+				function build(settings2) {
+						var urlBuild;
+
+						// if parameter is object, add/overwrite to original object, return function to take more settings
+						if (typeof settings2 === "object") {
+
+								// copy keys/values from newest settings onto original settings object
+								for (var key in settings2) {
+										settings[key] = settings2[key];
+								}
+
+								return build;
+						}
+
+						// final settings assumed
+						else {
+								// throw if either method or api_key are not defined, required settings for request
+								if (!settings.method || !settings.api_key) {
+										throw "method and api_key are required for Flickr requests";
+								}
+
+								// if format undefined, default to json
+								!settings.format ? settings.format = "json" : null;
+								// if nojsoncallback undefined, default to no callback
+								settings.format === "json" && !settings.nojsoncallback ? settings.nojsoncallback = "1" : null;
+
+								// construct URL with finalized settings
+								urlBuild = "https://api.flickr.com/services/rest/?&method=" + settings.method + "&api_key=" + settings.api_key;
+
+								for (var key in settings) {
+										urlBuild += "&" + key + "=" + settings[key];
+								}
+
+								return urlBuild;
+						}
 				}
 
-				var urlBuild = "https://api.flickr.com/services/rest/?method=" + settings.method + "&api_key=" + settings.api_key + "&" + settings.jsoncallback;
-
-				if (settings.format) {
-						urlBuild += "&format=" + settings.format;
-				}
-
-				if (settings.content_type) {
-						urlBuild += "&content_type=" + settings.content_type;
-				}
-
-				if (settings.extras) {
-						urlBuild += "&extras=" + settings.extras;
-				}
-
-				if (settings.per_page) {
-						urlBuild += "&per_page=" + settings.per_page;
-				}
-
-				if (settings.sort) {
-						urlBuild += "&sort=" + settings.sort;
-				}
-
-				if (settings.tag_mode) {
-						urlBuild += "&tag_mode=" + settings.tag_mode;
-				}
-
-				if (settings.tags) {
-						urlBuild += "&tags=" + settings.tags;
-				}
-
-				return urlBuild;
+				return build;
 		}
 
-		exports.GalleryURL = url(FlickrGallerySettings);
+		exports.flickrMakeUrl = url;
 })(typeof module === "object" ? module.exports : window);
 
 },{}],"/Users/ben/Github Projects/skylines/js/Router.jsx":[function(require,module,exports){
@@ -133,13 +122,16 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var Router = require("react-router");
+		// modified react-router for React v0.13 compatibility
+		// clone from git@github.com:nhunzaker/react-router.git
+		var Router = require("./react-router");
 		var Parse = require("Parse");
 		var AppView = require("./components/AppView").AppView;
 		var GalleryView = require("./components/GalleryView").GalleryView;
 		var LoginView = require("./components/LoginView").LoginView;
 		var RegisterView = require("./components/RegisterView").RegisterView;
 		var DetailView = require("./components/DetailView").DetailView;
+		var PassEmailSentView = require("./components/PassEmailSentView").PassEmailSentView;
 
 		var DefaultRoute = Router.DefaultRoute;
 		var Route = Router.Route;
@@ -149,11 +141,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				Route,
 				{ name: "app", path: "/", handler: AppView },
 				React.createElement(Route, { name: "home", handler: GalleryView }),
-				React.createElement(Route, { name: "detail", handler: DetailView }),
-				React.createElement(Redirect, { from: "details", to: "detail" }),
+				React.createElement(Route, { name: "photo", path: "photo/:id", handler: DetailView }),
+				React.createElement(Redirect, { from: "details", to: "photo" }),
 				React.createElement(Route, { name: "login", handler: LoginView }),
 				React.createElement(Redirect, { from: "signin", to: "login" }),
 				React.createElement(Route, { name: "register", handler: RegisterView }),
+				React.createElement(Route, { name: "passemailsent", handler: PassEmailSentView }),
 				React.createElement(DefaultRoute, { handler: GalleryView })
 		);
 
@@ -162,7 +155,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.router = router;
 })(typeof module === "object" ? module.exports : window);
 
-},{"./components/AppView":"/Users/ben/Github Projects/skylines/js/components/AppView.jsx","./components/DetailView":"/Users/ben/Github Projects/skylines/js/components/DetailView.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/js/components/GalleryView.jsx","./components/LoginView":"/Users/ben/Github Projects/skylines/js/components/LoginView.jsx","./components/RegisterView":"/Users/ben/Github Projects/skylines/js/components/RegisterView.jsx","Parse":"/Users/ben/Github Projects/skylines/node_modules/Parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react-router":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/index.js"}],"/Users/ben/Github Projects/skylines/js/actions/GalleryActions.js":[function(require,module,exports){
+},{"./components/AppView":"/Users/ben/Github Projects/skylines/js/components/AppView.jsx","./components/DetailView":"/Users/ben/Github Projects/skylines/js/components/DetailView.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/js/components/GalleryView.jsx","./components/LoginView":"/Users/ben/Github Projects/skylines/js/components/LoginView.jsx","./components/PassEmailSentView":"/Users/ben/Github Projects/skylines/js/components/PassEmailSentView.jsx","./components/RegisterView":"/Users/ben/Github Projects/skylines/js/components/RegisterView.jsx","./react-router":"/Users/ben/Github Projects/skylines/js/react-router/modules/index.js","Parse":"/Users/ben/Github Projects/skylines/node_modules/Parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/actions/DetailActions.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -172,7 +165,47 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var alt = require("../alt-app").alt;
-		var SkylinesFC = require("../FlickrClient").FCGallery;
+		var fcDetail = require("../FlickrClient").fcDetail;
+
+		var DetailActions = (function () {
+				function DetailActions() {
+						_classCallCheck(this, DetailActions);
+				}
+
+				_createClass(DetailActions, {
+						getDetail: {
+								value: function getDetail(flickrKey, photoId) {
+										var _this = this;
+
+										fcDetail.request({ api_key: flickrKey, photo_id: photoId }).then(function (data) {
+												return _this.dispatch(data.photo);
+										});
+								}
+						},
+						resetState: {
+								value: function resetState() {
+										this.dispatch();
+								}
+						}
+				});
+
+				return DetailActions;
+		})();
+
+		exports.detailActions = alt.createActions(DetailActions);
+})(typeof module === "object" ? module.exports : window);
+
+},{"../FlickrClient":"/Users/ben/Github Projects/skylines/js/FlickrClient.js","../alt-app":"/Users/ben/Github Projects/skylines/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/js/actions/GalleryActions.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+;(function (exports) {
+
+		var alt = require("../alt-app").alt;
+		var fcGallery = require("../FlickrClient").fcGallery;
 
 		var GalleryActions = (function () {
 				function GalleryActions() {
@@ -181,11 +214,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				_createClass(GalleryActions, {
 						getPhotos: {
-								value: function getPhotos() {
+								value: function getPhotos(flickrKey) {
 										var _this = this;
 
-										SkylinesFC.getPhotos().then(function (data) {
-												return _this.dispatch(data);
+										fcGallery.request({ api_key: flickrKey }).then(function (data) {
+												return _this.dispatch(data.photos);
 										});
 								}
 						}
@@ -237,6 +270,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										});
 								}
 						},
+						logout: {
+								value: function logout() {
+										Parse.User.logOut();
+										this.dispatch(Parse.User.current());
+								}
+						},
 						register: {
 								value: function register(username, password, email, router) {
 										var _this = this;
@@ -251,6 +290,18 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														router.transitionTo("home");
 												},
 												error: function (user, error) {
+														return console.log(error);
+												}
+										});
+								}
+						},
+						resetPassword: {
+								value: function resetPassword(email) {
+										Parse.User.requestPasswordReset(email, {
+												success: function () {
+														router.transitionTo("passemailsent");
+												},
+												error: function () {
 														return console.log(error);
 												}
 										});
@@ -282,6 +333,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 // require files?
 var Parse = require("parse").Parse;
 var React = require("react");
+var GalleryView = require("./components/GalleryView").GalleryView;
 
 window.onload = app;
 
@@ -289,16 +341,24 @@ function app() {
 		console.log("app time");
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm");
+		var flickrKey = "eeacdafae711c1ae98c0342fa323569a";
 
 		var router = require("./Router").router;
 
 		router.run(function (Handler, state) {
+				var user = Parse.User.current();
 				var params = state.params;
-				React.render(React.createElement(Handler, { params: params, router: this }), document.getElementById("container"));
+				var path = state.path;
+
+				if (user && (path === "/login" || path === "/register")) {
+						router.transitionTo("home");
+				} else {
+						React.render(React.createElement(Handler, { params: params, router: this, flickrKey: flickrKey }), document.getElementById("container"));
+				}
 		});
 }
 
-},{"./Router":"/Users/ben/Github Projects/skylines/js/Router.jsx","parse":"/Users/ben/Github Projects/skylines/node_modules/parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/AppView.jsx":[function(require,module,exports){
+},{"./Router":"/Users/ben/Github Projects/skylines/js/Router.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/js/components/GalleryView.jsx","parse":"/Users/ben/Github Projects/skylines/node_modules/parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/AppView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -312,7 +372,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var RouteHandler = require("react-router").RouteHandler;
+		var RouteHandler = require("../react-router").RouteHandler;
 		var Header = require("./Header").Header;
 		var Footer = require("./Footer").Footer;
 
@@ -329,7 +389,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(AppView, {
 						render: {
 								value: function render() {
-										console.log(this.props);
+										// console.log(this.props)
 										return React.createElement(
 												"div",
 												null,
@@ -347,7 +407,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.AppView = AppView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"./Footer":"/Users/ben/Github Projects/skylines/js/components/Footer.jsx","./Header":"/Users/ben/Github Projects/skylines/js/components/Header.jsx","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react-router":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/index.js"}],"/Users/ben/Github Projects/skylines/js/components/DetailView.jsx":[function(require,module,exports){
+},{"../react-router":"/Users/ben/Github Projects/skylines/js/react-router/modules/index.js","./Footer":"/Users/ben/Github Projects/skylines/js/components/Footer.jsx","./Header":"/Users/ben/Github Projects/skylines/js/components/Header.jsx","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/DetailView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -361,29 +421,99 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
+		var detailStore = require("../stores/DetailStore").detailStore;
+		var detailActions = require("../actions/DetailActions").detailActions;
 
 		var DetailView = (function (_React$Component) {
 				function DetailView() {
 						_classCallCheck(this, DetailView);
 
 						_get(Object.getPrototypeOf(DetailView.prototype), "constructor", this).call(this);
-						this.state = {};
+						this.state = detailStore.getState();
 				}
 
 				_inherits(DetailView, _React$Component);
 
 				_createClass(DetailView, {
+						componentWillMount: {
+								value: function componentWillMount() {
+										detailActions.getDetail(this.props.flickrKey, this.props.params.id);
+								}
+						},
+						componentDidMount: {
+								value: function componentDidMount() {
+										detailStore.listen(this.onChange.bind(this));
+								}
+						},
+						componentWillUnmount: {
+								value: function componentWillUnmount() {
+										detailStore.unlisten(this.onChange);
+										detailActions.resetState();
+								}
+						},
+						onChange: {
+								value: function onChange() {
+										this.setState(detailStore.getState());
+								}
+						},
 						render: {
 								value: function render() {
-										return React.createElement(
-												"main",
-												null,
-												React.createElement(
-														"h2",
+										var photo = this.state.photo;
+										if (this.state.photo) {
+												var ownerUrl = "https://www.flickr.com/people/" + photo.owner.path_alias;
+												return React.createElement(
+														"main",
 														null,
-														"details"
-												)
-										);
+														React.createElement(
+																"a",
+																{ href: photo.urls.url[0]._content, target: "_blank" },
+																React.createElement(
+																		"h2",
+																		null,
+																		photo.title._content
+																)
+														),
+														React.createElement(
+																"a",
+																{ href: ownerUrl, target: "_blank" },
+																React.createElement(
+																		"h4",
+																		null,
+																		photo.owner.username
+																)
+														),
+														React.createElement(
+																"a",
+																{ href: ownerUrl, target: "_blank" },
+																React.createElement(
+																		"h6",
+																		null,
+																		photo.owner.realname
+																)
+														),
+														React.createElement("img", { src: this.state.photoUrl("b") }),
+														React.createElement(
+																"h5",
+																null,
+																photo.description
+														),
+														React.createElement(
+																"h6",
+																null,
+																photo.location.locality._content,
+																", ",
+																photo.location.country._content
+														),
+														React.createElement(
+																"h6",
+																null,
+																"Taken ",
+																photo.dates.taken
+														)
+												);
+										} else {
+												return React.createElement("span", null);
+										}
 								}
 						}
 				});
@@ -394,7 +524,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.DetailView = DetailView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/Footer.jsx":[function(require,module,exports){
+},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/js/actions/DetailActions.js","../stores/DetailStore":"/Users/ben/Github Projects/skylines/js/stores/DetailStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/Footer.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -448,8 +578,6 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== "fun
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 ;(function (exports) {
 
 		var React = require("react");
@@ -477,20 +605,20 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										userStore.listen(this.onUserChange.bind(this));
-										galleryStore.listen(this.onGalleryChange.bind(this));
+										galleryActions.getPhotos(this.props.flickrKey);
 										userActions.current();
-								}
-						},
-						componentWillUnmount: {
-								value: function componentWillUnmount() {
-										userStore.unlisten(this.onUserChange.bind(this));
-										galleryStore.unlisten(this.onGalleryChange);
 								}
 						},
 						componentDidMount: {
 								value: function componentDidMount() {
-										galleryActions.getPhotos();
+										userStore.listen(this.onUserChange.bind(this));
+										galleryStore.listen(this.onGalleryChange.bind(this));
+								}
+						},
+						componentWillUnmount: {
+								value: function componentWillUnmount() {
+										userStore.unlisten(this.onUserChange);
+										galleryStore.unlisten(this.onGalleryChange);
 								}
 						},
 						onGalleryChange: {
@@ -507,9 +635,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 								value: function render() {
 										var _this = this;
 
-										console.log(this.state);
 										var photos = this.state.photo.map(function (photo) {
-												return React.createElement(Photo, _extends({}, photo, { user: _this.state.user, key: photo.id }));
+												return React.createElement(Photo, { photo: photo, router: _this.props.router, user: _this.state.user, key: photo.id });
 										});
 										return React.createElement(
 												"main",
@@ -528,7 +655,6 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 						_classCallCheck(this, Photo);
 
 						_get(Object.getPrototypeOf(Photo.prototype), "constructor", this).call(this);
-						this.state = {};
 				}
 
 				_inherits(Photo, _React$Component2);
@@ -536,26 +662,31 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				_createClass(Photo, {
 						render: {
 								value: function render() {
-										var owner_url = "https://www.flickr.com/people/" + this.props.owner;
+										var owner_url = "https://www.flickr.com/people/" + this.props.photo.owner;
 										return React.createElement(
 												"div",
 												{ className: "photo" },
-												React.createElement("img", { src: this.props.url_m }),
+												React.createElement("img", { src: this.props.photo.url_m }),
 												React.createElement(
 														"h4",
-														null,
-														this.props.title
+														{ onClick: this.details.bind(this) },
+														this.props.photo.title
 												),
 												React.createElement(
 														"a",
-														{ href: owner_url },
+														{ href: owner_url, target: "_blank" },
 														React.createElement(
 																"h4",
 																null,
-																this.props.ownername
+																this.props.photo.ownername
 														)
 												)
 										);
+								}
+						},
+						details: {
+								value: function details() {
+										this.props.router.transitionTo("photo", { id: this.props.photo.id });
 								}
 						}
 				});
@@ -580,8 +711,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var Link = require("react-router").Link;
+		var Link = require("../react-router").Link;
 		var userStore = require("../stores/UserStore").userStore;
+		var userActions = require("../actions/UserActions").userActions;
 
 		var Header = (function (_React$Component) {
 				function Header() {
@@ -612,12 +744,20 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						render: {
 								value: function render() {
 										var userinfo;
-										console.log(this.state);
 										if (this.state.user) {
 												userinfo = React.createElement(
-														"h6",
+														"div",
 														{ className: "header-user" },
-														this.state.user.get("username")
+														React.createElement(
+																"h6",
+																null,
+																this.state.user.get("username")
+														),
+														React.createElement(
+																"h6",
+																{ onClick: this.logout },
+																"Logout"
+														)
 												);
 										} else {
 												userinfo = React.createElement(
@@ -655,6 +795,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												userinfo
 										);
 								}
+						},
+						logout: {
+								value: function logout() {
+										userActions.logout();
+								}
 						}
 				});
 
@@ -664,7 +809,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.Header = Header;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../stores/UserStore":"/Users/ben/Github Projects/skylines/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react-router":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/index.js"}],"/Users/ben/Github Projects/skylines/js/components/LoginView.jsx":[function(require,module,exports){
+},{"../actions/UserActions":"/Users/ben/Github Projects/skylines/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/js/react-router/modules/index.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/LoginView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -679,7 +824,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var React = require("react");
 		var Parse = require("Parse");
-		var Link = require("react-router").Link;
+		var Link = require("../react-router").Link;
 		var userActions = require("../actions/UserActions").userActions;
 		var userStore = require("../stores/UserStore").userStore;
 
@@ -726,7 +871,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						login: {
 								value: function login(e) {
 										e.preventDefault();
-										console.log("view login");
 										userActions.login(this.refs.username.getDOMNode().value, this.refs.password.getDOMNode().value, this.props.router);
 								}
 						}
@@ -738,7 +882,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.LoginView = LoginView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/UserActions":"/Users/ben/Github Projects/skylines/js/actions/UserActions.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/js/stores/UserStore.js","Parse":"/Users/ben/Github Projects/skylines/node_modules/Parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react-router":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/index.js"}],"/Users/ben/Github Projects/skylines/js/components/RegisterView.jsx":[function(require,module,exports){
+},{"../actions/UserActions":"/Users/ben/Github Projects/skylines/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/js/react-router/modules/index.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/js/stores/UserStore.js","Parse":"/Users/ben/Github Projects/skylines/node_modules/Parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/PassEmailSentView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -752,7 +896,49 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var Link = require("react-router").Link;
+
+		var PassEmailSentView = (function (_React$Component) {
+				function PassEmailSentView() {
+						_classCallCheck(this, PassEmailSentView);
+
+						_get(Object.getPrototypeOf(PassEmailSentView.prototype), "constructor", this).call(this);
+				}
+
+				_inherits(PassEmailSentView, _React$Component);
+
+				_createClass(PassEmailSentView, {
+						render: {
+								value: function render() {
+										return React.createElement(
+												"h3",
+												null,
+												"A password reset link has been sent to your email"
+										);
+								}
+						}
+				});
+
+				return PassEmailSentView;
+		})(React.Component);
+
+		exports.PassEmailSent = PassEmailSentView;
+})(typeof module === "object" ? module.exports : window);
+
+},{"react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/components/RegisterView.jsx":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+;(function (exports) {
+
+		var React = require("react");
+		var Link = require("../react-router").Link;
 		var userActions = require("../actions/UserActions").userActions;
 		var userStore = require("../stores/UserStore").userStore;
 
@@ -835,7 +1021,2868 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.RegisterView = RegisterView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/UserActions":"/Users/ben/Github Projects/skylines/js/actions/UserActions.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react-router":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/index.js"}],"/Users/ben/Github Projects/skylines/js/stores/GalleryStore.js":[function(require,module,exports){
+},{"../actions/UserActions":"/Users/ben/Github Projects/skylines/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/js/react-router/modules/index.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/Cancellation.js":[function(require,module,exports){
+"use strict";
+
+/**
+ * Represents a cancellation caused by navigating away
+ * before the previous transition has fully resolved.
+ */
+function Cancellation() {}
+
+module.exports = Cancellation;
+
+},{}],"/Users/ben/Github Projects/skylines/js/react-router/modules/History.js":[function(require,module,exports){
+"use strict";
+
+var invariant = require("react/lib/invariant");
+var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
+
+var History = {
+
+  /**
+   * The current number of entries in the history.
+   *
+   * Note: This property is read-only.
+   */
+  length: 1,
+
+  /**
+   * Sends the browser back one entry in the history.
+   */
+  back: function back() {
+    invariant(canUseDOM, "Cannot use History.back without a DOM");
+
+    // Do this first so that History.length will
+    // be accurate in location change listeners.
+    History.length -= 1;
+
+    window.history.back();
+  }
+
+};
+
+module.exports = History;
+
+},{"react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/Match.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+/* jshint -W084 */
+var PathUtils = require("./PathUtils");
+
+function deepSearch(route, pathname, query) {
+  // Check the subtree first to find the most deeply-nested match.
+  var childRoutes = route.childRoutes;
+  if (childRoutes) {
+    var match, childRoute;
+    for (var i = 0, len = childRoutes.length; i < len; ++i) {
+      childRoute = childRoutes[i];
+
+      if (childRoute.isDefault || childRoute.isNotFound) continue; // Check these in order later.
+
+      if (match = deepSearch(childRoute, pathname, query)) {
+        // A route in the subtree matched! Add this route and we're done.
+        match.routes.unshift(route);
+        return match;
+      }
+    }
+  }
+
+  // No child routes matched; try the default route.
+  var defaultRoute = route.defaultRoute;
+  if (defaultRoute && (params = PathUtils.extractParams(defaultRoute.path, pathname))) {
+    return new Match(pathname, params, query, [route, defaultRoute]);
+  } // Does the "not found" route match?
+  var notFoundRoute = route.notFoundRoute;
+  if (notFoundRoute && (params = PathUtils.extractParams(notFoundRoute.path, pathname))) {
+    return new Match(pathname, params, query, [route, notFoundRoute]);
+  } // Last attempt: check this route.
+  var params = PathUtils.extractParams(route.path, pathname);
+  if (params) {
+    return new Match(pathname, params, query, [route]);
+  }return null;
+}
+
+var Match = (function () {
+  function Match(pathname, params, query, routes) {
+    _classCallCheck(this, Match);
+
+    this.pathname = pathname;
+    this.params = params;
+    this.query = query;
+    this.routes = routes;
+  }
+
+  _createClass(Match, null, {
+    findMatch: {
+
+      /**
+       * Attempts to match depth-first a route in the given route's
+       * subtree against the given path and returns the match if it
+       * succeeds, null if no match can be made.
+       */
+
+      value: function findMatch(routes, path) {
+        var pathname = PathUtils.withoutQuery(path);
+        var query = PathUtils.extractQuery(path);
+        var match = null;
+
+        for (var i = 0, len = routes.length; match == null && i < len; ++i) match = deepSearch(routes[i], pathname, query);
+
+        return match;
+      }
+    }
+  });
+
+  return Match;
+})();
+
+module.exports = Match;
+
+},{"./PathUtils":"/Users/ben/Github Projects/skylines/js/react-router/modules/PathUtils.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/Navigation.js":[function(require,module,exports){
+"use strict";
+
+var warning = require("react/lib/warning");
+var PropTypes = require("./PropTypes");
+
+function deprecatedMethod(routerMethodName, fn) {
+  return function () {
+    warning(false, "Router.Navigation is deprecated. Please use this.context.router." + routerMethodName + "() instead");
+
+    return fn.apply(this, arguments);
+  };
+}
+
+/**
+ * A mixin for components that modify the URL.
+ *
+ * Example:
+ *
+ *   var MyLink = React.createClass({
+ *     mixins: [ Router.Navigation ],
+ *     handleClick(event) {
+ *       event.preventDefault();
+ *       this.transitionTo('aRoute', { the: 'params' }, { the: 'query' });
+ *     },
+ *     render() {
+ *       return (
+ *         <a onClick={this.handleClick}>Click me!</a>
+ *       );
+ *     }
+ *   });
+ */
+var Navigation = {
+
+  contextTypes: {
+    router: PropTypes.router.isRequired
+  },
+
+  /**
+   * Returns an absolute URL path created from the given route
+   * name, URL parameters, and query values.
+   */
+  makePath: deprecatedMethod("makePath", function (to, params, query) {
+    return this.context.router.makePath(to, params, query);
+  }),
+
+  /**
+   * Returns a string that may safely be used as the href of a
+   * link to the route with the given name.
+   */
+  makeHref: deprecatedMethod("makeHref", function (to, params, query) {
+    return this.context.router.makeHref(to, params, query);
+  }),
+
+  /**
+   * Transitions to the URL specified in the arguments by pushing
+   * a new URL onto the history stack.
+   */
+  transitionTo: deprecatedMethod("transitionTo", function (to, params, query) {
+    this.context.router.transitionTo(to, params, query);
+  }),
+
+  /**
+   * Transitions to the URL specified in the arguments by replacing
+   * the current URL in the history stack.
+   */
+  replaceWith: deprecatedMethod("replaceWith", function (to, params, query) {
+    this.context.router.replaceWith(to, params, query);
+  }),
+
+  /**
+   * Transitions to the previous URL.
+   */
+  goBack: deprecatedMethod("goBack", function () {
+    return this.context.router.goBack();
+  })
+
+};
+
+module.exports = Navigation;
+
+},{"./PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/PathUtils.js":[function(require,module,exports){
+"use strict";
+
+var invariant = require("react/lib/invariant");
+var merge = require("qs/lib/utils").merge;
+var qs = require("qs");
+
+var paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
+var paramInjectMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|[*]/g;
+var paramInjectTrailingSlashMatcher = /\/\/\?|\/\?\/|\/\?/g;
+var queryMatcher = /\?(.+)/;
+
+var _compiledPatterns = {};
+
+function compilePattern(pattern) {
+  if (!(pattern in _compiledPatterns)) {
+    var paramNames = [];
+    var source = pattern.replace(paramCompileMatcher, function (match, paramName) {
+      if (paramName) {
+        paramNames.push(paramName);
+        return "([^/?#]+)";
+      } else if (match === "*") {
+        paramNames.push("splat");
+        return "(.*?)";
+      } else {
+        return "\\" + match;
+      }
+    });
+
+    _compiledPatterns[pattern] = {
+      matcher: new RegExp("^" + source + "$", "i"),
+      paramNames: paramNames
+    };
+  }
+
+  return _compiledPatterns[pattern];
+}
+
+var PathUtils = {
+
+  /**
+   * Returns true if the given path is absolute.
+   */
+  isAbsolute: function isAbsolute(path) {
+    return path.charAt(0) === "/";
+  },
+
+  /**
+   * Joins two URL paths together.
+   */
+  join: function join(a, b) {
+    return a.replace(/\/*$/, "/") + b;
+  },
+
+  /**
+   * Returns an array of the names of all parameters in the given pattern.
+   */
+  extractParamNames: function extractParamNames(pattern) {
+    return compilePattern(pattern).paramNames;
+  },
+
+  /**
+   * Extracts the portions of the given URL path that match the given pattern
+   * and returns an object of param name => value pairs. Returns null if the
+   * pattern does not match the given path.
+   */
+  extractParams: function extractParams(pattern, path) {
+    var _compilePattern = compilePattern(pattern);
+
+    var matcher = _compilePattern.matcher;
+    var paramNames = _compilePattern.paramNames;
+
+    var match = path.match(matcher);
+
+    if (!match) {
+      return null;
+    }var params = {};
+
+    paramNames.forEach(function (paramName, index) {
+      params[paramName] = match[index + 1];
+    });
+
+    return params;
+  },
+
+  /**
+   * Returns a version of the given route path with params interpolated. Throws
+   * if there is a dynamic segment of the route path for which there is no param.
+   */
+  injectParams: function injectParams(pattern, params) {
+    params = params || {};
+
+    var splatIndex = 0;
+
+    return pattern.replace(paramInjectMatcher, function (match, paramName) {
+      paramName = paramName || "splat";
+
+      // If param is optional don't check for existence
+      if (paramName.slice(-1) === "?") {
+        paramName = paramName.slice(0, -1);
+
+        if (params[paramName] == null) return "";
+      } else {
+        invariant(params[paramName] != null, "Missing \"%s\" parameter for path \"%s\"", paramName, pattern);
+      }
+
+      var segment;
+      if (paramName === "splat" && Array.isArray(params[paramName])) {
+        segment = params[paramName][splatIndex++];
+
+        invariant(segment != null, "Missing splat # %s for path \"%s\"", splatIndex, pattern);
+      } else {
+        segment = params[paramName];
+      }
+
+      return segment;
+    }).replace(paramInjectTrailingSlashMatcher, "/");
+  },
+
+  /**
+   * Returns an object that is the result of parsing any query string contained
+   * in the given path, null if the path contains no query string.
+   */
+  extractQuery: function extractQuery(path) {
+    var match = path.match(queryMatcher);
+    return match && qs.parse(match[1]);
+  },
+
+  /**
+   * Returns a version of the given path without the query string.
+   */
+  withoutQuery: function withoutQuery(path) {
+    return path.replace(queryMatcher, "");
+  },
+
+  /**
+   * Returns a version of the given path with the parameters in the given
+   * query merged into the query string.
+   */
+  withQuery: function withQuery(path, query) {
+    var existingQuery = PathUtils.extractQuery(path);
+
+    if (existingQuery) query = query ? merge(existingQuery, query) : existingQuery;
+
+    var queryString = qs.stringify(query, { indices: false });
+
+    if (queryString) {
+      return PathUtils.withoutQuery(path) + "?" + queryString;
+    }return path;
+  }
+
+};
+
+module.exports = PathUtils;
+
+},{"qs":"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/index.js","qs/lib/utils":"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/utils.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js":[function(require,module,exports){
+"use strict";
+
+var assign = require("react/lib/Object.assign");
+var ReactPropTypes = require("react").PropTypes;
+var Route = require("./Route");
+
+var PropTypes = assign({}, ReactPropTypes, {
+
+  /**
+   * Indicates that a prop should be falsy.
+   */
+  falsy: function falsy(props, propName, componentName) {
+    if (props[propName]) {
+      return new Error("<" + componentName + "> may not have a \"" + propName + "\" prop");
+    }
+  },
+
+  /**
+   * Indicates that a prop should be a Route object.
+   */
+  route: ReactPropTypes.instanceOf(Route),
+
+  /**
+   * Indicates that a prop should be a Router object.
+   */
+  //router: ReactPropTypes.instanceOf(Router) // TODO
+  router: ReactPropTypes.func
+
+});
+
+module.exports = PropTypes;
+
+},{"./Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/Route.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/Redirect.js":[function(require,module,exports){
+"use strict";
+
+/**
+ * Encapsulates a redirect to the given route.
+ */
+function Redirect(to, params, query) {
+  this.to = to;
+  this.params = params;
+  this.query = query;
+}
+
+module.exports = Redirect;
+
+},{}],"/Users/ben/Github Projects/skylines/js/react-router/modules/Route.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var assign = require("react/lib/Object.assign");
+var invariant = require("react/lib/invariant");
+var warning = require("react/lib/warning");
+var PathUtils = require("./PathUtils");
+
+var _currentRoute;
+
+var Route = (function () {
+  function Route(name, path, ignoreScrollBehavior, isDefault, isNotFound, onEnter, onLeave, handler) {
+    _classCallCheck(this, Route);
+
+    this.name = name;
+    this.path = path;
+    this.paramNames = PathUtils.extractParamNames(this.path);
+    this.ignoreScrollBehavior = !!ignoreScrollBehavior;
+    this.isDefault = !!isDefault;
+    this.isNotFound = !!isNotFound;
+    this.onEnter = onEnter;
+    this.onLeave = onLeave;
+    this.handler = handler;
+  }
+
+  _createClass(Route, {
+    appendChild: {
+
+      /**
+       * Appends the given route to this route's child routes.
+       */
+
+      value: function appendChild(route) {
+        invariant(route instanceof Route, "route.appendChild must use a valid Route");
+
+        if (!this.childRoutes) this.childRoutes = [];
+
+        this.childRoutes.push(route);
+      }
+    },
+    toString: {
+      value: function toString() {
+        var string = "<Route";
+
+        if (this.name) string += " name=\"" + this.name + "\"";
+
+        string += " path=\"" + this.path + "\">";
+
+        return string;
+      }
+    }
+  }, {
+    createRoute: {
+
+      /**
+       * Creates and returns a new route. Options may be a URL pathname string
+       * with placeholders for named params or an object with any of the following
+       * properties:
+       *
+       * - name                     The name of the route. This is used to lookup a
+       *                            route relative to its parent route and should be
+       *                            unique among all child routes of the same parent
+       * - path                     A URL pathname string with optional placeholders
+       *                            that specify the names of params to extract from
+       *                            the URL when the path matches. Defaults to `/${name}`
+       *                            when there is a name given, or the path of the parent
+       *                            route, or /
+       * - ignoreScrollBehavior     True to make this route (and all descendants) ignore
+       *                            the scroll behavior of the router
+       * - isDefault                True to make this route the default route among all
+       *                            its siblings
+       * - isNotFound               True to make this route the "not found" route among
+       *                            all its siblings
+       * - onEnter                  A transition hook that will be called when the
+       *                            router is going to enter this route
+       * - onLeave                  A transition hook that will be called when the
+       *                            router is going to leave this route
+       * - handler                  A React component that will be rendered when
+       *                            this route is active
+       * - parentRoute              The parent route to use for this route. This option
+       *                            is automatically supplied when creating routes inside
+       *                            the callback to another invocation of createRoute. You
+       *                            only ever need to use this when declaring routes
+       *                            independently of one another to manually piece together
+       *                            the route hierarchy
+       *
+       * The callback may be used to structure your route hierarchy. Any call to
+       * createRoute, createDefaultRoute, createNotFoundRoute, or createRedirect
+       * inside the callback automatically uses this route as its parent.
+       */
+
+      value: function createRoute(options, callback) {
+        options = options || {};
+
+        if (typeof options === "string") options = { path: options };
+
+        var parentRoute = _currentRoute;
+
+        if (parentRoute) {
+          warning(options.parentRoute == null || options.parentRoute === parentRoute, "You should not use parentRoute with createRoute inside another route's child callback; it is ignored");
+        } else {
+          parentRoute = options.parentRoute;
+        }
+
+        var name = options.name;
+        var path = options.path || name;
+
+        if (path && !(options.isDefault || options.isNotFound)) {
+          if (PathUtils.isAbsolute(path)) {
+            if (parentRoute) {
+              invariant(path === parentRoute.path || parentRoute.paramNames.length === 0, "You cannot nest path \"%s\" inside \"%s\"; the parent requires URL parameters", path, parentRoute.path);
+            }
+          } else if (parentRoute) {
+            // Relative paths extend their parent.
+            path = PathUtils.join(parentRoute.path, path);
+          } else {
+            path = "/" + path;
+          }
+        } else {
+          path = parentRoute ? parentRoute.path : "/";
+        }
+
+        if (options.isNotFound && !/\*$/.test(path)) path += "*"; // Auto-append * to the path of not found routes.
+
+        var route = new Route(name, path, options.ignoreScrollBehavior, options.isDefault, options.isNotFound, options.onEnter, options.onLeave, options.handler);
+
+        if (parentRoute) {
+          if (route.isDefault) {
+            invariant(parentRoute.defaultRoute == null, "%s may not have more than one default route", parentRoute);
+
+            parentRoute.defaultRoute = route;
+          } else if (route.isNotFound) {
+            invariant(parentRoute.notFoundRoute == null, "%s may not have more than one not found route", parentRoute);
+
+            parentRoute.notFoundRoute = route;
+          }
+
+          parentRoute.appendChild(route);
+        }
+
+        // Any routes created in the callback
+        // use this route as their parent.
+        if (typeof callback === "function") {
+          var currentRoute = _currentRoute;
+          _currentRoute = route;
+          callback.call(route, route);
+          _currentRoute = currentRoute;
+        }
+
+        return route;
+      }
+    },
+    createDefaultRoute: {
+
+      /**
+       * Creates and returns a route that is rendered when its parent matches
+       * the current URL.
+       */
+
+      value: function createDefaultRoute(options) {
+        return Route.createRoute(assign({}, options, { isDefault: true }));
+      }
+    },
+    createNotFoundRoute: {
+
+      /**
+       * Creates and returns a route that is rendered when its parent matches
+       * the current URL but none of its siblings do.
+       */
+
+      value: function createNotFoundRoute(options) {
+        return Route.createRoute(assign({}, options, { isNotFound: true }));
+      }
+    },
+    createRedirect: {
+
+      /**
+       * Creates and returns a route that automatically redirects the transition
+       * to another route. In addition to the normal options to createRoute, this
+       * function accepts the following options:
+       *
+       * - from         An alias for the `path` option. Defaults to *
+       * - to           The path/route/route name to redirect to
+       * - params       The params to use in the redirect URL. Defaults
+       *                to using the current params
+       * - query        The query to use in the redirect URL. Defaults
+       *                to using the current query
+       */
+
+      value: function createRedirect(options) {
+        return Route.createRoute(assign({}, options, {
+          path: options.path || options.from || "*",
+          onEnter: function onEnter(transition, params, query) {
+            transition.redirect(options.to, options.params || params, options.query || query);
+          }
+        }));
+      }
+    }
+  });
+
+  return Route;
+})();
+
+module.exports = Route;
+
+},{"./PathUtils":"/Users/ben/Github Projects/skylines/js/react-router/modules/PathUtils.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/ScrollHistory.js":[function(require,module,exports){
+"use strict";
+
+var invariant = require("react/lib/invariant");
+var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
+var getWindowScrollPosition = require("./getWindowScrollPosition");
+
+function shouldUpdateScroll(state, prevState) {
+  if (!prevState) {
+    return true;
+  } // Don't update scroll position when only the query has changed.
+  if (state.pathname === prevState.pathname) {
+    return false;
+  }var routes = state.routes;
+  var prevRoutes = prevState.routes;
+
+  var sharedAncestorRoutes = routes.filter(function (route) {
+    return prevRoutes.indexOf(route) !== -1;
+  });
+
+  return !sharedAncestorRoutes.some(function (route) {
+    return route.ignoreScrollBehavior;
+  });
+}
+
+/**
+ * Provides the router with the ability to manage window scroll position
+ * according to its scroll behavior.
+ */
+var ScrollHistory = {
+
+  statics: {
+
+    /**
+     * Records curent scroll position as the last known position for the given URL path.
+     */
+    recordScrollPosition: function recordScrollPosition(path) {
+      if (!this.scrollHistory) this.scrollHistory = {};
+
+      this.scrollHistory[path] = getWindowScrollPosition();
+    },
+
+    /**
+     * Returns the last known scroll position for the given URL path.
+     */
+    getScrollPosition: function getScrollPosition(path) {
+      if (!this.scrollHistory) this.scrollHistory = {};
+
+      return this.scrollHistory[path] || null;
+    }
+
+  },
+
+  componentWillMount: function componentWillMount() {
+    invariant(this.constructor.getScrollBehavior() == null || canUseDOM, "Cannot use scroll behavior without a DOM");
+  },
+
+  componentDidMount: function componentDidMount() {
+    this._updateScroll();
+  },
+
+  componentDidUpdate: function componentDidUpdate(prevProps, prevState) {
+    this._updateScroll(prevState);
+  },
+
+  _updateScroll: function _updateScroll(prevState) {
+    if (!shouldUpdateScroll(this.state, prevState)) {
+      return;
+    }var scrollBehavior = this.constructor.getScrollBehavior();
+
+    if (scrollBehavior) scrollBehavior.updateScrollPosition(this.constructor.getScrollPosition(this.state.path), this.state.action);
+  }
+
+};
+
+module.exports = ScrollHistory;
+
+},{"./getWindowScrollPosition":"/Users/ben/Github Projects/skylines/js/react-router/modules/getWindowScrollPosition.js","react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/State.js":[function(require,module,exports){
+"use strict";
+
+var warning = require("react/lib/warning");
+var PropTypes = require("./PropTypes");
+
+function deprecatedMethod(routerMethodName, fn) {
+  return function () {
+    warning(false, "Router.State is deprecated. Please use this.context.router." + routerMethodName + "() instead");
+
+    return fn.apply(this, arguments);
+  };
+}
+
+/**
+ * A mixin for components that need to know the path, routes, URL
+ * params and query that are currently active.
+ *
+ * Example:
+ *
+ *   var AboutLink = React.createClass({
+ *     mixins: [ Router.State ],
+ *     render() {
+ *       var className = this.props.className;
+ *   
+ *       if (this.isActive('about'))
+ *         className += ' is-active';
+ *   
+ *       return React.DOM.a({ className: className }, this.props.children);
+ *     }
+ *   });
+ */
+var State = {
+
+  contextTypes: {
+    router: PropTypes.router.isRequired
+  },
+
+  /**
+   * Returns the current URL path.
+   */
+  getPath: deprecatedMethod("getCurrentPath", function () {
+    return this.context.router.getCurrentPath();
+  }),
+
+  /**
+   * Returns the current URL path without the query string.
+   */
+  getPathname: deprecatedMethod("getCurrentPathname", function () {
+    return this.context.router.getCurrentPathname();
+  }),
+
+  /**
+   * Returns an object of the URL params that are currently active.
+   */
+  getParams: deprecatedMethod("getCurrentParams", function () {
+    return this.context.router.getCurrentParams();
+  }),
+
+  /**
+   * Returns an object of the query params that are currently active.
+   */
+  getQuery: deprecatedMethod("getCurrentQuery", function () {
+    return this.context.router.getCurrentQuery();
+  }),
+
+  /**
+   * Returns an array of the routes that are currently active.
+   */
+  getRoutes: deprecatedMethod("getCurrentRoutes", function () {
+    return this.context.router.getCurrentRoutes();
+  }),
+
+  /**
+   * A helper method to determine if a given route, params, and query
+   * are active.
+   */
+  isActive: deprecatedMethod("isActive", function (to, params, query) {
+    return this.context.router.isActive(to, params, query);
+  })
+
+};
+
+module.exports = State;
+
+},{"./PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/Transition.js":[function(require,module,exports){
+"use strict";
+
+/* jshint -W058 */
+
+var Cancellation = require("./Cancellation");
+var Redirect = require("./Redirect");
+
+/**
+ * Encapsulates a transition to a given path.
+ *
+ * The willTransitionTo and willTransitionFrom handlers receive
+ * an instance of this class as their first argument.
+ */
+function Transition(path, retry) {
+  this.path = path;
+  this.abortReason = null;
+  // TODO: Change this to router.retryTransition(transition)
+  this.retry = retry.bind(this);
+}
+
+Transition.prototype.abort = function (reason) {
+  if (this.abortReason == null) this.abortReason = reason || "ABORT";
+};
+
+Transition.prototype.redirect = function (to, params, query) {
+  this.abort(new Redirect(to, params, query));
+};
+
+Transition.prototype.cancel = function () {
+  this.abort(new Cancellation());
+};
+
+Transition.from = function (transition, routes, components, callback) {
+  routes.reduce(function (callback, route, index) {
+    return function (error) {
+      if (error || transition.abortReason) {
+        callback(error);
+      } else if (route.onLeave) {
+        try {
+          route.onLeave(transition, components[index], callback);
+
+          // If there is no callback in the argument list, call it automatically.
+          if (route.onLeave.length < 3) callback();
+        } catch (e) {
+          callback(e);
+        }
+      } else {
+        callback();
+      }
+    };
+  }, callback)();
+};
+
+Transition.to = function (transition, routes, params, query, callback) {
+  routes.reduceRight(function (callback, route) {
+    return function (error) {
+      if (error || transition.abortReason) {
+        callback(error);
+      } else if (route.onEnter) {
+        try {
+          route.onEnter(transition, params, query, callback);
+
+          // If there is no callback in the argument list, call it automatically.
+          if (route.onEnter.length < 4) callback();
+        } catch (e) {
+          callback(e);
+        }
+      } else {
+        callback();
+      }
+    };
+  }, callback)();
+};
+
+module.exports = Transition;
+
+},{"./Cancellation":"/Users/ben/Github Projects/skylines/js/react-router/modules/Cancellation.js","./Redirect":"/Users/ben/Github Projects/skylines/js/react-router/modules/Redirect.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/actions/LocationActions.js":[function(require,module,exports){
+"use strict";
+
+/**
+ * Actions that modify the URL.
+ */
+var LocationActions = {
+
+  /**
+   * Indicates a new location is being pushed to the history stack.
+   */
+  PUSH: "push",
+
+  /**
+   * Indicates the current location should be replaced.
+   */
+  REPLACE: "replace",
+
+  /**
+   * Indicates the most recent entry should be removed from the history stack.
+   */
+  POP: "pop"
+
+};
+
+module.exports = LocationActions;
+
+},{}],"/Users/ben/Github Projects/skylines/js/react-router/modules/behaviors/ImitateBrowserBehavior.js":[function(require,module,exports){
+"use strict";
+
+var LocationActions = require("../actions/LocationActions");
+
+/**
+ * A scroll behavior that attempts to imitate the default behavior
+ * of modern browsers.
+ */
+var ImitateBrowserBehavior = {
+
+  updateScrollPosition: function updateScrollPosition(position, actionType) {
+    switch (actionType) {
+      case LocationActions.PUSH:
+      case LocationActions.REPLACE:
+        window.scrollTo(0, 0);
+        break;
+      case LocationActions.POP:
+        if (position) {
+          window.scrollTo(position.x, position.y);
+        } else {
+          window.scrollTo(0, 0);
+        }
+        break;
+    }
+  }
+
+};
+
+module.exports = ImitateBrowserBehavior;
+
+},{"../actions/LocationActions":"/Users/ben/Github Projects/skylines/js/react-router/modules/actions/LocationActions.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/behaviors/ScrollToTopBehavior.js":[function(require,module,exports){
+"use strict";
+
+/**
+ * A scroll behavior that always scrolls to the top of the page
+ * after a transition.
+ */
+var ScrollToTopBehavior = {
+
+  updateScrollPosition: function updateScrollPosition() {
+    window.scrollTo(0, 0);
+  }
+
+};
+
+module.exports = ScrollToTopBehavior;
+
+},{}],"/Users/ben/Github Projects/skylines/js/react-router/modules/components/DefaultRoute.js":[function(require,module,exports){
+"use strict";
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var PropTypes = require("../PropTypes");
+var RouteHandler = require("./RouteHandler");
+var Route = require("./Route");
+
+/**
+ * A <DefaultRoute> component is a special kind of <Route> that
+ * renders when its parent matches but none of its siblings do.
+ * Only one such route may be used at any given level in the
+ * route hierarchy.
+ */
+
+var DefaultRoute = (function (_Route) {
+  function DefaultRoute() {
+    _classCallCheck(this, DefaultRoute);
+
+    if (_Route != null) {
+      _Route.apply(this, arguments);
+    }
+  }
+
+  _inherits(DefaultRoute, _Route);
+
+  return DefaultRoute;
+})(Route);
+
+// TODO: Include these in the above class definition
+// once we can use ES7 property initializers.
+// https://github.com/babel/babel/issues/619
+
+DefaultRoute.propTypes = {
+  name: PropTypes.string,
+  path: PropTypes.falsy,
+  children: PropTypes.falsy,
+  handler: PropTypes.func.isRequired
+};
+
+DefaultRoute.defaultProps = {
+  handler: RouteHandler
+};
+
+module.exports = DefaultRoute;
+
+},{"../PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","./Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Route.js","./RouteHandler":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/RouteHandler.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Link.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var React = require("react");
+var assign = require("react/lib/Object.assign");
+var PropTypes = require("../PropTypes");
+
+function isLeftClickEvent(event) {
+  return event.button === 0;
+}
+
+function isModifiedEvent(event) {
+  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
+}
+
+/**
+ * <Link> components are used to create an <a> element that links to a route.
+ * When that route is active, the link gets an "active" class name (or the
+ * value of its `activeClassName` prop).
+ *
+ * For example, assuming you have the following route:
+ *
+ *   <Route name="showPost" path="/posts/:postID" handler={Post}/>
+ *
+ * You could use the following component to link to that route:
+ *
+ *   <Link to="showPost" params={{ postID: "123" }} />
+ *
+ * In addition to params, links may pass along query string parameters
+ * using the `query` prop.
+ *
+ *   <Link to="showPost" params={{ postID: "123" }} query={{ show:true }}/>
+ */
+
+var Link = (function (_React$Component) {
+  function Link() {
+    _classCallCheck(this, Link);
+
+    if (_React$Component != null) {
+      _React$Component.apply(this, arguments);
+    }
+  }
+
+  _inherits(Link, _React$Component);
+
+  _createClass(Link, {
+    handleClick: {
+      value: function handleClick(event) {
+        var allowTransition = true;
+        var clickResult;
+
+        if (this.props.onClick) clickResult = this.props.onClick(event);
+
+        if (isModifiedEvent(event) || !isLeftClickEvent(event)) {
+          return;
+        }if (clickResult === false || event.defaultPrevented === true) allowTransition = false;
+
+        event.preventDefault();
+
+        if (allowTransition) this.context.router.transitionTo(this.props.to, this.props.params, this.props.query);
+      }
+    },
+    getHref: {
+
+      /**
+       * Returns the value of the "href" attribute to use on the DOM element.
+       */
+
+      value: function getHref() {
+        return this.context.router.makeHref(this.props.to, this.props.params, this.props.query);
+      }
+    },
+    getClassName: {
+
+      /**
+       * Returns the value of the "class" attribute to use on the DOM element, which contains
+       * the value of the activeClassName property when this <Link> is active.
+       */
+
+      value: function getClassName() {
+        var className = this.props.className;
+
+        if (this.getActiveState()) className += " " + this.props.activeClassName;
+
+        return className;
+      }
+    },
+    getActiveState: {
+      value: function getActiveState() {
+        return this.context.router.isActive(this.props.to, this.props.params, this.props.query);
+      }
+    },
+    render: {
+      value: function render() {
+        var props = assign({}, this.props, {
+          href: this.getHref(),
+          className: this.getClassName(),
+          onClick: this.handleClick.bind(this)
+        });
+
+        if (props.activeStyle && this.getActiveState()) props.style = props.activeStyle;
+
+        return React.DOM.a(props, this.props.children);
+      }
+    }
+  });
+
+  return Link;
+})(React.Component);
+
+// TODO: Include these in the above class definition
+// once we can use ES7 property initializers.
+// https://github.com/babel/babel/issues/619
+
+Link.contextTypes = {
+  router: PropTypes.router.isRequired
+};
+
+Link.propTypes = {
+  activeClassName: PropTypes.string.isRequired,
+  to: PropTypes.oneOfType([PropTypes.string, PropTypes.route]).isRequired,
+  params: PropTypes.object,
+  query: PropTypes.object,
+  activeStyle: PropTypes.object,
+  onClick: PropTypes.func
+};
+
+Link.defaultProps = {
+  activeClassName: "active",
+  className: ""
+};
+
+module.exports = Link;
+
+},{"../PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/components/NotFoundRoute.js":[function(require,module,exports){
+"use strict";
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var PropTypes = require("../PropTypes");
+var RouteHandler = require("./RouteHandler");
+var Route = require("./Route");
+
+/**
+ * A <NotFoundRoute> is a special kind of <Route> that
+ * renders when the beginning of its parent's path matches
+ * but none of its siblings do, including any <DefaultRoute>.
+ * Only one such route may be used at any given level in the
+ * route hierarchy.
+ */
+
+var NotFoundRoute = (function (_Route) {
+  function NotFoundRoute() {
+    _classCallCheck(this, NotFoundRoute);
+
+    if (_Route != null) {
+      _Route.apply(this, arguments);
+    }
+  }
+
+  _inherits(NotFoundRoute, _Route);
+
+  return NotFoundRoute;
+})(Route);
+
+// TODO: Include these in the above class definition
+// once we can use ES7 property initializers.
+// https://github.com/babel/babel/issues/619
+
+NotFoundRoute.propTypes = {
+  name: PropTypes.string,
+  path: PropTypes.falsy,
+  children: PropTypes.falsy,
+  handler: PropTypes.func.isRequired
+};
+
+NotFoundRoute.defaultProps = {
+  handler: RouteHandler
+};
+
+module.exports = NotFoundRoute;
+
+},{"../PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","./Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Route.js","./RouteHandler":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/RouteHandler.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Redirect.js":[function(require,module,exports){
+"use strict";
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var PropTypes = require("../PropTypes");
+var Route = require("./Route");
+
+/**
+ * A <Redirect> component is a special kind of <Route> that always
+ * redirects to another route when it matches.
+ */
+
+var Redirect = (function (_Route) {
+  function Redirect() {
+    _classCallCheck(this, Redirect);
+
+    if (_Route != null) {
+      _Route.apply(this, arguments);
+    }
+  }
+
+  _inherits(Redirect, _Route);
+
+  return Redirect;
+})(Route);
+
+// TODO: Include these in the above class definition
+// once we can use ES7 property initializers.
+// https://github.com/babel/babel/issues/619
+
+Redirect.propTypes = {
+  path: PropTypes.string,
+  from: PropTypes.string, // Alias for path.
+  to: PropTypes.string,
+  handler: PropTypes.falsy
+};
+
+// Redirects should not have a default handler
+Redirect.defaultProps = {};
+
+module.exports = Redirect;
+
+},{"../PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","./Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Route.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Route.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var React = require("react");
+var invariant = require("react/lib/invariant");
+var PropTypes = require("../PropTypes");
+var RouteHandler = require("./RouteHandler");
+
+/**
+ * <Route> components specify components that are rendered to the page when the
+ * URL matches a given pattern.
+ *
+ * Routes are arranged in a nested tree structure. When a new URL is requested,
+ * the tree is searched depth-first to find a route whose path matches the URL.
+ * When one is found, all routes in the tree that lead to it are considered
+ * "active" and their components are rendered into the DOM, nested in the same
+ * order as they are in the tree.
+ *
+ * The preferred way to configure a router is using JSX. The XML-like syntax is
+ * a great way to visualize how routes are laid out in an application.
+ *
+ *   var routes = [
+ *     <Route handler={App}>
+ *       <Route name="login" handler={Login}/>
+ *       <Route name="logout" handler={Logout}/>
+ *       <Route name="about" handler={About}/>
+ *     </Route>
+ *   ];
+ *   
+ *   Router.run(routes, function (Handler) {
+ *     React.render(<Handler/>, document.body);
+ *   });
+ *
+ * Handlers for Route components that contain children can render their active
+ * child route using a <RouteHandler> element.
+ *
+ *   var App = React.createClass({
+ *     render: function () {
+ *       return (
+ *         <div class="application">
+ *           <RouteHandler/>
+ *         </div>
+ *       );
+ *     }
+ *   });
+ *
+ * If no handler is provided for the route, it will render a matched child route.
+ */
+
+var Route = (function (_React$Component) {
+  function Route() {
+    _classCallCheck(this, Route);
+
+    if (_React$Component != null) {
+      _React$Component.apply(this, arguments);
+    }
+  }
+
+  _inherits(Route, _React$Component);
+
+  _createClass(Route, {
+    render: {
+      value: function render() {
+        invariant(false, "%s elements are for router configuration only and should not be rendered", this.constructor.name);
+      }
+    }
+  });
+
+  return Route;
+})(React.Component);
+
+// TODO: Include these in the above class definition
+// once we can use ES7 property initializers.
+// https://github.com/babel/babel/issues/619
+
+Route.propTypes = {
+  name: PropTypes.string,
+  path: PropTypes.string,
+  handler: PropTypes.func,
+  ignoreScrollBehavior: PropTypes.bool
+};
+
+Route.defaultProps = {
+  handler: RouteHandler
+};
+
+module.exports = Route;
+
+},{"../PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","./RouteHandler":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/RouteHandler.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/components/RouteHandler.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var React = require("react");
+var assign = require("react/lib/Object.assign");
+var PropTypes = require("../PropTypes");
+
+var REF_NAME = "__routeHandler__";
+
+/**
+ * A <RouteHandler> component renders the active child route handler
+ * when routes are nested.
+ */
+
+var RouteHandler = (function (_React$Component) {
+  function RouteHandler() {
+    _classCallCheck(this, RouteHandler);
+
+    if (_React$Component != null) {
+      _React$Component.apply(this, arguments);
+    }
+  }
+
+  _inherits(RouteHandler, _React$Component);
+
+  _createClass(RouteHandler, {
+    getChildContext: {
+      value: function getChildContext() {
+        return {
+          routeDepth: this.context.routeDepth + 1
+        };
+      }
+    },
+    componentDidMount: {
+      value: function componentDidMount() {
+        this._updateRouteComponent(this.refs[REF_NAME]);
+      }
+    },
+    componentDidUpdate: {
+      value: function componentDidUpdate() {
+        this._updateRouteComponent(this.refs[REF_NAME]);
+      }
+    },
+    componentWillUnmount: {
+      value: function componentWillUnmount() {
+        this._updateRouteComponent(null);
+      }
+    },
+    _updateRouteComponent: {
+      value: function _updateRouteComponent(component) {
+        this.context.router.setRouteComponentAtDepth(this.getRouteDepth(), component);
+      }
+    },
+    getRouteDepth: {
+      value: function getRouteDepth() {
+        return this.context.routeDepth;
+      }
+    },
+    createChildRouteHandler: {
+      value: function createChildRouteHandler(props) {
+        var route = this.context.router.getRouteAtDepth(this.getRouteDepth());
+        return route ? React.createElement(route.handler, assign({}, props || this.props, { ref: REF_NAME })) : null;
+      }
+    },
+    render: {
+      value: function render() {
+        return this.createChildRouteHandler();
+      }
+    }
+  });
+
+  return RouteHandler;
+})(React.Component);
+
+// TODO: Include these in the above class definition
+// once we can use ES7 property initializers.
+// https://github.com/babel/babel/issues/619
+
+RouteHandler.contextTypes = {
+  routeDepth: PropTypes.number.isRequired,
+  router: PropTypes.router.isRequired
+};
+
+RouteHandler.childContextTypes = {
+  routeDepth: PropTypes.number.isRequired
+};
+
+module.exports = RouteHandler;
+
+},{"../PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/createRouter.js":[function(require,module,exports){
+(function (process){
+"use strict";
+
+/* jshint -W058 */
+var React = require("react");
+var warning = require("react/lib/warning");
+var invariant = require("react/lib/invariant");
+var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
+var LocationActions = require("./actions/LocationActions");
+var ImitateBrowserBehavior = require("./behaviors/ImitateBrowserBehavior");
+var HashLocation = require("./locations/HashLocation");
+var HistoryLocation = require("./locations/HistoryLocation");
+var RefreshLocation = require("./locations/RefreshLocation");
+var StaticLocation = require("./locations/StaticLocation");
+var ScrollHistory = require("./ScrollHistory");
+var createRoutesFromReactChildren = require("./createRoutesFromReactChildren");
+var isReactChildren = require("./isReactChildren");
+var Transition = require("./Transition");
+var PropTypes = require("./PropTypes");
+var Redirect = require("./Redirect");
+var History = require("./History");
+var Cancellation = require("./Cancellation");
+var Match = require("./Match");
+var Route = require("./Route");
+var supportsHistory = require("./supportsHistory");
+var PathUtils = require("./PathUtils");
+
+/**
+ * The default location for new routers.
+ */
+var DEFAULT_LOCATION = canUseDOM ? HashLocation : "/";
+
+/**
+ * The default scroll behavior for new routers.
+ */
+var DEFAULT_SCROLL_BEHAVIOR = canUseDOM ? ImitateBrowserBehavior : null;
+
+function hasProperties(object, properties) {
+  for (var propertyName in properties) if (properties.hasOwnProperty(propertyName) && object[propertyName] !== properties[propertyName]) {
+    return false;
+  }return true;
+}
+
+function hasMatch(routes, route, prevParams, nextParams, prevQuery, nextQuery) {
+  return routes.some(function (r) {
+    if (r !== route) return false;
+
+    var paramNames = route.paramNames;
+    var paramName;
+
+    // Ensure that all params the route cares about did not change.
+    for (var i = 0, len = paramNames.length; i < len; ++i) {
+      paramName = paramNames[i];
+
+      if (nextParams[paramName] !== prevParams[paramName]) return false;
+    }
+
+    // Ensure the query hasn't changed.
+    return hasProperties(prevQuery, nextQuery) && hasProperties(nextQuery, prevQuery);
+  });
+}
+
+function addRoutesToNamedRoutes(routes, namedRoutes) {
+  var route;
+  for (var i = 0, len = routes.length; i < len; ++i) {
+    route = routes[i];
+
+    if (route.name) {
+      invariant(namedRoutes[route.name] == null, "You may not have more than one route named \"%s\"", route.name);
+
+      namedRoutes[route.name] = route;
+    }
+
+    if (route.childRoutes) addRoutesToNamedRoutes(route.childRoutes, namedRoutes);
+  }
+}
+
+function routeIsActive(activeRoutes, routeName) {
+  return activeRoutes.some(function (route) {
+    return route.name === routeName;
+  });
+}
+
+function paramsAreActive(activeParams, params) {
+  for (var property in params) if (String(activeParams[property]) !== String(params[property])) {
+    return false;
+  }return true;
+}
+
+function queryIsActive(activeQuery, query) {
+  for (var property in query) if (String(activeQuery[property]) !== String(query[property])) {
+    return false;
+  }return true;
+}
+
+/**
+ * Creates and returns a new router using the given options. A router
+ * is a ReactComponent class that knows how to react to changes in the
+ * URL and keep the contents of the page in sync.
+ *
+ * Options may be any of the following:
+ *
+ * - routes           (required) The route config
+ * - location         The location to use. Defaults to HashLocation when
+ *                    the DOM is available, "/" otherwise
+ * - scrollBehavior   The scroll behavior to use. Defaults to ImitateBrowserBehavior
+ *                    when the DOM is available, null otherwise
+ * - onError          A function that is used to handle errors
+ * - onAbort          A function that is used to handle aborted transitions
+ *
+ * When rendering in a server-side environment, the location should simply
+ * be the URL path that was used in the request, including the query string.
+ */
+function createRouter(options) {
+  options = options || {};
+
+  if (isReactChildren(options)) options = { routes: options };
+
+  var mountedComponents = [];
+  var location = options.location || DEFAULT_LOCATION;
+  var scrollBehavior = options.scrollBehavior || DEFAULT_SCROLL_BEHAVIOR;
+  var state = {};
+  var nextState = {};
+  var pendingTransition = null;
+  var dispatchHandler = null;
+
+  if (typeof location === "string") location = new StaticLocation(location);
+
+  if (location instanceof StaticLocation) {
+    warning(!canUseDOM || process.env.NODE_ENV === "test", "You should not use a static location in a DOM environment because " + "the router will not be kept in sync with the current URL");
+  } else {
+    invariant(canUseDOM || location.needsDOM === false, "You cannot use %s without a DOM", location);
+  }
+
+  // Automatically fall back to full page refreshes in
+  // browsers that don't support the HTML history API.
+  if (location === HistoryLocation && !supportsHistory()) location = RefreshLocation;
+
+  var Router = React.createClass({
+
+    displayName: "Router",
+
+    statics: {
+
+      isRunning: false,
+
+      cancelPendingTransition: function cancelPendingTransition() {
+        if (pendingTransition) {
+          pendingTransition.cancel();
+          pendingTransition = null;
+        }
+      },
+
+      clearAllRoutes: function clearAllRoutes() {
+        this.cancelPendingTransition();
+        this.namedRoutes = {};
+        this.routes = [];
+      },
+
+      /**
+       * Adds routes to this router from the given children object (see ReactChildren).
+       */
+      addRoutes: function addRoutes(routes) {
+        if (isReactChildren(routes)) routes = createRoutesFromReactChildren(routes);
+
+        addRoutesToNamedRoutes(routes, this.namedRoutes);
+
+        this.routes.push.apply(this.routes, routes);
+      },
+
+      /**
+       * Replaces routes of this router from the given children object (see ReactChildren).
+       */
+      replaceRoutes: function replaceRoutes(routes) {
+        this.clearAllRoutes();
+        this.addRoutes(routes);
+        this.refresh();
+      },
+
+      /**
+       * Performs a match of the given path against this router and returns an object
+       * with the { routes, params, pathname, query } that match. Returns null if no
+       * match can be made.
+       */
+      match: function match(path) {
+        return Match.findMatch(this.routes, path);
+      },
+
+      /**
+       * Returns an absolute URL path created from the given route
+       * name, URL parameters, and query.
+       */
+      makePath: function makePath(to, params, query) {
+        var path;
+        if (PathUtils.isAbsolute(to)) {
+          path = to;
+        } else {
+          var route = to instanceof Route ? to : this.namedRoutes[to];
+
+          invariant(route instanceof Route, "Cannot find a route named \"%s\"", to);
+
+          path = route.path;
+        }
+
+        return PathUtils.withQuery(PathUtils.injectParams(path, params), query);
+      },
+
+      /**
+       * Returns a string that may safely be used as the href of a link
+       * to the route with the given name, URL parameters, and query.
+       */
+      makeHref: function makeHref(to, params, query) {
+        var path = this.makePath(to, params, query);
+        return location === HashLocation ? "#" + path : path;
+      },
+
+      /**
+       * Transitions to the URL specified in the arguments by pushing
+       * a new URL onto the history stack.
+       */
+      transitionTo: function transitionTo(to, params, query) {
+        var path = this.makePath(to, params, query);
+
+        if (pendingTransition) {
+          // Replace so pending location does not stay in history.
+          location.replace(path);
+        } else {
+          location.push(path);
+        }
+      },
+
+      /**
+       * Transitions to the URL specified in the arguments by replacing
+       * the current URL in the history stack.
+       */
+      replaceWith: function replaceWith(to, params, query) {
+        location.replace(this.makePath(to, params, query));
+      },
+
+      /**
+       * Transitions to the previous URL if one is available. Returns true if the
+       * router was able to go back, false otherwise.
+       *
+       * Note: The router only tracks history entries in your application, not the
+       * current browser session, so you can safely call this function without guarding
+       * against sending the user back to some other site. However, when using
+       * RefreshLocation (which is the fallback for HistoryLocation in browsers that
+       * don't support HTML5 history) this method will *always* send the client back
+       * because we cannot reliably track history length.
+       */
+      goBack: function goBack() {
+        if (History.length > 1 || location === RefreshLocation) {
+          location.pop();
+          return true;
+        }
+
+        warning(false, "goBack() was ignored because there is no router history");
+
+        return false;
+      },
+
+      handleAbort: options.onAbort || function (abortReason) {
+        if (location instanceof StaticLocation) throw new Error("Unhandled aborted transition! Reason: " + abortReason);
+
+        if (abortReason instanceof Cancellation) {
+          return;
+        } else if (abortReason instanceof Redirect) {
+          location.replace(this.makePath(abortReason.to, abortReason.params, abortReason.query));
+        } else {
+          location.pop();
+        }
+      },
+
+      handleError: options.onError || function (error) {
+        // Throw so we don't silently swallow async errors.
+        throw error; // This error probably originated in a transition hook.
+      },
+
+      handleLocationChange: function handleLocationChange(change) {
+        this.dispatch(change.path, change.type);
+      },
+
+      /**
+       * Performs a transition to the given path and calls callback(error, abortReason)
+       * when the transition is finished. If both arguments are null the router's state
+       * was updated. Otherwise the transition did not complete.
+       *
+       * In a transition, a router first determines which routes are involved by beginning
+       * with the current route, up the route tree to the first parent route that is shared
+       * with the destination route, and back down the tree to the destination route. The
+       * willTransitionFrom hook is invoked on all route handlers we're transitioning away
+       * from, in reverse nesting order. Likewise, the willTransitionTo hook is invoked on
+       * all route handlers we're transitioning to.
+       *
+       * Both willTransitionFrom and willTransitionTo hooks may either abort or redirect the
+       * transition. To resolve asynchronously, they may use the callback argument. If no
+       * hooks wait, the transition is fully synchronous.
+       */
+      dispatch: function dispatch(path, action) {
+        this.cancelPendingTransition();
+
+        var prevPath = state.path;
+        var isRefreshing = action == null;
+
+        if (prevPath === path && !isRefreshing) {
+          return;
+        } // Nothing to do!
+
+        // Record the scroll position as early as possible to
+        // get it before browsers try update it automatically.
+        if (prevPath && action === LocationActions.PUSH) this.recordScrollPosition(prevPath);
+
+        var match = this.match(path);
+
+        warning(match != null, "No route matches path \"%s\". Make sure you have <Route path=\"%s\"> somewhere in your routes", path, path);
+
+        if (match == null) match = {};
+
+        var prevRoutes = state.routes || [];
+        var prevParams = state.params || {};
+        var prevQuery = state.query || {};
+
+        var nextRoutes = match.routes || [];
+        var nextParams = match.params || {};
+        var nextQuery = match.query || {};
+
+        var fromRoutes, toRoutes;
+        if (prevRoutes.length) {
+          fromRoutes = prevRoutes.filter(function (route) {
+            return !hasMatch(nextRoutes, route, prevParams, nextParams, prevQuery, nextQuery);
+          });
+
+          toRoutes = nextRoutes.filter(function (route) {
+            return !hasMatch(prevRoutes, route, prevParams, nextParams, prevQuery, nextQuery);
+          });
+        } else {
+          fromRoutes = [];
+          toRoutes = nextRoutes;
+        }
+
+        var transition = new Transition(path, this.replaceWith.bind(this, path));
+        pendingTransition = transition;
+
+        var fromComponents = mountedComponents.slice(prevRoutes.length - fromRoutes.length);
+
+        Transition.from(transition, fromRoutes, fromComponents, function (error) {
+          if (error || transition.abortReason) return dispatchHandler.call(Router, error, transition); // No need to continue.
+
+          Transition.to(transition, toRoutes, nextParams, nextQuery, function (error) {
+            dispatchHandler.call(Router, error, transition, {
+              path: path,
+              action: action,
+              pathname: match.pathname,
+              routes: nextRoutes,
+              params: nextParams,
+              query: nextQuery
+            });
+          });
+        });
+      },
+
+      /**
+       * Starts this router and calls callback(router, state) when the route changes.
+       *
+       * If the router's location is static (i.e. a URL path in a server environment)
+       * the callback is called only once. Otherwise, the location should be one of the
+       * Router.*Location objects (e.g. Router.HashLocation or Router.HistoryLocation).
+       */
+      run: function run(callback) {
+        invariant(!this.isRunning, "Router is already running");
+
+        dispatchHandler = function (error, transition, newState) {
+          if (error) Router.handleError(error);
+
+          if (pendingTransition !== transition) return;
+
+          pendingTransition = null;
+
+          if (transition.abortReason) {
+            Router.handleAbort(transition.abortReason);
+          } else {
+            callback.call(this, this, nextState = newState);
+          }
+        };
+
+        if (!(location instanceof StaticLocation)) {
+          if (location.addChangeListener) location.addChangeListener(Router.handleLocationChange.bind(Router));
+
+          this.isRunning = true;
+        }
+
+        // Bootstrap using the current path.
+        this.refresh();
+      },
+
+      refresh: function refresh() {
+        Router.dispatch(location.getCurrentPath(), null);
+      },
+
+      stop: function stop() {
+        this.cancelPendingTransition();
+
+        if (location.removeChangeListener) location.removeChangeListener(Router.handleLocationChange.bind(Router));
+
+        this.isRunning = false;
+      },
+
+      getLocation: function getLocation() {
+        return location;
+      },
+
+      getScrollBehavior: function getScrollBehavior() {
+        return scrollBehavior;
+      },
+
+      getRouteAtDepth: function getRouteAtDepth(routeDepth) {
+        var routes = state.routes;
+        return routes && routes[routeDepth];
+      },
+
+      setRouteComponentAtDepth: function setRouteComponentAtDepth(routeDepth, component) {
+        mountedComponents[routeDepth] = component;
+      },
+
+      /**
+       * Returns the current URL path + query string.
+       */
+      getCurrentPath: function getCurrentPath() {
+        return state.path;
+      },
+
+      /**
+       * Returns the current URL path without the query string.
+       */
+      getCurrentPathname: function getCurrentPathname() {
+        return state.pathname;
+      },
+
+      /**
+       * Returns an object of the currently active URL parameters.
+       */
+      getCurrentParams: function getCurrentParams() {
+        return state.params;
+      },
+
+      /**
+       * Returns an object of the currently active query parameters.
+       */
+      getCurrentQuery: function getCurrentQuery() {
+        return state.query;
+      },
+
+      /**
+       * Returns an array of the currently active routes.
+       */
+      getCurrentRoutes: function getCurrentRoutes() {
+        return state.routes;
+      },
+
+      /**
+       * Returns true if the given route, params, and query are active.
+       */
+      isActive: function isActive(to, params, query) {
+        if (PathUtils.isAbsolute(to)) {
+          return to === state.path;
+        }return routeIsActive(state.routes, to) && paramsAreActive(state.params, params) && (query == null || queryIsActive(state.query, query));
+      }
+
+    },
+
+    mixins: [ScrollHistory],
+
+    propTypes: {
+      children: PropTypes.falsy
+    },
+
+    childContextTypes: {
+      routeDepth: PropTypes.number.isRequired,
+      router: PropTypes.router.isRequired
+    },
+
+    getChildContext: function getChildContext() {
+      return {
+        routeDepth: 1,
+        router: Router
+      };
+    },
+
+    getInitialState: function getInitialState() {
+      return state = nextState;
+    },
+
+    componentWillReceiveProps: function componentWillReceiveProps() {
+      this.setState(state = nextState);
+    },
+
+    componentWillUnmount: function componentWillUnmount() {
+      Router.stop();
+    },
+
+    render: function render() {
+      var route = Router.getRouteAtDepth(0);
+      return route ? React.createElement(route.handler, this.props) : null;
+    }
+
+  });
+
+  Router.clearAllRoutes();
+
+  if (options.routes) Router.addRoutes(options.routes);
+
+  return Router;
+}
+
+module.exports = createRouter;
+
+}).call(this,require('_process'))
+},{"./Cancellation":"/Users/ben/Github Projects/skylines/js/react-router/modules/Cancellation.js","./History":"/Users/ben/Github Projects/skylines/js/react-router/modules/History.js","./Match":"/Users/ben/Github Projects/skylines/js/react-router/modules/Match.js","./PathUtils":"/Users/ben/Github Projects/skylines/js/react-router/modules/PathUtils.js","./PropTypes":"/Users/ben/Github Projects/skylines/js/react-router/modules/PropTypes.js","./Redirect":"/Users/ben/Github Projects/skylines/js/react-router/modules/Redirect.js","./Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/Route.js","./ScrollHistory":"/Users/ben/Github Projects/skylines/js/react-router/modules/ScrollHistory.js","./Transition":"/Users/ben/Github Projects/skylines/js/react-router/modules/Transition.js","./actions/LocationActions":"/Users/ben/Github Projects/skylines/js/react-router/modules/actions/LocationActions.js","./behaviors/ImitateBrowserBehavior":"/Users/ben/Github Projects/skylines/js/react-router/modules/behaviors/ImitateBrowserBehavior.js","./createRoutesFromReactChildren":"/Users/ben/Github Projects/skylines/js/react-router/modules/createRoutesFromReactChildren.js","./isReactChildren":"/Users/ben/Github Projects/skylines/js/react-router/modules/isReactChildren.js","./locations/HashLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/HashLocation.js","./locations/HistoryLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/HistoryLocation.js","./locations/RefreshLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/RefreshLocation.js","./locations/StaticLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/StaticLocation.js","./supportsHistory":"/Users/ben/Github Projects/skylines/js/react-router/modules/supportsHistory.js","_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/createRoutesFromReactChildren.js":[function(require,module,exports){
+"use strict";
+
+/* jshint -W084 */
+var React = require("react");
+var assign = require("react/lib/Object.assign");
+var warning = require("react/lib/warning");
+var DefaultRoute = require("./components/DefaultRoute");
+var NotFoundRoute = require("./components/NotFoundRoute");
+var Redirect = require("./components/Redirect");
+var Route = require("./Route");
+
+function checkPropTypes(componentName, propTypes, props) {
+  componentName = componentName || "UnknownComponent";
+
+  for (var propName in propTypes) {
+    if (propTypes.hasOwnProperty(propName)) {
+      var error = propTypes[propName](props, propName, componentName);
+
+      if (error instanceof Error) warning(false, error.message);
+    }
+  }
+}
+
+function createRouteOptions(props) {
+  var options = assign({}, props);
+  var handler = options.handler;
+
+  if (handler) {
+    options.onEnter = handler.willTransitionTo;
+    options.onLeave = handler.willTransitionFrom;
+  }
+
+  return options;
+}
+
+function createRouteFromReactElement(element) {
+  if (!React.isValidElement(element)) {
+    return;
+  }var type = element.type;
+  var props = assign({}, type.defaultProps, element.props);
+
+  if (type.propTypes) checkPropTypes(type.displayName, type.propTypes, props);
+
+  if (type === DefaultRoute) {
+    return Route.createDefaultRoute(createRouteOptions(props));
+  }if (type === NotFoundRoute) {
+    return Route.createNotFoundRoute(createRouteOptions(props));
+  }if (type === Redirect) {
+    return Route.createRedirect(createRouteOptions(props));
+  }return Route.createRoute(createRouteOptions(props), function () {
+    if (props.children) createRoutesFromReactChildren(props.children);
+  });
+}
+
+/**
+ * Creates and returns an array of routes created from the given
+ * ReactChildren, all of which should be one of <Route>, <DefaultRoute>,
+ * <NotFoundRoute>, or <Redirect>, e.g.:
+ *
+ *   var { createRoutesFromReactChildren, Route, Redirect } = require('react-router');
+ *
+ *   var routes = createRoutesFromReactChildren(
+ *     <Route path="/" handler={App}>
+ *       <Route name="user" path="/user/:userId" handler={User}>
+ *         <Route name="task" path="tasks/:taskId" handler={Task}/>
+ *         <Redirect from="todos/:taskId" to="task"/>
+ *       </Route>
+ *     </Route>
+ *   );
+ */
+function createRoutesFromReactChildren(children) {
+  var routes = [];
+
+  React.Children.forEach(children, function (child) {
+    if (child = createRouteFromReactElement(child)) routes.push(child);
+  });
+
+  return routes;
+}
+
+module.exports = createRoutesFromReactChildren;
+
+},{"./Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/Route.js","./components/DefaultRoute":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/DefaultRoute.js","./components/NotFoundRoute":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/NotFoundRoute.js","./components/Redirect":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Redirect.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/getWindowScrollPosition.js":[function(require,module,exports){
+"use strict";
+
+var invariant = require("react/lib/invariant");
+var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
+
+/**
+ * Returns the current scroll position of the window as { x, y }.
+ */
+function getWindowScrollPosition() {
+  invariant(canUseDOM, "Cannot get current scroll position without a DOM");
+
+  return {
+    x: window.pageXOffset || document.documentElement.scrollLeft,
+    y: window.pageYOffset || document.documentElement.scrollTop
+  };
+}
+
+module.exports = getWindowScrollPosition;
+
+},{"react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/index.js":[function(require,module,exports){
+"use strict";
+
+exports.DefaultRoute = require("./components/DefaultRoute");
+exports.Link = require("./components/Link");
+exports.NotFoundRoute = require("./components/NotFoundRoute");
+exports.Redirect = require("./components/Redirect");
+exports.Route = require("./components/Route");
+exports.RouteHandler = require("./components/RouteHandler");
+
+exports.HashLocation = require("./locations/HashLocation");
+exports.HistoryLocation = require("./locations/HistoryLocation");
+exports.RefreshLocation = require("./locations/RefreshLocation");
+exports.StaticLocation = require("./locations/StaticLocation");
+
+exports.ImitateBrowserBehavior = require("./behaviors/ImitateBrowserBehavior");
+exports.ScrollToTopBehavior = require("./behaviors/ScrollToTopBehavior");
+
+exports.History = require("./History");
+exports.Navigation = require("./Navigation");
+exports.State = require("./State");
+
+exports.createRoute = require("./Route").createRoute;
+exports.createDefaultRoute = require("./Route").createDefaultRoute;
+exports.createNotFoundRoute = require("./Route").createNotFoundRoute;
+exports.createRedirect = require("./Route").createRedirect;
+exports.createRoutesFromReactChildren = require("./createRoutesFromReactChildren");
+exports.create = require("./createRouter");
+exports.run = require("./runRouter");
+
+},{"./History":"/Users/ben/Github Projects/skylines/js/react-router/modules/History.js","./Navigation":"/Users/ben/Github Projects/skylines/js/react-router/modules/Navigation.js","./Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/Route.js","./State":"/Users/ben/Github Projects/skylines/js/react-router/modules/State.js","./behaviors/ImitateBrowserBehavior":"/Users/ben/Github Projects/skylines/js/react-router/modules/behaviors/ImitateBrowserBehavior.js","./behaviors/ScrollToTopBehavior":"/Users/ben/Github Projects/skylines/js/react-router/modules/behaviors/ScrollToTopBehavior.js","./components/DefaultRoute":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/DefaultRoute.js","./components/Link":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Link.js","./components/NotFoundRoute":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/NotFoundRoute.js","./components/Redirect":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Redirect.js","./components/Route":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/Route.js","./components/RouteHandler":"/Users/ben/Github Projects/skylines/js/react-router/modules/components/RouteHandler.js","./createRouter":"/Users/ben/Github Projects/skylines/js/react-router/modules/createRouter.js","./createRoutesFromReactChildren":"/Users/ben/Github Projects/skylines/js/react-router/modules/createRoutesFromReactChildren.js","./locations/HashLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/HashLocation.js","./locations/HistoryLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/HistoryLocation.js","./locations/RefreshLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/RefreshLocation.js","./locations/StaticLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/StaticLocation.js","./runRouter":"/Users/ben/Github Projects/skylines/js/react-router/modules/runRouter.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/isReactChildren.js":[function(require,module,exports){
+"use strict";
+
+var React = require("react");
+
+function isValidChild(object) {
+  return object == null || React.isValidElement(object);
+}
+
+function isReactChildren(object) {
+  return isValidChild(object) || Array.isArray(object) && object.every(isValidChild);
+}
+
+module.exports = isReactChildren;
+
+},{"react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/HashLocation.js":[function(require,module,exports){
+"use strict";
+
+var LocationActions = require("../actions/LocationActions");
+var History = require("../History");
+
+var _listeners = [];
+var _isListening = false;
+var _actionType;
+
+function notifyChange(type) {
+  if (type === LocationActions.PUSH) History.length += 1;
+
+  var change = {
+    path: HashLocation.getCurrentPath(),
+    type: type
+  };
+
+  _listeners.forEach(function (listener) {
+    listener.call(HashLocation, change);
+  });
+}
+
+function ensureSlash() {
+  var path = HashLocation.getCurrentPath();
+
+  if (path.charAt(0) === "/") {
+    return true;
+  }HashLocation.replace("/" + path);
+
+  return false;
+}
+
+function onHashChange() {
+  if (ensureSlash()) {
+    // If we don't have an _actionType then all we know is the hash
+    // changed. It was probably caused by the user clicking the Back
+    // button, but may have also been the Forward button or manual
+    // manipulation. So just guess 'pop'.
+    notifyChange(_actionType || LocationActions.POP);
+    _actionType = null;
+  }
+}
+
+/**
+ * A Location that uses `window.location.hash`.
+ */
+var HashLocation = {
+
+  addChangeListener: function addChangeListener(listener) {
+    _listeners.push(listener);
+
+    // Do this BEFORE listening for hashchange.
+    ensureSlash();
+
+    if (!_isListening) {
+      if (window.addEventListener) {
+        window.addEventListener("hashchange", onHashChange, false);
+      } else {
+        window.attachEvent("onhashchange", onHashChange);
+      }
+
+      _isListening = true;
+    }
+  },
+
+  removeChangeListener: function removeChangeListener(listener) {
+    _listeners = _listeners.filter(function (l) {
+      return l !== listener;
+    });
+
+    if (_listeners.length === 0) {
+      if (window.removeEventListener) {
+        window.removeEventListener("hashchange", onHashChange, false);
+      } else {
+        window.removeEvent("onhashchange", onHashChange);
+      }
+
+      _isListening = false;
+    }
+  },
+
+  push: function push(path) {
+    _actionType = LocationActions.PUSH;
+    window.location.hash = path;
+  },
+
+  replace: function replace(path) {
+    _actionType = LocationActions.REPLACE;
+    window.location.replace(window.location.pathname + window.location.search + "#" + path);
+  },
+
+  pop: function pop() {
+    _actionType = LocationActions.POP;
+    History.back();
+  },
+
+  getCurrentPath: function getCurrentPath() {
+    return decodeURI(
+    // We can't use window.location.hash here because it's not
+    // consistent across browsers - Firefox will pre-decode it!
+    window.location.href.split("#")[1] || "");
+  },
+
+  toString: function toString() {
+    return "<HashLocation>";
+  }
+
+};
+
+module.exports = HashLocation;
+
+},{"../History":"/Users/ben/Github Projects/skylines/js/react-router/modules/History.js","../actions/LocationActions":"/Users/ben/Github Projects/skylines/js/react-router/modules/actions/LocationActions.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/HistoryLocation.js":[function(require,module,exports){
+"use strict";
+
+var LocationActions = require("../actions/LocationActions");
+var History = require("../History");
+
+var _listeners = [];
+var _isListening = false;
+
+function notifyChange(type) {
+  var change = {
+    path: HistoryLocation.getCurrentPath(),
+    type: type
+  };
+
+  _listeners.forEach(function (listener) {
+    listener.call(HistoryLocation, change);
+  });
+}
+
+function onPopState(event) {
+  if (event.state === undefined) {
+    return;
+  } // Ignore extraneous popstate events in WebKit.
+
+  notifyChange(LocationActions.POP);
+}
+
+/**
+ * A Location that uses HTML5 history.
+ */
+var HistoryLocation = {
+
+  addChangeListener: function addChangeListener(listener) {
+    _listeners.push(listener);
+
+    if (!_isListening) {
+      if (window.addEventListener) {
+        window.addEventListener("popstate", onPopState, false);
+      } else {
+        window.attachEvent("onpopstate", onPopState);
+      }
+
+      _isListening = true;
+    }
+  },
+
+  removeChangeListener: function removeChangeListener(listener) {
+    _listeners = _listeners.filter(function (l) {
+      return l !== listener;
+    });
+
+    if (_listeners.length === 0) {
+      if (window.addEventListener) {
+        window.removeEventListener("popstate", onPopState, false);
+      } else {
+        window.removeEvent("onpopstate", onPopState);
+      }
+
+      _isListening = false;
+    }
+  },
+
+  push: function push(path) {
+    window.history.pushState({ path: path }, "", path);
+    History.length += 1;
+    notifyChange(LocationActions.PUSH);
+  },
+
+  replace: function replace(path) {
+    window.history.replaceState({ path: path }, "", path);
+    notifyChange(LocationActions.REPLACE);
+  },
+
+  pop: History.back,
+
+  getCurrentPath: function getCurrentPath() {
+    return decodeURI(window.location.pathname + window.location.search);
+  },
+
+  toString: function toString() {
+    return "<HistoryLocation>";
+  }
+
+};
+
+module.exports = HistoryLocation;
+
+},{"../History":"/Users/ben/Github Projects/skylines/js/react-router/modules/History.js","../actions/LocationActions":"/Users/ben/Github Projects/skylines/js/react-router/modules/actions/LocationActions.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/RefreshLocation.js":[function(require,module,exports){
+"use strict";
+
+var HistoryLocation = require("./HistoryLocation");
+var History = require("../History");
+
+/**
+ * A Location that uses full page refreshes. This is used as
+ * the fallback for HistoryLocation in browsers that do not
+ * support the HTML5 history API.
+ */
+var RefreshLocation = {
+
+  push: function push(path) {
+    window.location = path;
+  },
+
+  replace: function replace(path) {
+    window.location.replace(path);
+  },
+
+  pop: History.back,
+
+  getCurrentPath: HistoryLocation.getCurrentPath,
+
+  toString: function toString() {
+    return "<RefreshLocation>";
+  }
+
+};
+
+module.exports = RefreshLocation;
+
+},{"../History":"/Users/ben/Github Projects/skylines/js/react-router/modules/History.js","./HistoryLocation":"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/HistoryLocation.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/locations/StaticLocation.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var invariant = require("react/lib/invariant");
+
+function throwCannotModify() {
+  invariant(false, "You cannot modify a static location");
+}
+
+/**
+ * A location that only ever contains a single path. Useful in
+ * stateless environments like servers where there is no path history,
+ * only the path that was used in the request.
+ */
+
+var StaticLocation = (function () {
+  function StaticLocation(path) {
+    _classCallCheck(this, StaticLocation);
+
+    this.path = path;
+  }
+
+  _createClass(StaticLocation, {
+    getCurrentPath: {
+      value: function getCurrentPath() {
+        return this.path;
+      }
+    },
+    toString: {
+      value: function toString() {
+        return "<StaticLocation path=\"" + this.path + "\">";
+      }
+    }
+  });
+
+  return StaticLocation;
+})();
+
+// TODO: Include these in the above class definition
+// once we can use ES7 property initializers.
+// https://github.com/babel/babel/issues/619
+
+StaticLocation.prototype.push = throwCannotModify;
+StaticLocation.prototype.replace = throwCannotModify;
+StaticLocation.prototype.pop = throwCannotModify;
+
+module.exports = StaticLocation;
+
+},{"react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/runRouter.js":[function(require,module,exports){
+"use strict";
+
+var createRouter = require("./createRouter");
+
+/**
+ * A high-level convenience method that creates, configures, and
+ * runs a router in one shot. The method signature is:
+ *
+ *   Router.run(routes[, location ], callback);
+ *
+ * Using `window.location.hash` to manage the URL, you could do:
+ *
+ *   Router.run(routes, function (Handler) {
+ *     React.render(<Handler/>, document.body);
+ *   });
+ * 
+ * Using HTML5 history and a custom "cursor" prop:
+ * 
+ *   Router.run(routes, Router.HistoryLocation, function (Handler) {
+ *     React.render(<Handler cursor={cursor}/>, document.body);
+ *   });
+ *
+ * Returns the newly created router.
+ *
+ * Note: If you need to specify further options for your router such
+ * as error/abort handling or custom scroll behavior, use Router.create
+ * instead.
+ *
+ *   var router = Router.create(options);
+ *   router.run(function (Handler) {
+ *     // ...
+ *   });
+ */
+function runRouter(routes, location, callback) {
+  if (typeof location === "function") {
+    callback = location;
+    location = null;
+  }
+
+  var router = createRouter({
+    routes: routes,
+    location: location
+  });
+
+  router.run(callback);
+
+  return router;
+}
+
+module.exports = runRouter;
+
+},{"./createRouter":"/Users/ben/Github Projects/skylines/js/react-router/modules/createRouter.js"}],"/Users/ben/Github Projects/skylines/js/react-router/modules/supportsHistory.js":[function(require,module,exports){
+"use strict";
+
+function supportsHistory() {
+  /*! taken from modernizr
+   * https://github.com/Modernizr/Modernizr/blob/master/LICENSE
+   * https://github.com/Modernizr/Modernizr/blob/master/feature-detects/history.js
+   * changed to avoid false negatives for Windows Phones: https://github.com/rackt/react-router/issues/586
+   */
+  var ua = navigator.userAgent;
+  if ((ua.indexOf("Android 2.") !== -1 || ua.indexOf("Android 4.0") !== -1) && ua.indexOf("Mobile Safari") !== -1 && ua.indexOf("Chrome") === -1 && ua.indexOf("Windows Phone") === -1) {
+    return false;
+  }
+  return window.history && "pushState" in window.history;
+}
+
+module.exports = supportsHistory;
+
+},{}],"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/index.js":[function(require,module,exports){
+module.exports = require('./lib/');
+
+},{"./lib/":"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/index.js"}],"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/index.js":[function(require,module,exports){
+// Load modules
+
+var Stringify = require('./stringify');
+var Parse = require('./parse');
+
+
+// Declare internals
+
+var internals = {};
+
+
+module.exports = {
+    stringify: Stringify,
+    parse: Parse
+};
+
+},{"./parse":"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/parse.js","./stringify":"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/stringify.js"}],"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/parse.js":[function(require,module,exports){
+// Load modules
+
+var Utils = require('./utils');
+
+
+// Declare internals
+
+var internals = {
+    delimiter: '&',
+    depth: 5,
+    arrayLimit: 20,
+    parameterLimit: 1000
+};
+
+
+internals.parseValues = function (str, options) {
+
+    var obj = {};
+    var parts = str.split(options.delimiter, options.parameterLimit === Infinity ? undefined : options.parameterLimit);
+
+    for (var i = 0, il = parts.length; i < il; ++i) {
+        var part = parts[i];
+        var pos = part.indexOf(']=') === -1 ? part.indexOf('=') : part.indexOf(']=') + 1;
+
+        if (pos === -1) {
+            obj[Utils.decode(part)] = '';
+        }
+        else {
+            var key = Utils.decode(part.slice(0, pos));
+            var val = Utils.decode(part.slice(pos + 1));
+
+            if (!obj.hasOwnProperty(key)) {
+                obj[key] = val;
+            }
+            else {
+                obj[key] = [].concat(obj[key]).concat(val);
+            }
+        }
+    }
+
+    return obj;
+};
+
+
+internals.parseObject = function (chain, val, options) {
+
+    if (!chain.length) {
+        return val;
+    }
+
+    var root = chain.shift();
+
+    var obj = {};
+    if (root === '[]') {
+        obj = [];
+        obj = obj.concat(internals.parseObject(chain, val, options));
+    }
+    else {
+        var cleanRoot = root[0] === '[' && root[root.length - 1] === ']' ? root.slice(1, root.length - 1) : root;
+        var index = parseInt(cleanRoot, 10);
+        var indexString = '' + index;
+        if (!isNaN(index) &&
+            root !== cleanRoot &&
+            indexString === cleanRoot &&
+            index >= 0 &&
+            index <= options.arrayLimit) {
+
+            obj = [];
+            obj[index] = internals.parseObject(chain, val, options);
+        }
+        else {
+            obj[cleanRoot] = internals.parseObject(chain, val, options);
+        }
+    }
+
+    return obj;
+};
+
+
+internals.parseKeys = function (key, val, options) {
+
+    if (!key) {
+        return;
+    }
+
+    // The regex chunks
+
+    var parent = /^([^\[\]]*)/;
+    var child = /(\[[^\[\]]*\])/g;
+
+    // Get the parent
+
+    var segment = parent.exec(key);
+
+    // Don't allow them to overwrite object prototype properties
+
+    if (Object.prototype.hasOwnProperty(segment[1])) {
+        return;
+    }
+
+    // Stash the parent if it exists
+
+    var keys = [];
+    if (segment[1]) {
+        keys.push(segment[1]);
+    }
+
+    // Loop through children appending to the array until we hit depth
+
+    var i = 0;
+    while ((segment = child.exec(key)) !== null && i < options.depth) {
+
+        ++i;
+        if (!Object.prototype.hasOwnProperty(segment[1].replace(/\[|\]/g, ''))) {
+            keys.push(segment[1]);
+        }
+    }
+
+    // If there's a remainder, just add whatever is left
+
+    if (segment) {
+        keys.push('[' + key.slice(segment.index) + ']');
+    }
+
+    return internals.parseObject(keys, val, options);
+};
+
+
+module.exports = function (str, options) {
+
+    if (str === '' ||
+        str === null ||
+        typeof str === 'undefined') {
+
+        return {};
+    }
+
+    options = options || {};
+    options.delimiter = typeof options.delimiter === 'string' || Utils.isRegExp(options.delimiter) ? options.delimiter : internals.delimiter;
+    options.depth = typeof options.depth === 'number' ? options.depth : internals.depth;
+    options.arrayLimit = typeof options.arrayLimit === 'number' ? options.arrayLimit : internals.arrayLimit;
+    options.parameterLimit = typeof options.parameterLimit === 'number' ? options.parameterLimit : internals.parameterLimit;
+
+    var tempObj = typeof str === 'string' ? internals.parseValues(str, options) : str;
+    var obj = {};
+
+    // Iterate over the keys and setup the new object
+
+    var keys = Object.keys(tempObj);
+    for (var i = 0, il = keys.length; i < il; ++i) {
+        var key = keys[i];
+        var newObj = internals.parseKeys(key, tempObj[key], options);
+        obj = Utils.merge(obj, newObj);
+    }
+
+    return Utils.compact(obj);
+};
+
+},{"./utils":"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/utils.js"}],"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/stringify.js":[function(require,module,exports){
+// Load modules
+
+var Utils = require('./utils');
+
+
+// Declare internals
+
+var internals = {
+    delimiter: '&',
+    indices: true
+};
+
+
+internals.stringify = function (obj, prefix, options) {
+
+    if (Utils.isBuffer(obj)) {
+        obj = obj.toString();
+    }
+    else if (obj instanceof Date) {
+        obj = obj.toISOString();
+    }
+    else if (obj === null) {
+        obj = '';
+    }
+
+    if (typeof obj === 'string' ||
+        typeof obj === 'number' ||
+        typeof obj === 'boolean') {
+
+        return [encodeURIComponent(prefix) + '=' + encodeURIComponent(obj)];
+    }
+
+    var values = [];
+
+    if (typeof obj === 'undefined') {
+        return values;
+    }
+
+    var objKeys = Object.keys(obj);
+    for (var i = 0, il = objKeys.length; i < il; ++i) {
+        var key = objKeys[i];
+        if (!options.indices &&
+            Array.isArray(obj)) {
+
+            values = values.concat(internals.stringify(obj[key], prefix, options));
+        }
+        else {
+            values = values.concat(internals.stringify(obj[key], prefix + '[' + key + ']', options));
+        }
+    }
+
+    return values;
+};
+
+
+module.exports = function (obj, options) {
+
+    options = options || {};
+    var delimiter = typeof options.delimiter === 'undefined' ? internals.delimiter : options.delimiter;
+    options.indices = typeof options.indices === 'boolean' ? options.indices : internals.indices;
+
+    var keys = [];
+
+    if (typeof obj !== 'object' ||
+        obj === null) {
+
+        return '';
+    }
+
+    var objKeys = Object.keys(obj);
+    for (var i = 0, il = objKeys.length; i < il; ++i) {
+        var key = objKeys[i];
+        keys = keys.concat(internals.stringify(obj[key], key, options));
+    }
+
+    return keys.join(delimiter);
+};
+
+},{"./utils":"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/utils.js"}],"/Users/ben/Github Projects/skylines/js/react-router/node_modules/qs/lib/utils.js":[function(require,module,exports){
+// Load modules
+
+
+// Declare internals
+
+var internals = {};
+
+
+exports.arrayToObject = function (source) {
+
+    var obj = {};
+    for (var i = 0, il = source.length; i < il; ++i) {
+        if (typeof source[i] !== 'undefined') {
+
+            obj[i] = source[i];
+        }
+    }
+
+    return obj;
+};
+
+
+exports.merge = function (target, source) {
+
+    if (!source) {
+        return target;
+    }
+
+    if (typeof source !== 'object') {
+        if (Array.isArray(target)) {
+            target.push(source);
+        }
+        else {
+            target[source] = true;
+        }
+
+        return target;
+    }
+
+    if (typeof target !== 'object') {
+        target = [target].concat(source);
+        return target;
+    }
+
+    if (Array.isArray(target) &&
+        !Array.isArray(source)) {
+
+        target = exports.arrayToObject(target);
+    }
+
+    var keys = Object.keys(source);
+    for (var k = 0, kl = keys.length; k < kl; ++k) {
+        var key = keys[k];
+        var value = source[key];
+
+        if (!target[key]) {
+            target[key] = value;
+        }
+        else {
+            target[key] = exports.merge(target[key], value);
+        }
+    }
+
+    return target;
+};
+
+
+exports.decode = function (str) {
+
+    try {
+        return decodeURIComponent(str.replace(/\+/g, ' '));
+    } catch (e) {
+        return str;
+    }
+};
+
+
+exports.compact = function (obj, refs) {
+
+    if (typeof obj !== 'object' ||
+        obj === null) {
+
+        return obj;
+    }
+
+    refs = refs || [];
+    var lookup = refs.indexOf(obj);
+    if (lookup !== -1) {
+        return refs[lookup];
+    }
+
+    refs.push(obj);
+
+    if (Array.isArray(obj)) {
+        var compacted = [];
+
+        for (var i = 0, il = obj.length; i < il; ++i) {
+            if (typeof obj[i] !== 'undefined') {
+                compacted.push(obj[i]);
+            }
+        }
+
+        return compacted;
+    }
+
+    var keys = Object.keys(obj);
+    for (i = 0, il = keys.length; i < il; ++i) {
+        var key = keys[i];
+        obj[key] = exports.compact(obj[key], refs);
+    }
+
+    return obj;
+};
+
+
+exports.isRegExp = function (obj) {
+    return Object.prototype.toString.call(obj) === '[object RegExp]';
+};
+
+
+exports.isBuffer = function (obj) {
+
+    if (obj === null ||
+        typeof obj === 'undefined') {
+
+        return false;
+    }
+
+    return !!(obj.constructor &&
+        obj.constructor.isBuffer &&
+        obj.constructor.isBuffer(obj));
+};
+
+},{}],"/Users/ben/Github Projects/skylines/js/stores/DetailStore.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+;(function (exports) {
+
+		var alt = require("../alt-app").alt;
+		var detailActions = require("../actions/DetailActions").detailActions;
+
+		var DetailStore = (function () {
+				function DetailStore() {
+						_classCallCheck(this, DetailStore);
+
+						this.onResetState();
+
+						this.bindAction(detailActions.getDetail, this.onGetInfo);
+						this.bindAction(detailActions.resetState, this.onResetState);
+				}
+
+				_createClass(DetailStore, {
+						onGetInfo: {
+								value: function onGetInfo(data) {
+										this.photo = data;
+										this.photoUrl = function (size) {
+												return "https://farm" + data.farm + ".staticflickr.com/" + data.server + "/" + data.id + "_" + data.secret + "_" + size + "." + (data.originalformat ? data.originalformat : "jpg");
+										};
+								}
+						},
+						onResetState: {
+								value: function onResetState() {
+										this.photo = null;
+										this.photoUrl = function () {
+												return "";
+										};
+								}
+						}
+				});
+
+				return DetailStore;
+		})();
+
+		exports.detailStore = alt.createStore(DetailStore);
+})(typeof module === "object" ? module.exports : window);
+
+},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/js/actions/DetailActions.js","../alt-app":"/Users/ben/Github Projects/skylines/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/js/stores/GalleryStore.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -860,8 +3907,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryStore, {
 						onGetPhotos: {
 								value: function onGetPhotos(data) {
-										this.photo = data.photos.photo;
-										this.page = data.photos.page;
+										for (var key in data) {
+												this[key] = data[key];
+										}
 								}
 						}
 				});
@@ -892,7 +3940,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						this.user = null;
 
 						this.bindListeners({
-								setUser: [userActions.current, userActions.login, userActions.register]
+								setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
 						});
 				}
 
@@ -21093,2783 +24141,7 @@ arguments[4]["/Users/ben/Github Projects/skylines/node_modules/Parse/build/parse
 arguments[4]["/Users/ben/Github Projects/skylines/node_modules/Parse/node_modules/localStorage/lib/localStorage.js"][0].apply(exports,arguments)
 },{}],"/Users/ben/Github Projects/skylines/node_modules/parse/node_modules/xmlhttprequest/lib/XMLHttpRequest.js":[function(require,module,exports){
 arguments[4]["/Users/ben/Github Projects/skylines/node_modules/Parse/node_modules/xmlhttprequest/lib/XMLHttpRequest.js"][0].apply(exports,arguments)
-},{"_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/buffer/index.js","child_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/lib/_empty.js","fs":"/Users/ben/Github Projects/skylines/node_modules/browserify/lib/_empty.js","http":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/http-browserify/index.js","https":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/https-browserify/index.js","url":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/url/url.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Cancellation.js":[function(require,module,exports){
-"use strict";
-
-/**
- * Represents a cancellation caused by navigating away
- * before the previous transition has fully resolved.
- */
-function Cancellation() {}
-
-module.exports = Cancellation;
-},{}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Configuration.js":[function(require,module,exports){
-"use strict";
-
-var warning = require("react/lib/warning");
-var invariant = require("react/lib/invariant");
-
-function checkPropTypes(componentName, propTypes, props) {
-  for (var propName in propTypes) {
-    if (propTypes.hasOwnProperty(propName)) {
-      var error = propTypes[propName](props, propName, componentName);
-
-      if (error instanceof Error) warning(false, error.message);
-    }
-  }
-}
-
-var Configuration = {
-
-  statics: {
-
-    validateProps: function validateProps(props) {
-      checkPropTypes(this.displayName, this.propTypes, props);
-    }
-
-  },
-
-  render: function render() {
-    invariant(false, "%s elements are for router configuration only and should not be rendered", this.constructor.displayName);
-  }
-
-};
-
-module.exports = Configuration;
-},{"react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/History.js":[function(require,module,exports){
-"use strict";
-
-var invariant = require("react/lib/invariant");
-var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
-
-var History = {
-
-  /**
-   * The current number of entries in the history.
-   *
-   * Note: This property is read-only.
-   */
-  length: 1,
-
-  /**
-   * Sends the browser back one entry in the history.
-   */
-  back: function back() {
-    invariant(canUseDOM, "Cannot use History.back without a DOM");
-
-    // Do this first so that History.length will
-    // be accurate in location change listeners.
-    History.length -= 1;
-
-    window.history.back();
-  }
-
-};
-
-module.exports = History;
-},{"react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Match.js":[function(require,module,exports){
-"use strict";
-
-var _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
-
-/* jshint -W084 */
-var PathUtils = require("./PathUtils");
-
-function deepSearch(route, pathname, query) {
-  // Check the subtree first to find the most deeply-nested match.
-  var childRoutes = route.childRoutes;
-  if (childRoutes) {
-    var match, childRoute;
-    for (var i = 0, len = childRoutes.length; i < len; ++i) {
-      childRoute = childRoutes[i];
-
-      if (childRoute.isDefault || childRoute.isNotFound) continue; // Check these in order later.
-
-      if (match = deepSearch(childRoute, pathname, query)) {
-        // A route in the subtree matched! Add this route and we're done.
-        match.routes.unshift(route);
-        return match;
-      }
-    }
-  }
-
-  // No child routes matched; try the default route.
-  var defaultRoute = route.defaultRoute;
-  if (defaultRoute && (params = PathUtils.extractParams(defaultRoute.path, pathname))) {
-    return new Match(pathname, params, query, [route, defaultRoute]);
-  } // Does the "not found" route match?
-  var notFoundRoute = route.notFoundRoute;
-  if (notFoundRoute && (params = PathUtils.extractParams(notFoundRoute.path, pathname))) {
-    return new Match(pathname, params, query, [route, notFoundRoute]);
-  } // Last attempt: check this route.
-  var params = PathUtils.extractParams(route.path, pathname);
-  if (params) {
-    return new Match(pathname, params, query, [route]);
-  }return null;
-}
-
-var Match = (function () {
-  function Match(pathname, params, query, routes) {
-    _classCallCheck(this, Match);
-
-    this.pathname = pathname;
-    this.params = params;
-    this.query = query;
-    this.routes = routes;
-  }
-
-  _prototypeProperties(Match, {
-    findMatch: {
-
-      /**
-       * Attempts to match depth-first a route in the given route's
-       * subtree against the given path and returns the match if it
-       * succeeds, null if no match can be made.
-       */
-
-      value: function findMatch(routes, path) {
-        var pathname = PathUtils.withoutQuery(path);
-        var query = PathUtils.extractQuery(path);
-        var match = null;
-
-        for (var i = 0, len = routes.length; match == null && i < len; ++i) match = deepSearch(routes[i], pathname, query);
-
-        return match;
-      },
-      writable: true,
-      configurable: true
-    }
-  });
-
-  return Match;
-})();
-
-module.exports = Match;
-},{"./PathUtils":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PathUtils.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Navigation.js":[function(require,module,exports){
-"use strict";
-
-var PropTypes = require("./PropTypes");
-
-/**
- * A mixin for components that modify the URL.
- *
- * Example:
- *
- *   var MyLink = React.createClass({
- *     mixins: [ Router.Navigation ],
- *     handleClick: function (event) {
- *       event.preventDefault();
- *       this.transitionTo('aRoute', { the: 'params' }, { the: 'query' });
- *     },
- *     render: function () {
- *       return (
- *         <a onClick={this.handleClick}>Click me!</a>
- *       );
- *     }
- *   });
- */
-var Navigation = {
-
-  contextTypes: {
-    makePath: PropTypes.func.isRequired,
-    makeHref: PropTypes.func.isRequired,
-    transitionTo: PropTypes.func.isRequired,
-    replaceWith: PropTypes.func.isRequired,
-    goBack: PropTypes.func.isRequired
-  },
-
-  /**
-   * Returns an absolute URL path created from the given route
-   * name, URL parameters, and query values.
-   */
-  makePath: function makePath(to, params, query) {
-    return this.context.makePath(to, params, query);
-  },
-
-  /**
-   * Returns a string that may safely be used as the href of a
-   * link to the route with the given name.
-   */
-  makeHref: function makeHref(to, params, query) {
-    return this.context.makeHref(to, params, query);
-  },
-
-  /**
-   * Transitions to the URL specified in the arguments by pushing
-   * a new URL onto the history stack.
-   */
-  transitionTo: function transitionTo(to, params, query) {
-    this.context.transitionTo(to, params, query);
-  },
-
-  /**
-   * Transitions to the URL specified in the arguments by replacing
-   * the current URL in the history stack.
-   */
-  replaceWith: function replaceWith(to, params, query) {
-    this.context.replaceWith(to, params, query);
-  },
-
-  /**
-   * Transitions to the previous URL.
-   */
-  goBack: function goBack() {
-    return this.context.goBack();
-  }
-
-};
-
-module.exports = Navigation;
-},{"./PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/NavigationContext.js":[function(require,module,exports){
-"use strict";
-
-var PropTypes = require("./PropTypes");
-
-/**
- * Provides the router with context for Router.Navigation.
- */
-var NavigationContext = {
-
-  childContextTypes: {
-    makePath: PropTypes.func.isRequired,
-    makeHref: PropTypes.func.isRequired,
-    transitionTo: PropTypes.func.isRequired,
-    replaceWith: PropTypes.func.isRequired,
-    goBack: PropTypes.func.isRequired
-  },
-
-  getChildContext: function getChildContext() {
-    return {
-      makePath: this.constructor.makePath.bind(this.constructor),
-      makeHref: this.constructor.makeHref.bind(this.constructor),
-      transitionTo: this.constructor.transitionTo.bind(this.constructor),
-      replaceWith: this.constructor.replaceWith.bind(this.constructor),
-      goBack: this.constructor.goBack.bind(this.constructor)
-    };
-  }
-
-};
-
-module.exports = NavigationContext;
-},{"./PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PathUtils.js":[function(require,module,exports){
-"use strict";
-
-var invariant = require("react/lib/invariant");
-var merge = require("qs/lib/utils").merge;
-var qs = require("qs");
-
-var paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
-var paramInjectMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|[*]/g;
-var paramInjectTrailingSlashMatcher = /\/\/\?|\/\?\/|\/\?/g;
-var queryMatcher = /\?(.+)/;
-
-var _compiledPatterns = {};
-
-function compilePattern(pattern) {
-  if (!(pattern in _compiledPatterns)) {
-    var paramNames = [];
-    var source = pattern.replace(paramCompileMatcher, function (match, paramName) {
-      if (paramName) {
-        paramNames.push(paramName);
-        return "([^/?#]+)";
-      } else if (match === "*") {
-        paramNames.push("splat");
-        return "(.*?)";
-      } else {
-        return "\\" + match;
-      }
-    });
-
-    _compiledPatterns[pattern] = {
-      matcher: new RegExp("^" + source + "$", "i"),
-      paramNames: paramNames
-    };
-  }
-
-  return _compiledPatterns[pattern];
-}
-
-var PathUtils = {
-
-  /**
-   * Returns true if the given path is absolute.
-   */
-  isAbsolute: function isAbsolute(path) {
-    return path.charAt(0) === "/";
-  },
-
-  /**
-   * Joins two URL paths together.
-   */
-  join: function join(a, b) {
-    return a.replace(/\/*$/, "/") + b;
-  },
-
-  /**
-   * Returns an array of the names of all parameters in the given pattern.
-   */
-  extractParamNames: function extractParamNames(pattern) {
-    return compilePattern(pattern).paramNames;
-  },
-
-  /**
-   * Extracts the portions of the given URL path that match the given pattern
-   * and returns an object of param name => value pairs. Returns null if the
-   * pattern does not match the given path.
-   */
-  extractParams: function extractParams(pattern, path) {
-    var _compilePattern = compilePattern(pattern);
-
-    var matcher = _compilePattern.matcher;
-    var paramNames = _compilePattern.paramNames;
-
-    var match = path.match(matcher);
-
-    if (!match) {
-      return null;
-    }var params = {};
-
-    paramNames.forEach(function (paramName, index) {
-      params[paramName] = match[index + 1];
-    });
-
-    return params;
-  },
-
-  /**
-   * Returns a version of the given route path with params interpolated. Throws
-   * if there is a dynamic segment of the route path for which there is no param.
-   */
-  injectParams: function injectParams(pattern, params) {
-    params = params || {};
-
-    var splatIndex = 0;
-
-    return pattern.replace(paramInjectMatcher, function (match, paramName) {
-      paramName = paramName || "splat";
-
-      // If param is optional don't check for existence
-      if (paramName.slice(-1) === "?") {
-        paramName = paramName.slice(0, -1);
-
-        if (params[paramName] == null) return "";
-      } else {
-        invariant(params[paramName] != null, "Missing \"%s\" parameter for path \"%s\"", paramName, pattern);
-      }
-
-      var segment;
-      if (paramName === "splat" && Array.isArray(params[paramName])) {
-        segment = params[paramName][splatIndex++];
-
-        invariant(segment != null, "Missing splat # %s for path \"%s\"", splatIndex, pattern);
-      } else {
-        segment = params[paramName];
-      }
-
-      return segment;
-    }).replace(paramInjectTrailingSlashMatcher, "/");
-  },
-
-  /**
-   * Returns an object that is the result of parsing any query string contained
-   * in the given path, null if the path contains no query string.
-   */
-  extractQuery: function extractQuery(path) {
-    var match = path.match(queryMatcher);
-    return match && qs.parse(match[1]);
-  },
-
-  /**
-   * Returns a version of the given path without the query string.
-   */
-  withoutQuery: function withoutQuery(path) {
-    return path.replace(queryMatcher, "");
-  },
-
-  /**
-   * Returns a version of the given path with the parameters in the given
-   * query merged into the query string.
-   */
-  withQuery: function withQuery(path, query) {
-    var existingQuery = PathUtils.extractQuery(path);
-
-    if (existingQuery) query = query ? merge(existingQuery, query) : existingQuery;
-
-    var queryString = qs.stringify(query, { indices: false });
-
-    if (queryString) {
-      return PathUtils.withoutQuery(path) + "?" + queryString;
-    }return path;
-  }
-
-};
-
-module.exports = PathUtils;
-},{"qs":"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/index.js","qs/lib/utils":"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/utils.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js":[function(require,module,exports){
-"use strict";
-
-var assign = require("react/lib/Object.assign");
-var ReactPropTypes = require("react").PropTypes;
-
-var PropTypes = assign({
-
-  /**
-   * Requires that the value of a prop be falsy.
-   */
-  falsy: function falsy(props, propName, componentName) {
-    if (props[propName]) {
-      return new Error("<" + componentName + "> may not have a \"" + propName + "\" prop");
-    }
-  }
-
-}, ReactPropTypes);
-
-module.exports = PropTypes;
-},{"react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Redirect.js":[function(require,module,exports){
-"use strict";
-
-/**
- * Encapsulates a redirect to the given route.
- */
-function Redirect(to, params, query) {
-  this.to = to;
-  this.params = params;
-  this.query = query;
-}
-
-module.exports = Redirect;
-},{}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Route.js":[function(require,module,exports){
-"use strict";
-
-var _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
-
-var assign = require("react/lib/Object.assign");
-var invariant = require("react/lib/invariant");
-var warning = require("react/lib/warning");
-var PathUtils = require("./PathUtils");
-
-var _currentRoute;
-
-var Route = (function () {
-  function Route(name, path, ignoreScrollBehavior, isDefault, isNotFound, onEnter, onLeave, handler) {
-    _classCallCheck(this, Route);
-
-    this.name = name;
-    this.path = path;
-    this.paramNames = PathUtils.extractParamNames(this.path);
-    this.ignoreScrollBehavior = !!ignoreScrollBehavior;
-    this.isDefault = !!isDefault;
-    this.isNotFound = !!isNotFound;
-    this.onEnter = onEnter;
-    this.onLeave = onLeave;
-    this.handler = handler;
-  }
-
-  _prototypeProperties(Route, {
-    createRoute: {
-
-      /**
-       * Creates and returns a new route. Options may be a URL pathname string
-       * with placeholders for named params or an object with any of the following
-       * properties:
-       *
-       * - name                     The name of the route. This is used to lookup a
-       *                            route relative to its parent route and should be
-       *                            unique among all child routes of the same parent
-       * - path                     A URL pathname string with optional placeholders
-       *                            that specify the names of params to extract from
-       *                            the URL when the path matches. Defaults to `/${name}`
-       *                            when there is a name given, or the path of the parent
-       *                            route, or /
-       * - ignoreScrollBehavior     True to make this route (and all descendants) ignore
-       *                            the scroll behavior of the router
-       * - isDefault                True to make this route the default route among all
-       *                            its siblings
-       * - isNotFound               True to make this route the "not found" route among
-       *                            all its siblings
-       * - onEnter                  A transition hook that will be called when the
-       *                            router is going to enter this route
-       * - onLeave                  A transition hook that will be called when the
-       *                            router is going to leave this route
-       * - handler                  A React component that will be rendered when
-       *                            this route is active
-       * - parentRoute              The parent route to use for this route. This option
-       *                            is automatically supplied when creating routes inside
-       *                            the callback to another invocation of createRoute. You
-       *                            only ever need to use this when declaring routes
-       *                            independently of one another to manually piece together
-       *                            the route hierarchy
-       *
-       * The callback may be used to structure your route hierarchy. Any call to
-       * createRoute, createDefaultRoute, createNotFoundRoute, or createRedirect
-       * inside the callback automatically uses this route as its parent.
-       */
-
-      value: function createRoute(options, callback) {
-        options = options || {};
-
-        if (typeof options === "string") options = { path: options };
-
-        var parentRoute = _currentRoute;
-
-        if (parentRoute) {
-          warning(options.parentRoute == null || options.parentRoute === parentRoute, "You should not use parentRoute with createRoute inside another route's child callback; it is ignored");
-        } else {
-          parentRoute = options.parentRoute;
-        }
-
-        var name = options.name;
-        var path = options.path || name;
-
-        if (path && !(options.isDefault || options.isNotFound)) {
-          if (PathUtils.isAbsolute(path)) {
-            if (parentRoute) {
-              invariant(parentRoute.paramNames.length === 0, "You cannot nest path \"%s\" inside \"%s\"; the parent requires URL parameters", path, parentRoute.path);
-            }
-          } else if (parentRoute) {
-            // Relative paths extend their parent.
-            path = PathUtils.join(parentRoute.path, path);
-          } else {
-            path = "/" + path;
-          }
-        } else {
-          path = parentRoute ? parentRoute.path : "/";
-        }
-
-        if (options.isNotFound && !/\*$/.test(path)) path += "*"; // Auto-append * to the path of not found routes.
-
-        var route = new Route(name, path, options.ignoreScrollBehavior, options.isDefault, options.isNotFound, options.onEnter, options.onLeave, options.handler);
-
-        if (parentRoute) {
-          if (route.isDefault) {
-            invariant(parentRoute.defaultRoute == null, "%s may not have more than one default route", parentRoute);
-
-            parentRoute.defaultRoute = route;
-          } else if (route.isNotFound) {
-            invariant(parentRoute.notFoundRoute == null, "%s may not have more than one not found route", parentRoute);
-
-            parentRoute.notFoundRoute = route;
-          }
-
-          parentRoute.appendChild(route);
-        }
-
-        // Any routes created in the callback
-        // use this route as their parent.
-        if (typeof callback === "function") {
-          var currentRoute = _currentRoute;
-          _currentRoute = route;
-          callback.call(route, route);
-          _currentRoute = currentRoute;
-        }
-
-        return route;
-      },
-      writable: true,
-      configurable: true
-    },
-    createDefaultRoute: {
-
-      /**
-       * Creates and returns a route that is rendered when its parent matches
-       * the current URL.
-       */
-
-      value: function createDefaultRoute(options) {
-        return Route.createRoute(assign({}, options, { isDefault: true }));
-      },
-      writable: true,
-      configurable: true
-    },
-    createNotFoundRoute: {
-
-      /**
-       * Creates and returns a route that is rendered when its parent matches
-       * the current URL but none of its siblings do.
-       */
-
-      value: function createNotFoundRoute(options) {
-        return Route.createRoute(assign({}, options, { isNotFound: true }));
-      },
-      writable: true,
-      configurable: true
-    },
-    createRedirect: {
-
-      /**
-       * Creates and returns a route that automatically redirects the transition
-       * to another route. In addition to the normal options to createRoute, this
-       * function accepts the following options:
-       *
-       * - from         An alias for the `path` option. Defaults to *
-       * - to           The path/route/route name to redirect to
-       * - params       The params to use in the redirect URL. Defaults
-       *                to using the current params
-       * - query        The query to use in the redirect URL. Defaults
-       *                to using the current query
-       */
-
-      value: function createRedirect(options) {
-        return Route.createRoute(assign({}, options, {
-          path: options.path || options.from || "*",
-          onEnter: function onEnter(transition, params, query) {
-            transition.redirect(options.to, options.params || params, options.query || query);
-          }
-        }));
-      },
-      writable: true,
-      configurable: true
-    }
-  }, {
-    appendChild: {
-
-      /**
-       * Appends the given route to this route's child routes.
-       */
-
-      value: function appendChild(route) {
-        invariant(route instanceof Route, "route.appendChild must use a valid Route");
-
-        if (!this.childRoutes) this.childRoutes = [];
-
-        this.childRoutes.push(route);
-      },
-      writable: true,
-      configurable: true
-    },
-    toString: {
-      value: function toString() {
-        var string = "<Route";
-
-        if (this.name) string += " name=\"" + this.name + "\"";
-
-        string += " path=\"" + this.path + "\">";
-
-        return string;
-      },
-      writable: true,
-      configurable: true
-    }
-  });
-
-  return Route;
-})();
-
-module.exports = Route;
-},{"./PathUtils":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PathUtils.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/RouteHandlerMixin.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-var assign = require("react/lib/Object.assign");
-var PropTypes = require("./PropTypes");
-
-var REF_NAME = "__routeHandler__";
-
-var RouteHandlerMixin = {
-
-  contextTypes: {
-    getRouteAtDepth: PropTypes.func.isRequired,
-    setRouteComponentAtDepth: PropTypes.func.isRequired,
-    routeHandlers: PropTypes.array.isRequired
-  },
-
-  childContextTypes: {
-    routeHandlers: PropTypes.array.isRequired
-  },
-
-  getChildContext: function getChildContext() {
-    return {
-      routeHandlers: this.context.routeHandlers.concat([this])
-    };
-  },
-
-  componentDidMount: function componentDidMount() {
-    this._updateRouteComponent(this.refs[REF_NAME]);
-  },
-
-  componentDidUpdate: function componentDidUpdate() {
-    this._updateRouteComponent(this.refs[REF_NAME]);
-  },
-
-  componentWillUnmount: function componentWillUnmount() {
-    this._updateRouteComponent(null);
-  },
-
-  _updateRouteComponent: function _updateRouteComponent(component) {
-    this.context.setRouteComponentAtDepth(this.getRouteDepth(), component);
-  },
-
-  getRouteDepth: function getRouteDepth() {
-    return this.context.routeHandlers.length;
-  },
-
-  createChildRouteHandler: function createChildRouteHandler(props) {
-    var route = this.context.getRouteAtDepth(this.getRouteDepth());
-    return route ? React.createElement(route.handler, assign({}, props || this.props, { ref: REF_NAME })) : null;
-  }
-
-};
-
-module.exports = RouteHandlerMixin;
-},{"./PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/ScrollHistory.js":[function(require,module,exports){
-"use strict";
-
-var invariant = require("react/lib/invariant");
-var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
-var getWindowScrollPosition = require("./getWindowScrollPosition");
-
-function shouldUpdateScroll(state, prevState) {
-  if (!prevState) {
-    return true;
-  } // Don't update scroll position when only the query has changed.
-  if (state.pathname === prevState.pathname) {
-    return false;
-  }var routes = state.routes;
-  var prevRoutes = prevState.routes;
-
-  var sharedAncestorRoutes = routes.filter(function (route) {
-    return prevRoutes.indexOf(route) !== -1;
-  });
-
-  return !sharedAncestorRoutes.some(function (route) {
-    return route.ignoreScrollBehavior;
-  });
-}
-
-/**
- * Provides the router with the ability to manage window scroll position
- * according to its scroll behavior.
- */
-var ScrollHistory = {
-
-  statics: {
-
-    /**
-     * Records curent scroll position as the last known position for the given URL path.
-     */
-    recordScrollPosition: function recordScrollPosition(path) {
-      if (!this.scrollHistory) this.scrollHistory = {};
-
-      this.scrollHistory[path] = getWindowScrollPosition();
-    },
-
-    /**
-     * Returns the last known scroll position for the given URL path.
-     */
-    getScrollPosition: function getScrollPosition(path) {
-      if (!this.scrollHistory) this.scrollHistory = {};
-
-      return this.scrollHistory[path] || null;
-    }
-
-  },
-
-  componentWillMount: function componentWillMount() {
-    invariant(this.constructor.getScrollBehavior() == null || canUseDOM, "Cannot use scroll behavior without a DOM");
-  },
-
-  componentDidMount: function componentDidMount() {
-    this._updateScroll();
-  },
-
-  componentDidUpdate: function componentDidUpdate(prevProps, prevState) {
-    this._updateScroll(prevState);
-  },
-
-  _updateScroll: function _updateScroll(prevState) {
-    if (!shouldUpdateScroll(this.state, prevState)) {
-      return;
-    }var scrollBehavior = this.constructor.getScrollBehavior();
-
-    if (scrollBehavior) scrollBehavior.updateScrollPosition(this.constructor.getScrollPosition(this.state.path), this.state.action);
-  }
-
-};
-
-module.exports = ScrollHistory;
-},{"./getWindowScrollPosition":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/getWindowScrollPosition.js","react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/State.js":[function(require,module,exports){
-"use strict";
-
-var PropTypes = require("./PropTypes");
-
-/**
- * A mixin for components that need to know the path, routes, URL
- * params and query that are currently active.
- *
- * Example:
- *
- *   var AboutLink = React.createClass({
- *     mixins: [ Router.State ],
- *     render: function () {
- *       var className = this.props.className;
- *   
- *       if (this.isActive('about'))
- *         className += ' is-active';
- *   
- *       return React.DOM.a({ className: className }, this.props.children);
- *     }
- *   });
- */
-var State = {
-
-  contextTypes: {
-    getCurrentPath: PropTypes.func.isRequired,
-    getCurrentRoutes: PropTypes.func.isRequired,
-    getCurrentPathname: PropTypes.func.isRequired,
-    getCurrentParams: PropTypes.func.isRequired,
-    getCurrentQuery: PropTypes.func.isRequired,
-    isActive: PropTypes.func.isRequired
-  },
-
-  /**
-   * Returns the current URL path.
-   */
-  getPath: function getPath() {
-    return this.context.getCurrentPath();
-  },
-
-  /**
-   * Returns an array of the routes that are currently active.
-   */
-  getRoutes: function getRoutes() {
-    return this.context.getCurrentRoutes();
-  },
-
-  /**
-   * Returns the current URL path without the query string.
-   */
-  getPathname: function getPathname() {
-    return this.context.getCurrentPathname();
-  },
-
-  /**
-   * Returns an object of the URL params that are currently active.
-   */
-  getParams: function getParams() {
-    return this.context.getCurrentParams();
-  },
-
-  /**
-   * Returns an object of the query params that are currently active.
-   */
-  getQuery: function getQuery() {
-    return this.context.getCurrentQuery();
-  },
-
-  /**
-   * A helper method to determine if a given route, params, and query
-   * are active.
-   */
-  isActive: function isActive(to, params, query) {
-    return this.context.isActive(to, params, query);
-  }
-
-};
-
-module.exports = State;
-},{"./PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/StateContext.js":[function(require,module,exports){
-"use strict";
-
-var assign = require("react/lib/Object.assign");
-var PropTypes = require("./PropTypes");
-var PathUtils = require("./PathUtils");
-
-function routeIsActive(activeRoutes, routeName) {
-  return activeRoutes.some(function (route) {
-    return route.name === routeName;
-  });
-}
-
-function paramsAreActive(activeParams, params) {
-  for (var property in params) if (String(activeParams[property]) !== String(params[property])) {
-    return false;
-  }return true;
-}
-
-function queryIsActive(activeQuery, query) {
-  for (var property in query) if (String(activeQuery[property]) !== String(query[property])) {
-    return false;
-  }return true;
-}
-
-/**
- * Provides the router with context for Router.State.
- */
-var StateContext = {
-
-  /**
-   * Returns the current URL path + query string.
-   */
-  getCurrentPath: function getCurrentPath() {
-    return this.state.path;
-  },
-
-  /**
-   * Returns a read-only array of the currently active routes.
-   */
-  getCurrentRoutes: function getCurrentRoutes() {
-    return this.state.routes.slice(0);
-  },
-
-  /**
-   * Returns the current URL path without the query string.
-   */
-  getCurrentPathname: function getCurrentPathname() {
-    return this.state.pathname;
-  },
-
-  /**
-   * Returns a read-only object of the currently active URL parameters.
-   */
-  getCurrentParams: function getCurrentParams() {
-    return assign({}, this.state.params);
-  },
-
-  /**
-   * Returns a read-only object of the currently active query parameters.
-   */
-  getCurrentQuery: function getCurrentQuery() {
-    return assign({}, this.state.query);
-  },
-
-  /**
-   * Returns true if the given route, params, and query are active.
-   */
-  isActive: function isActive(to, params, query) {
-    if (PathUtils.isAbsolute(to)) {
-      return to === this.state.path;
-    }return routeIsActive(this.state.routes, to) && paramsAreActive(this.state.params, params) && (query == null || queryIsActive(this.state.query, query));
-  },
-
-  childContextTypes: {
-    getCurrentPath: PropTypes.func.isRequired,
-    getCurrentRoutes: PropTypes.func.isRequired,
-    getCurrentPathname: PropTypes.func.isRequired,
-    getCurrentParams: PropTypes.func.isRequired,
-    getCurrentQuery: PropTypes.func.isRequired,
-    isActive: PropTypes.func.isRequired
-  },
-
-  getChildContext: function getChildContext() {
-    return {
-      getCurrentPath: this.getCurrentPath,
-      getCurrentRoutes: this.getCurrentRoutes,
-      getCurrentPathname: this.getCurrentPathname,
-      getCurrentParams: this.getCurrentParams,
-      getCurrentQuery: this.getCurrentQuery,
-      isActive: this.isActive
-    };
-  }
-
-};
-
-module.exports = StateContext;
-},{"./PathUtils":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PathUtils.js","./PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Transition.js":[function(require,module,exports){
-"use strict";
-
-/* jshint -W058 */
-
-var Cancellation = require("./Cancellation");
-var Redirect = require("./Redirect");
-
-/**
- * Encapsulates a transition to a given path.
- *
- * The willTransitionTo and willTransitionFrom handlers receive
- * an instance of this class as their first argument.
- */
-function Transition(path, retry) {
-  this.path = path;
-  this.abortReason = null;
-  // TODO: Change this to router.retryTransition(transition)
-  this.retry = retry.bind(this);
-}
-
-Transition.prototype.abort = function (reason) {
-  if (this.abortReason == null) this.abortReason = reason || "ABORT";
-};
-
-Transition.prototype.redirect = function (to, params, query) {
-  this.abort(new Redirect(to, params, query));
-};
-
-Transition.prototype.cancel = function () {
-  this.abort(new Cancellation());
-};
-
-Transition.from = function (transition, routes, components, callback) {
-  routes.reduce(function (callback, route, index) {
-    return function (error) {
-      if (error || transition.abortReason) {
-        callback(error);
-      } else if (route.onLeave) {
-        try {
-          route.onLeave(transition, components[index], callback);
-
-          // If there is no callback in the argument list, call it automatically.
-          if (route.onLeave.length < 3) callback();
-        } catch (e) {
-          callback(e);
-        }
-      } else {
-        callback();
-      }
-    };
-  }, callback)();
-};
-
-Transition.to = function (transition, routes, params, query, callback) {
-  routes.reduceRight(function (callback, route) {
-    return function (error) {
-      if (error || transition.abortReason) {
-        callback(error);
-      } else if (route.onEnter) {
-        try {
-          route.onEnter(transition, params, query, callback);
-
-          // If there is no callback in the argument list, call it automatically.
-          if (route.onEnter.length < 4) callback();
-        } catch (e) {
-          callback(e);
-        }
-      } else {
-        callback();
-      }
-    };
-  }, callback)();
-};
-
-module.exports = Transition;
-},{"./Cancellation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Cancellation.js","./Redirect":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Redirect.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/actions/LocationActions.js":[function(require,module,exports){
-"use strict";
-
-/**
- * Actions that modify the URL.
- */
-var LocationActions = {
-
-  /**
-   * Indicates a new location is being pushed to the history stack.
-   */
-  PUSH: "push",
-
-  /**
-   * Indicates the current location should be replaced.
-   */
-  REPLACE: "replace",
-
-  /**
-   * Indicates the most recent entry should be removed from the history stack.
-   */
-  POP: "pop"
-
-};
-
-module.exports = LocationActions;
-},{}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/behaviors/ImitateBrowserBehavior.js":[function(require,module,exports){
-"use strict";
-
-var LocationActions = require("../actions/LocationActions");
-
-/**
- * A scroll behavior that attempts to imitate the default behavior
- * of modern browsers.
- */
-var ImitateBrowserBehavior = {
-
-  updateScrollPosition: function updateScrollPosition(position, actionType) {
-    switch (actionType) {
-      case LocationActions.PUSH:
-      case LocationActions.REPLACE:
-        window.scrollTo(0, 0);
-        break;
-      case LocationActions.POP:
-        if (position) {
-          window.scrollTo(position.x, position.y);
-        } else {
-          window.scrollTo(0, 0);
-        }
-        break;
-    }
-  }
-
-};
-
-module.exports = ImitateBrowserBehavior;
-},{"../actions/LocationActions":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/actions/LocationActions.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/behaviors/ScrollToTopBehavior.js":[function(require,module,exports){
-"use strict";
-
-/**
- * A scroll behavior that always scrolls to the top of the page
- * after a transition.
- */
-var ScrollToTopBehavior = {
-
-  updateScrollPosition: function updateScrollPosition() {
-    window.scrollTo(0, 0);
-  }
-
-};
-
-module.exports = ScrollToTopBehavior;
-},{}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/DefaultRoute.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-var Configuration = require("../Configuration");
-var PropTypes = require("../PropTypes");
-
-/**
- * A <DefaultRoute> component is a special kind of <Route> that
- * renders when its parent matches but none of its siblings do.
- * Only one such route may be used at any given level in the
- * route hierarchy.
- */
-var DefaultRoute = React.createClass({
-
-  displayName: "DefaultRoute",
-
-  mixins: [Configuration],
-
-  propTypes: {
-    name: PropTypes.string,
-    path: PropTypes.falsy,
-    children: PropTypes.falsy,
-    handler: PropTypes.func.isRequired
-  }
-
-});
-
-module.exports = DefaultRoute;
-},{"../Configuration":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Configuration.js","../PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/Link.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-var classSet = require("react/lib/cx");
-var assign = require("react/lib/Object.assign");
-var Navigation = require("../Navigation");
-var State = require("../State");
-var PropTypes = require("../PropTypes");
-var Route = require("../Route");
-
-function isLeftClickEvent(event) {
-  return event.button === 0;
-}
-
-function isModifiedEvent(event) {
-  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
-}
-
-/**
- * <Link> components are used to create an <a> element that links to a route.
- * When that route is active, the link gets an "active" class name (or the
- * value of its `activeClassName` prop).
- *
- * For example, assuming you have the following route:
- *
- *   <Route name="showPost" path="/posts/:postID" handler={Post}/>
- *
- * You could use the following component to link to that route:
- *
- *   <Link to="showPost" params={{ postID: "123" }} />
- *
- * In addition to params, links may pass along query string parameters
- * using the `query` prop.
- *
- *   <Link to="showPost" params={{ postID: "123" }} query={{ show:true }}/>
- */
-var Link = React.createClass({
-
-  displayName: "Link",
-
-  mixins: [Navigation, State],
-
-  propTypes: {
-    activeClassName: PropTypes.string.isRequired,
-    to: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Route)]),
-    params: PropTypes.object,
-    query: PropTypes.object,
-    activeStyle: PropTypes.object,
-    onClick: PropTypes.func
-  },
-
-  getDefaultProps: function getDefaultProps() {
-    return {
-      activeClassName: "active"
-    };
-  },
-
-  handleClick: function handleClick(event) {
-    var allowTransition = true;
-    var clickResult;
-
-    if (this.props.onClick) clickResult = this.props.onClick(event);
-
-    if (isModifiedEvent(event) || !isLeftClickEvent(event)) {
-      return;
-    }if (clickResult === false || event.defaultPrevented === true) allowTransition = false;
-
-    event.preventDefault();
-
-    if (allowTransition) this.transitionTo(this.props.to, this.props.params, this.props.query);
-  },
-
-  /**
-   * Returns the value of the "href" attribute to use on the DOM element.
-   */
-  getHref: function getHref() {
-    return this.makeHref(this.props.to, this.props.params, this.props.query);
-  },
-
-  /**
-   * Returns the value of the "class" attribute to use on the DOM element, which contains
-   * the value of the activeClassName property when this <Link> is active.
-   */
-  getClassName: function getClassName() {
-    var classNames = {};
-
-    if (this.props.className) classNames[this.props.className] = true;
-
-    if (this.getActiveState()) classNames[this.props.activeClassName] = true;
-
-    return classSet(classNames);
-  },
-
-  getActiveState: function getActiveState() {
-    return this.isActive(this.props.to, this.props.params, this.props.query);
-  },
-
-  render: function render() {
-    var props = assign({}, this.props, {
-      href: this.getHref(),
-      className: this.getClassName(),
-      onClick: this.handleClick
-    });
-
-    if (props.activeStyle && this.getActiveState()) props.style = props.activeStyle;
-
-    return React.DOM.a(props, this.props.children);
-  }
-
-});
-
-module.exports = Link;
-},{"../Navigation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Navigation.js","../PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","../Route":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Route.js","../State":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/State.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js","react/lib/cx":"/Users/ben/Github Projects/skylines/node_modules/react/lib/cx.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/NotFoundRoute.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-var Configuration = require("../Configuration");
-var PropTypes = require("../PropTypes");
-
-/**
- * A <NotFoundRoute> is a special kind of <Route> that
- * renders when the beginning of its parent's path matches
- * but none of its siblings do, including any <DefaultRoute>.
- * Only one such route may be used at any given level in the
- * route hierarchy.
- */
-var NotFoundRoute = React.createClass({
-
-  displayName: "NotFoundRoute",
-
-  mixins: [Configuration],
-
-  propTypes: {
-    name: PropTypes.string,
-    path: PropTypes.falsy,
-    children: PropTypes.falsy,
-    handler: PropTypes.func.isRequired
-  }
-
-});
-
-module.exports = NotFoundRoute;
-},{"../Configuration":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Configuration.js","../PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/Redirect.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-var Configuration = require("../Configuration");
-var PropTypes = require("../PropTypes");
-
-/**
- * A <Redirect> component is a special kind of <Route> that always
- * redirects to another route when it matches.
- */
-var Redirect = React.createClass({
-
-  displayName: "Redirect",
-
-  mixins: [Configuration],
-
-  propTypes: {
-    path: PropTypes.string,
-    from: PropTypes.string, // Alias for path.
-    to: PropTypes.string,
-    handler: PropTypes.falsy
-  }
-
-});
-
-module.exports = Redirect;
-},{"../Configuration":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Configuration.js","../PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/Route.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-var Configuration = require("../Configuration");
-var PropTypes = require("../PropTypes");
-var RouteHandler = require("./RouteHandler");
-/**
- * <Route> components specify components that are rendered to the page when the
- * URL matches a given pattern.
- *
- * Routes are arranged in a nested tree structure. When a new URL is requested,
- * the tree is searched depth-first to find a route whose path matches the URL.
- * When one is found, all routes in the tree that lead to it are considered
- * "active" and their components are rendered into the DOM, nested in the same
- * order as they are in the tree.
- *
- * The preferred way to configure a router is using JSX. The XML-like syntax is
- * a great way to visualize how routes are laid out in an application.
- *
- *   var routes = [
- *     <Route handler={App}>
- *       <Route name="login" handler={Login}/>
- *       <Route name="logout" handler={Logout}/>
- *       <Route name="about" handler={About}/>
- *     </Route>
- *   ];
- *   
- *   Router.run(routes, function (Handler) {
- *     React.render(<Handler/>, document.body);
- *   });
- *
- * Handlers for Route components that contain children can render their active
- * child route using a <RouteHandler> element.
- *
- *   var App = React.createClass({
- *     render: function () {
- *       return (
- *         <div class="application">
- *           <RouteHandler/>
- *         </div>
- *       );
- *     }
- *   });
- *
- * If no handler is provided for the route, it will render a matched child route.
- */
-var Route = React.createClass({
-
-  displayName: "Route",
-
-  mixins: [Configuration],
-
-  propTypes: {
-    name: PropTypes.string,
-    path: PropTypes.string,
-    handler: PropTypes.func,
-    ignoreScrollBehavior: PropTypes.bool
-  },
-
-  getDefaultProps: function getDefaultProps() {
-    return {
-      handler: RouteHandler
-    };
-  }
-
-});
-
-module.exports = Route;
-},{"../Configuration":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Configuration.js","../PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","./RouteHandler":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/RouteHandler.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/RouteHandler.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-var RouteHandlerMixin = require("../RouteHandlerMixin");
-
-/**
- * A <RouteHandler> component renders the active child route handler
- * when routes are nested.
- */
-var RouteHandler = React.createClass({
-
-  displayName: "RouteHandler",
-
-  mixins: [RouteHandlerMixin],
-
-  render: function render() {
-    return this.createChildRouteHandler();
-  }
-
-});
-
-module.exports = RouteHandler;
-},{"../RouteHandlerMixin":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/RouteHandlerMixin.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/createRouter.js":[function(require,module,exports){
-(function (process){
-"use strict";
-
-/* jshint -W058 */
-var React = require("react");
-var warning = require("react/lib/warning");
-var invariant = require("react/lib/invariant");
-var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
-var LocationActions = require("./actions/LocationActions");
-var ImitateBrowserBehavior = require("./behaviors/ImitateBrowserBehavior");
-var HashLocation = require("./locations/HashLocation");
-var HistoryLocation = require("./locations/HistoryLocation");
-var RefreshLocation = require("./locations/RefreshLocation");
-var StaticLocation = require("./locations/StaticLocation");
-var NavigationContext = require("./NavigationContext");
-var ScrollHistory = require("./ScrollHistory");
-var StateContext = require("./StateContext");
-var createRoutesFromReactChildren = require("./createRoutesFromReactChildren");
-var isReactChildren = require("./isReactChildren");
-var Transition = require("./Transition");
-var PropTypes = require("./PropTypes");
-var Redirect = require("./Redirect");
-var History = require("./History");
-var Cancellation = require("./Cancellation");
-var Match = require("./Match");
-var Route = require("./Route");
-var supportsHistory = require("./supportsHistory");
-var PathUtils = require("./PathUtils");
-
-/**
- * The default location for new routers.
- */
-var DEFAULT_LOCATION = canUseDOM ? HashLocation : "/";
-
-/**
- * The default scroll behavior for new routers.
- */
-var DEFAULT_SCROLL_BEHAVIOR = canUseDOM ? ImitateBrowserBehavior : null;
-
-function hasProperties(object, properties) {
-  for (var propertyName in properties) if (properties.hasOwnProperty(propertyName) && object[propertyName] !== properties[propertyName]) {
-    return false;
-  }return true;
-}
-
-function hasMatch(routes, route, prevParams, nextParams, prevQuery, nextQuery) {
-  return routes.some(function (r) {
-    if (r !== route) return false;
-
-    var paramNames = route.paramNames;
-    var paramName;
-
-    // Ensure that all params the route cares about did not change.
-    for (var i = 0, len = paramNames.length; i < len; ++i) {
-      paramName = paramNames[i];
-
-      if (nextParams[paramName] !== prevParams[paramName]) return false;
-    }
-
-    // Ensure the query hasn't changed.
-    return hasProperties(prevQuery, nextQuery) && hasProperties(nextQuery, prevQuery);
-  });
-}
-
-function addRoutesToNamedRoutes(routes, namedRoutes) {
-  var route;
-  for (var i = 0, len = routes.length; i < len; ++i) {
-    route = routes[i];
-
-    if (route.name) {
-      invariant(namedRoutes[route.name] == null, "You may not have more than one route named \"%s\"", route.name);
-
-      namedRoutes[route.name] = route;
-    }
-
-    if (route.childRoutes) addRoutesToNamedRoutes(route.childRoutes, namedRoutes);
-  }
-}
-
-/**
- * Creates and returns a new router using the given options. A router
- * is a ReactComponent class that knows how to react to changes in the
- * URL and keep the contents of the page in sync.
- *
- * Options may be any of the following:
- *
- * - routes           (required) The route config
- * - location         The location to use. Defaults to HashLocation when
- *                    the DOM is available, "/" otherwise
- * - scrollBehavior   The scroll behavior to use. Defaults to ImitateBrowserBehavior
- *                    when the DOM is available, null otherwise
- * - onError          A function that is used to handle errors
- * - onAbort          A function that is used to handle aborted transitions
- *
- * When rendering in a server-side environment, the location should simply
- * be the URL path that was used in the request, including the query string.
- */
-function createRouter(options) {
-  options = options || {};
-
-  if (isReactChildren(options)) options = { routes: options };
-
-  var mountedComponents = [];
-  var location = options.location || DEFAULT_LOCATION;
-  var scrollBehavior = options.scrollBehavior || DEFAULT_SCROLL_BEHAVIOR;
-  var state = {};
-  var nextState = {};
-  var pendingTransition = null;
-  var dispatchHandler = null;
-
-  if (typeof location === "string") location = new StaticLocation(location);
-
-  if (location instanceof StaticLocation) {
-    warning(!canUseDOM || process.env.NODE_ENV === "test", "You should not use a static location in a DOM environment because " + "the router will not be kept in sync with the current URL");
-  } else {
-    invariant(canUseDOM || location.needsDOM === false, "You cannot use %s without a DOM", location);
-  }
-
-  // Automatically fall back to full page refreshes in
-  // browsers that don't support the HTML history API.
-  if (location === HistoryLocation && !supportsHistory()) location = RefreshLocation;
-
-  var Router = React.createClass({
-
-    displayName: "Router",
-
-    statics: {
-
-      isRunning: false,
-
-      cancelPendingTransition: function cancelPendingTransition() {
-        if (pendingTransition) {
-          pendingTransition.cancel();
-          pendingTransition = null;
-        }
-      },
-
-      clearAllRoutes: function clearAllRoutes() {
-        Router.cancelPendingTransition();
-        Router.namedRoutes = {};
-        Router.routes = [];
-      },
-
-      /**
-       * Adds routes to this router from the given children object (see ReactChildren).
-       */
-      addRoutes: function addRoutes(routes) {
-        if (isReactChildren(routes)) routes = createRoutesFromReactChildren(routes);
-
-        addRoutesToNamedRoutes(routes, Router.namedRoutes);
-
-        Router.routes.push.apply(Router.routes, routes);
-      },
-
-      /**
-       * Replaces routes of this router from the given children object (see ReactChildren).
-       */
-      replaceRoutes: function replaceRoutes(routes) {
-        Router.clearAllRoutes();
-        Router.addRoutes(routes);
-        Router.refresh();
-      },
-
-      /**
-       * Performs a match of the given path against this router and returns an object
-       * with the { routes, params, pathname, query } that match. Returns null if no
-       * match can be made.
-       */
-      match: function match(path) {
-        return Match.findMatch(Router.routes, path);
-      },
-
-      /**
-       * Returns an absolute URL path created from the given route
-       * name, URL parameters, and query.
-       */
-      makePath: function makePath(to, params, query) {
-        var path;
-        if (PathUtils.isAbsolute(to)) {
-          path = to;
-        } else {
-          var route = to instanceof Route ? to : Router.namedRoutes[to];
-
-          invariant(route instanceof Route, "Cannot find a route named \"%s\"", to);
-
-          path = route.path;
-        }
-
-        return PathUtils.withQuery(PathUtils.injectParams(path, params), query);
-      },
-
-      /**
-       * Returns a string that may safely be used as the href of a link
-       * to the route with the given name, URL parameters, and query.
-       */
-      makeHref: function makeHref(to, params, query) {
-        var path = Router.makePath(to, params, query);
-        return location === HashLocation ? "#" + path : path;
-      },
-
-      /**
-       * Transitions to the URL specified in the arguments by pushing
-       * a new URL onto the history stack.
-       */
-      transitionTo: function transitionTo(to, params, query) {
-        var path = Router.makePath(to, params, query);
-
-        if (pendingTransition) {
-          // Replace so pending location does not stay in history.
-          location.replace(path);
-        } else {
-          location.push(path);
-        }
-      },
-
-      /**
-       * Transitions to the URL specified in the arguments by replacing
-       * the current URL in the history stack.
-       */
-      replaceWith: function replaceWith(to, params, query) {
-        location.replace(Router.makePath(to, params, query));
-      },
-
-      /**
-       * Transitions to the previous URL if one is available. Returns true if the
-       * router was able to go back, false otherwise.
-       *
-       * Note: The router only tracks history entries in your application, not the
-       * current browser session, so you can safely call this function without guarding
-       * against sending the user back to some other site. However, when using
-       * RefreshLocation (which is the fallback for HistoryLocation in browsers that
-       * don't support HTML5 history) this method will *always* send the client back
-       * because we cannot reliably track history length.
-       */
-      goBack: function goBack() {
-        if (History.length > 1 || location === RefreshLocation) {
-          location.pop();
-          return true;
-        }
-
-        warning(false, "goBack() was ignored because there is no router history");
-
-        return false;
-      },
-
-      handleAbort: options.onAbort || function (abortReason) {
-        if (location instanceof StaticLocation) throw new Error("Unhandled aborted transition! Reason: " + abortReason);
-
-        if (abortReason instanceof Cancellation) {
-          return;
-        } else if (abortReason instanceof Redirect) {
-          location.replace(Router.makePath(abortReason.to, abortReason.params, abortReason.query));
-        } else {
-          location.pop();
-        }
-      },
-
-      handleError: options.onError || function (error) {
-        // Throw so we don't silently swallow async errors.
-        throw error; // This error probably originated in a transition hook.
-      },
-
-      handleLocationChange: function handleLocationChange(change) {
-        Router.dispatch(change.path, change.type);
-      },
-
-      /**
-       * Performs a transition to the given path and calls callback(error, abortReason)
-       * when the transition is finished. If both arguments are null the router's state
-       * was updated. Otherwise the transition did not complete.
-       *
-       * In a transition, a router first determines which routes are involved by beginning
-       * with the current route, up the route tree to the first parent route that is shared
-       * with the destination route, and back down the tree to the destination route. The
-       * willTransitionFrom hook is invoked on all route handlers we're transitioning away
-       * from, in reverse nesting order. Likewise, the willTransitionTo hook is invoked on
-       * all route handlers we're transitioning to.
-       *
-       * Both willTransitionFrom and willTransitionTo hooks may either abort or redirect the
-       * transition. To resolve asynchronously, they may use the callback argument. If no
-       * hooks wait, the transition is fully synchronous.
-       */
-      dispatch: function dispatch(path, action) {
-        Router.cancelPendingTransition();
-
-        var prevPath = state.path;
-        var isRefreshing = action == null;
-
-        if (prevPath === path && !isRefreshing) {
-          return;
-        } // Nothing to do!
-
-        // Record the scroll position as early as possible to
-        // get it before browsers try update it automatically.
-        if (prevPath && action === LocationActions.PUSH) Router.recordScrollPosition(prevPath);
-
-        var match = Router.match(path);
-
-        warning(match != null, "No route matches path \"%s\". Make sure you have <Route path=\"%s\"> somewhere in your routes", path, path);
-
-        if (match == null) match = {};
-
-        var prevRoutes = state.routes || [];
-        var prevParams = state.params || {};
-        var prevQuery = state.query || {};
-
-        var nextRoutes = match.routes || [];
-        var nextParams = match.params || {};
-        var nextQuery = match.query || {};
-
-        var fromRoutes, toRoutes;
-        if (prevRoutes.length) {
-          fromRoutes = prevRoutes.filter(function (route) {
-            return !hasMatch(nextRoutes, route, prevParams, nextParams, prevQuery, nextQuery);
-          });
-
-          toRoutes = nextRoutes.filter(function (route) {
-            return !hasMatch(prevRoutes, route, prevParams, nextParams, prevQuery, nextQuery);
-          });
-        } else {
-          fromRoutes = [];
-          toRoutes = nextRoutes;
-        }
-
-        var transition = new Transition(path, Router.replaceWith.bind(Router, path));
-        pendingTransition = transition;
-
-        var fromComponents = mountedComponents.slice(prevRoutes.length - fromRoutes.length);
-
-        Transition.from(transition, fromRoutes, fromComponents, function (error) {
-          if (error || transition.abortReason) return dispatchHandler.call(Router, error, transition); // No need to continue.
-
-          Transition.to(transition, toRoutes, nextParams, nextQuery, function (error) {
-            dispatchHandler.call(Router, error, transition, {
-              path: path,
-              action: action,
-              pathname: match.pathname,
-              routes: nextRoutes,
-              params: nextParams,
-              query: nextQuery
-            });
-          });
-        });
-      },
-
-      /**
-       * Starts this router and calls callback(router, state) when the route changes.
-       *
-       * If the router's location is static (i.e. a URL path in a server environment)
-       * the callback is called only once. Otherwise, the location should be one of the
-       * Router.*Location objects (e.g. Router.HashLocation or Router.HistoryLocation).
-       */
-      run: function run(callback) {
-        invariant(!Router.isRunning, "Router is already running");
-
-        dispatchHandler = function (error, transition, newState) {
-          if (error) Router.handleError(error);
-
-          if (pendingTransition !== transition) return;
-
-          pendingTransition = null;
-
-          if (transition.abortReason) {
-            Router.handleAbort(transition.abortReason);
-          } else {
-            callback.call(Router, Router, nextState = newState);
-          }
-        };
-
-        if (!(location instanceof StaticLocation)) {
-          if (location.addChangeListener) location.addChangeListener(Router.handleLocationChange);
-
-          Router.isRunning = true;
-        }
-
-        // Bootstrap using the current path.
-        Router.refresh();
-      },
-
-      refresh: function refresh() {
-        Router.dispatch(location.getCurrentPath(), null);
-      },
-
-      stop: function stop() {
-        Router.cancelPendingTransition();
-
-        if (location.removeChangeListener) location.removeChangeListener(Router.handleLocationChange);
-
-       	Router.isRunning = false;
-      },
-
-      getScrollBehavior: function getScrollBehavior() {
-        return scrollBehavior;
-      }
-
-    },
-
-    mixins: [NavigationContext, StateContext, ScrollHistory],
-
-    propTypes: {
-      children: PropTypes.falsy
-    },
-
-    childContextTypes: {
-      getRouteAtDepth: React.PropTypes.func.isRequired,
-      setRouteComponentAtDepth: React.PropTypes.func.isRequired,
-      routeHandlers: React.PropTypes.array.isRequired
-    },
-
-    getChildContext: function getChildContext() {
-      return {
-        getRouteAtDepth: this.getRouteAtDepth,
-        setRouteComponentAtDepth: this.setRouteComponentAtDepth,
-        routeHandlers: [this]
-      };
-    },
-
-    getInitialState: function getInitialState() {
-      return state = nextState;
-    },
-
-    componentWillReceiveProps: function componentWillReceiveProps() {
-      this.setState(state = nextState);
-    },
-
-    componentWillUnmount: function componentWillUnmount() {
-      Router.stop();
-    },
-
-    getLocation: function getLocation() {
-      return location;
-    },
-
-    getRouteAtDepth: function getRouteAtDepth(depth) {
-      var routes = this.state.routes;
-      return routes && routes[depth];
-    },
-
-    setRouteComponentAtDepth: function setRouteComponentAtDepth(depth, component) {
-      mountedComponents[depth] = component;
-    },
-
-    render: function render() {
-      var route = this.getRouteAtDepth(0);
-      return route ? React.createElement(route.handler, this.props) : null;
-    }
-
-  });
-
-  Router.clearAllRoutes();
-
-  if (options.routes) Router.addRoutes(options.routes);
-
-  return Router;
-}
-
-module.exports = createRouter;
-}).call(this,require('_process'))
-},{"./Cancellation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Cancellation.js","./History":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/History.js","./Match":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Match.js","./NavigationContext":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/NavigationContext.js","./PathUtils":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PathUtils.js","./PropTypes":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/PropTypes.js","./Redirect":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Redirect.js","./Route":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Route.js","./ScrollHistory":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/ScrollHistory.js","./StateContext":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/StateContext.js","./Transition":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Transition.js","./actions/LocationActions":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/actions/LocationActions.js","./behaviors/ImitateBrowserBehavior":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/behaviors/ImitateBrowserBehavior.js","./createRoutesFromReactChildren":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/createRoutesFromReactChildren.js","./isReactChildren":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/isReactChildren.js","./locations/HashLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/HashLocation.js","./locations/HistoryLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/HistoryLocation.js","./locations/RefreshLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/RefreshLocation.js","./locations/StaticLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/StaticLocation.js","./supportsHistory":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/supportsHistory.js","_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/createRoutesFromReactChildren.js":[function(require,module,exports){
-"use strict";
-
-/* jshint -W084 */
-
-var React = require("react");
-var assign = require("react/lib/Object.assign");
-var warning = require("react/lib/warning");
-var DefaultRouteType = require("./components/DefaultRoute").type;
-var NotFoundRouteType = require("./components/NotFoundRoute").type;
-var RedirectType = require("./components/Redirect").type;
-var Route = require("./Route");
-
-function checkPropTypes(componentName, propTypes, props) {
-  componentName = componentName || "UnknownComponent";
-
-  for (var propName in propTypes) {
-    if (propTypes.hasOwnProperty(propName)) {
-      var error = propTypes[propName](props, propName, componentName);
-
-      if (error instanceof Error) warning(false, error.message);
-    }
-  }
-}
-
-function createRouteOptions(props) {
-  var options = assign({}, props);
-  var handler = options.handler;
-
-  if (handler) {
-    options.onEnter = handler.willTransitionTo;
-    options.onLeave = handler.willTransitionFrom;
-  }
-
-  return options;
-}
-
-function createRouteFromReactElement(element) {
-  if (!React.isValidElement(element)) {
-    return;
-  }var type = element.type;
-  var props = element.props;
-
-  if (type.propTypes) checkPropTypes(type.displayName, type.propTypes, props);
-
-  if (type === DefaultRouteType) {
-    return Route.createDefaultRoute(createRouteOptions(props));
-  }if (type === NotFoundRouteType) {
-    return Route.createNotFoundRoute(createRouteOptions(props));
-  }if (type === RedirectType) {
-    return Route.createRedirect(createRouteOptions(props));
-  }return Route.createRoute(createRouteOptions(props), function () {
-    if (props.children) createRoutesFromReactChildren(props.children);
-  });
-}
-
-/**
- * Creates and returns an array of routes created from the given
- * ReactChildren, all of which should be one of <Route>, <DefaultRoute>,
- * <NotFoundRoute>, or <Redirect>, e.g.:
- *
- *   var { createRoutesFromReactChildren, Route, Redirect } = require('react-router');
- *
- *   var routes = createRoutesFromReactChildren(
- *     <Route path="/" handler={App}>
- *       <Route name="user" path="/user/:userId" handler={User}>
- *         <Route name="task" path="tasks/:taskId" handler={Task}/>
- *         <Redirect from="todos/:taskId" to="task"/>
- *       </Route>
- *     </Route>
- *   );
- */
-function createRoutesFromReactChildren(children) {
-  var routes = [];
-
-  React.Children.forEach(children, function (child) {
-    if (child = createRouteFromReactElement(child)) routes.push(child);
-  });
-
-  return routes;
-}
-
-module.exports = createRoutesFromReactChildren;
-},{"./Route":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Route.js","./components/DefaultRoute":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/DefaultRoute.js","./components/NotFoundRoute":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/NotFoundRoute.js","./components/Redirect":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/Redirect.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js","react/lib/Object.assign":"/Users/ben/Github Projects/skylines/node_modules/react/lib/Object.assign.js","react/lib/warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/getWindowScrollPosition.js":[function(require,module,exports){
-"use strict";
-
-var invariant = require("react/lib/invariant");
-var canUseDOM = require("react/lib/ExecutionEnvironment").canUseDOM;
-
-/**
- * Returns the current scroll position of the window as { x, y }.
- */
-function getWindowScrollPosition() {
-  invariant(canUseDOM, "Cannot get current scroll position without a DOM");
-
-  return {
-    x: window.pageXOffset || document.documentElement.scrollLeft,
-    y: window.pageYOffset || document.documentElement.scrollTop
-  };
-}
-
-module.exports = getWindowScrollPosition;
-},{"react/lib/ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/index.js":[function(require,module,exports){
-"use strict";
-
-exports.DefaultRoute = require("./components/DefaultRoute");
-exports.Link = require("./components/Link");
-exports.NotFoundRoute = require("./components/NotFoundRoute");
-exports.Redirect = require("./components/Redirect");
-exports.Route = require("./components/Route");
-exports.RouteHandler = require("./components/RouteHandler");
-
-exports.HashLocation = require("./locations/HashLocation");
-exports.HistoryLocation = require("./locations/HistoryLocation");
-exports.RefreshLocation = require("./locations/RefreshLocation");
-exports.StaticLocation = require("./locations/StaticLocation");
-
-exports.ImitateBrowserBehavior = require("./behaviors/ImitateBrowserBehavior");
-exports.ScrollToTopBehavior = require("./behaviors/ScrollToTopBehavior");
-
-exports.History = require("./History");
-exports.Navigation = require("./Navigation");
-exports.RouteHandlerMixin = require("./RouteHandlerMixin");
-exports.State = require("./State");
-
-exports.createRoute = require("./Route").createRoute;
-exports.createDefaultRoute = require("./Route").createDefaultRoute;
-exports.createNotFoundRoute = require("./Route").createNotFoundRoute;
-exports.createRedirect = require("./Route").createRedirect;
-exports.createRoutesFromReactChildren = require("./createRoutesFromReactChildren");
-exports.create = require("./createRouter");
-exports.run = require("./runRouter");
-},{"./History":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/History.js","./Navigation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Navigation.js","./Route":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/Route.js","./RouteHandlerMixin":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/RouteHandlerMixin.js","./State":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/State.js","./behaviors/ImitateBrowserBehavior":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/behaviors/ImitateBrowserBehavior.js","./behaviors/ScrollToTopBehavior":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/behaviors/ScrollToTopBehavior.js","./components/DefaultRoute":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/DefaultRoute.js","./components/Link":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/Link.js","./components/NotFoundRoute":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/NotFoundRoute.js","./components/Redirect":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/Redirect.js","./components/Route":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/Route.js","./components/RouteHandler":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/components/RouteHandler.js","./createRouter":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/createRouter.js","./createRoutesFromReactChildren":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/createRoutesFromReactChildren.js","./locations/HashLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/HashLocation.js","./locations/HistoryLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/HistoryLocation.js","./locations/RefreshLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/RefreshLocation.js","./locations/StaticLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/StaticLocation.js","./runRouter":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/runRouter.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/isReactChildren.js":[function(require,module,exports){
-"use strict";
-
-var React = require("react");
-
-function isValidChild(object) {
-  return object == null || React.isValidElement(object);
-}
-
-function isReactChildren(object) {
-  return isValidChild(object) || Array.isArray(object) && object.every(isValidChild);
-}
-
-module.exports = isReactChildren;
-},{"react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/HashLocation.js":[function(require,module,exports){
-"use strict";
-
-var LocationActions = require("../actions/LocationActions");
-var History = require("../History");
-
-/**
- * Returns the current URL path from the `hash` portion of the URL, including
- * query string.
- */
-function getHashPath() {
-  return decodeURI(
-  // We can't use window.location.hash here because it's not
-  // consistent across browsers - Firefox will pre-decode it!
-  window.location.href.split("#")[1] || "");
-}
-
-var _actionType;
-
-function ensureSlash() {
-  var path = getHashPath();
-
-  if (path.charAt(0) === "/") {
-    return true;
-  }HashLocation.replace("/" + path);
-
-  return false;
-}
-
-var _changeListeners = [];
-
-function notifyChange(type) {
-  if (type === LocationActions.PUSH) History.length += 1;
-
-  var change = {
-    path: getHashPath(),
-    type: type
-  };
-
-  _changeListeners.forEach(function (listener) {
-    listener(change);
-  });
-}
-
-var _isListening = false;
-
-function onHashChange() {
-  if (ensureSlash()) {
-    // If we don't have an _actionType then all we know is the hash
-    // changed. It was probably caused by the user clicking the Back
-    // button, but may have also been the Forward button or manual
-    // manipulation. So just guess 'pop'.
-    notifyChange(_actionType || LocationActions.POP);
-    _actionType = null;
-  }
-}
-
-/**
- * A Location that uses `window.location.hash`.
- */
-var HashLocation = {
-
-  addChangeListener: function addChangeListener(listener) {
-    _changeListeners.push(listener);
-
-    // Do this BEFORE listening for hashchange.
-    ensureSlash();
-
-    if (!_isListening) {
-      if (window.addEventListener) {
-        window.addEventListener("hashchange", onHashChange, false);
-      } else {
-        window.attachEvent("onhashchange", onHashChange);
-      }
-
-      _isListening = true;
-    }
-  },
-
-  removeChangeListener: function removeChangeListener(listener) {
-    _changeListeners = _changeListeners.filter(function (l) {
-      return l !== listener;
-    });
-
-    if (_changeListeners.length === 0) {
-      if (window.removeEventListener) {
-        window.removeEventListener("hashchange", onHashChange, false);
-      } else {
-        window.removeEvent("onhashchange", onHashChange);
-      }
-
-      _isListening = false;
-    }
-  },
-
-  push: function push(path) {
-    _actionType = LocationActions.PUSH;
-    window.location.hash = path;
-  },
-
-  replace: function replace(path) {
-    _actionType = LocationActions.REPLACE;
-    window.location.replace(window.location.pathname + window.location.search + "#" + path);
-  },
-
-  pop: function pop() {
-    _actionType = LocationActions.POP;
-    History.back();
-  },
-
-  getCurrentPath: getHashPath,
-
-  toString: function toString() {
-    return "<HashLocation>";
-  }
-
-};
-
-module.exports = HashLocation;
-},{"../History":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/History.js","../actions/LocationActions":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/actions/LocationActions.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/HistoryLocation.js":[function(require,module,exports){
-"use strict";
-
-var LocationActions = require("../actions/LocationActions");
-var History = require("../History");
-
-/**
- * Returns the current URL path from `window.location`, including query string.
- */
-function getWindowPath() {
-  return decodeURI(window.location.pathname + window.location.search);
-}
-
-var _changeListeners = [];
-
-function notifyChange(type) {
-  var change = {
-    path: getWindowPath(),
-    type: type
-  };
-
-  _changeListeners.forEach(function (listener) {
-    listener(change);
-  });
-}
-
-var _isListening = false;
-
-function onPopState(event) {
-  if (event.state === undefined) {
-    return;
-  } // Ignore extraneous popstate events in WebKit.
-
-  notifyChange(LocationActions.POP);
-}
-
-/**
- * A Location that uses HTML5 history.
- */
-var HistoryLocation = {
-
-  addChangeListener: function addChangeListener(listener) {
-    _changeListeners.push(listener);
-
-    if (!_isListening) {
-      if (window.addEventListener) {
-        window.addEventListener("popstate", onPopState, false);
-      } else {
-        window.attachEvent("onpopstate", onPopState);
-      }
-
-      _isListening = true;
-    }
-  },
-
-  removeChangeListener: function removeChangeListener(listener) {
-    _changeListeners = _changeListeners.filter(function (l) {
-      return l !== listener;
-    });
-
-    if (_changeListeners.length === 0) {
-      if (window.addEventListener) {
-        window.removeEventListener("popstate", onPopState, false);
-      } else {
-        window.removeEvent("onpopstate", onPopState);
-      }
-
-      _isListening = false;
-    }
-  },
-
-  push: function push(path) {
-    window.history.pushState({ path: path }, "", path);
-    History.length += 1;
-    notifyChange(LocationActions.PUSH);
-  },
-
-  replace: function replace(path) {
-    window.history.replaceState({ path: path }, "", path);
-    notifyChange(LocationActions.REPLACE);
-  },
-
-  pop: History.back,
-
-  getCurrentPath: getWindowPath,
-
-  toString: function toString() {
-    return "<HistoryLocation>";
-  }
-
-};
-
-module.exports = HistoryLocation;
-},{"../History":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/History.js","../actions/LocationActions":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/actions/LocationActions.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/RefreshLocation.js":[function(require,module,exports){
-"use strict";
-
-var HistoryLocation = require("./HistoryLocation");
-var History = require("../History");
-
-/**
- * A Location that uses full page refreshes. This is used as
- * the fallback for HistoryLocation in browsers that do not
- * support the HTML5 history API.
- */
-var RefreshLocation = {
-
-  push: function push(path) {
-    window.location = path;
-  },
-
-  replace: function replace(path) {
-    window.location.replace(path);
-  },
-
-  pop: History.back,
-
-  getCurrentPath: HistoryLocation.getCurrentPath,
-
-  toString: function toString() {
-    return "<RefreshLocation>";
-  }
-
-};
-
-module.exports = RefreshLocation;
-},{"../History":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/History.js","./HistoryLocation":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/HistoryLocation.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/locations/StaticLocation.js":[function(require,module,exports){
-"use strict";
-
-var _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
-
-var invariant = require("react/lib/invariant");
-
-function throwCannotModify() {
-  invariant(false, "You cannot modify a static location");
-}
-
-/**
- * A location that only ever contains a single path. Useful in
- * stateless environments like servers where there is no path history,
- * only the path that was used in the request.
- */
-
-var StaticLocation = (function () {
-  function StaticLocation(path) {
-    _classCallCheck(this, StaticLocation);
-
-    this.path = path;
-  }
-
-  _prototypeProperties(StaticLocation, null, {
-    getCurrentPath: {
-      value: function getCurrentPath() {
-        return this.path;
-      },
-      writable: true,
-      configurable: true
-    },
-    toString: {
-      value: function toString() {
-        return "<StaticLocation path=\"" + this.path + "\">";
-      },
-      writable: true,
-      configurable: true
-    }
-  });
-
-  return StaticLocation;
-})();
-
-// TODO: Include these in the above class definition
-// once we can use ES7 property initializers.
-StaticLocation.prototype.push = throwCannotModify;
-StaticLocation.prototype.replace = throwCannotModify;
-StaticLocation.prototype.pop = throwCannotModify;
-
-module.exports = StaticLocation;
-},{"react/lib/invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/runRouter.js":[function(require,module,exports){
-"use strict";
-
-var createRouter = require("./createRouter");
-
-/**
- * A high-level convenience method that creates, configures, and
- * runs a router in one shot. The method signature is:
- *
- *   Router.run(routes[, location ], callback);
- *
- * Using `window.location.hash` to manage the URL, you could do:
- *
- *   Router.run(routes, function (Handler) {
- *     React.render(<Handler/>, document.body);
- *   });
- * 
- * Using HTML5 history and a custom "cursor" prop:
- * 
- *   Router.run(routes, Router.HistoryLocation, function (Handler) {
- *     React.render(<Handler cursor={cursor}/>, document.body);
- *   });
- *
- * Returns the newly created router.
- *
- * Note: If you need to specify further options for your router such
- * as error/abort handling or custom scroll behavior, use Router.create
- * instead.
- *
- *   var router = Router.create(options);
- *   router.run(function (Handler) {
- *     // ...
- *   });
- */
-function runRouter(routes, location, callback) {
-  if (typeof location === "function") {
-    callback = location;
-    location = null;
-  }
-
-  var router = createRouter({
-    routes: routes,
-    location: location
-  });
-
-  router.run(callback);
-
-  return router;
-}
-
-module.exports = runRouter;
-},{"./createRouter":"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/createRouter.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/lib/supportsHistory.js":[function(require,module,exports){
-"use strict";
-
-function supportsHistory() {
-  /*! taken from modernizr
-   * https://github.com/Modernizr/Modernizr/blob/master/LICENSE
-   * https://github.com/Modernizr/Modernizr/blob/master/feature-detects/history.js
-   * changed to avoid false negatives for Windows Phones: https://github.com/rackt/react-router/issues/586
-   */
-  var ua = navigator.userAgent;
-  if ((ua.indexOf("Android 2.") !== -1 || ua.indexOf("Android 4.0") !== -1) && ua.indexOf("Mobile Safari") !== -1 && ua.indexOf("Chrome") === -1 && ua.indexOf("Windows Phone") === -1) {
-    return false;
-  }
-  return window.history && "pushState" in window.history;
-}
-
-module.exports = supportsHistory;
-},{}],"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/index.js":[function(require,module,exports){
-module.exports = require('./lib/');
-
-},{"./lib/":"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/index.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/index.js":[function(require,module,exports){
-// Load modules
-
-var Stringify = require('./stringify');
-var Parse = require('./parse');
-
-
-// Declare internals
-
-var internals = {};
-
-
-module.exports = {
-    stringify: Stringify,
-    parse: Parse
-};
-
-},{"./parse":"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/parse.js","./stringify":"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/stringify.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/parse.js":[function(require,module,exports){
-// Load modules
-
-var Utils = require('./utils');
-
-
-// Declare internals
-
-var internals = {
-    delimiter: '&',
-    depth: 5,
-    arrayLimit: 20,
-    parameterLimit: 1000
-};
-
-
-internals.parseValues = function (str, options) {
-
-    var obj = {};
-    var parts = str.split(options.delimiter, options.parameterLimit === Infinity ? undefined : options.parameterLimit);
-
-    for (var i = 0, il = parts.length; i < il; ++i) {
-        var part = parts[i];
-        var pos = part.indexOf(']=') === -1 ? part.indexOf('=') : part.indexOf(']=') + 1;
-
-        if (pos === -1) {
-            obj[Utils.decode(part)] = '';
-        }
-        else {
-            var key = Utils.decode(part.slice(0, pos));
-            var val = Utils.decode(part.slice(pos + 1));
-
-            if (!obj.hasOwnProperty(key)) {
-                obj[key] = val;
-            }
-            else {
-                obj[key] = [].concat(obj[key]).concat(val);
-            }
-        }
-    }
-
-    return obj;
-};
-
-
-internals.parseObject = function (chain, val, options) {
-
-    if (!chain.length) {
-        return val;
-    }
-
-    var root = chain.shift();
-
-    var obj = {};
-    if (root === '[]') {
-        obj = [];
-        obj = obj.concat(internals.parseObject(chain, val, options));
-    }
-    else {
-        var cleanRoot = root[0] === '[' && root[root.length - 1] === ']' ? root.slice(1, root.length - 1) : root;
-        var index = parseInt(cleanRoot, 10);
-        var indexString = '' + index;
-        if (!isNaN(index) &&
-            root !== cleanRoot &&
-            indexString === cleanRoot &&
-            index >= 0 &&
-            index <= options.arrayLimit) {
-
-            obj = [];
-            obj[index] = internals.parseObject(chain, val, options);
-        }
-        else {
-            obj[cleanRoot] = internals.parseObject(chain, val, options);
-        }
-    }
-
-    return obj;
-};
-
-
-internals.parseKeys = function (key, val, options) {
-
-    if (!key) {
-        return;
-    }
-
-    // The regex chunks
-
-    var parent = /^([^\[\]]*)/;
-    var child = /(\[[^\[\]]*\])/g;
-
-    // Get the parent
-
-    var segment = parent.exec(key);
-
-    // Don't allow them to overwrite object prototype properties
-
-    if (Object.prototype.hasOwnProperty(segment[1])) {
-        return;
-    }
-
-    // Stash the parent if it exists
-
-    var keys = [];
-    if (segment[1]) {
-        keys.push(segment[1]);
-    }
-
-    // Loop through children appending to the array until we hit depth
-
-    var i = 0;
-    while ((segment = child.exec(key)) !== null && i < options.depth) {
-
-        ++i;
-        if (!Object.prototype.hasOwnProperty(segment[1].replace(/\[|\]/g, ''))) {
-            keys.push(segment[1]);
-        }
-    }
-
-    // If there's a remainder, just add whatever is left
-
-    if (segment) {
-        keys.push('[' + key.slice(segment.index) + ']');
-    }
-
-    return internals.parseObject(keys, val, options);
-};
-
-
-module.exports = function (str, options) {
-
-    if (str === '' ||
-        str === null ||
-        typeof str === 'undefined') {
-
-        return {};
-    }
-
-    options = options || {};
-    options.delimiter = typeof options.delimiter === 'string' || Utils.isRegExp(options.delimiter) ? options.delimiter : internals.delimiter;
-    options.depth = typeof options.depth === 'number' ? options.depth : internals.depth;
-    options.arrayLimit = typeof options.arrayLimit === 'number' ? options.arrayLimit : internals.arrayLimit;
-    options.parameterLimit = typeof options.parameterLimit === 'number' ? options.parameterLimit : internals.parameterLimit;
-
-    var tempObj = typeof str === 'string' ? internals.parseValues(str, options) : str;
-    var obj = {};
-
-    // Iterate over the keys and setup the new object
-
-    var keys = Object.keys(tempObj);
-    for (var i = 0, il = keys.length; i < il; ++i) {
-        var key = keys[i];
-        var newObj = internals.parseKeys(key, tempObj[key], options);
-        obj = Utils.merge(obj, newObj);
-    }
-
-    return Utils.compact(obj);
-};
-
-},{"./utils":"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/utils.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/stringify.js":[function(require,module,exports){
-// Load modules
-
-var Utils = require('./utils');
-
-
-// Declare internals
-
-var internals = {
-    delimiter: '&',
-    indices: true
-};
-
-
-internals.stringify = function (obj, prefix, options) {
-
-    if (Utils.isBuffer(obj)) {
-        obj = obj.toString();
-    }
-    else if (obj instanceof Date) {
-        obj = obj.toISOString();
-    }
-    else if (obj === null) {
-        obj = '';
-    }
-
-    if (typeof obj === 'string' ||
-        typeof obj === 'number' ||
-        typeof obj === 'boolean') {
-
-        return [encodeURIComponent(prefix) + '=' + encodeURIComponent(obj)];
-    }
-
-    var values = [];
-
-    if (typeof obj === 'undefined') {
-        return values;
-    }
-
-    var objKeys = Object.keys(obj);
-    for (var i = 0, il = objKeys.length; i < il; ++i) {
-        var key = objKeys[i];
-        if (!options.indices &&
-            Array.isArray(obj)) {
-
-            values = values.concat(internals.stringify(obj[key], prefix, options));
-        }
-        else {
-            values = values.concat(internals.stringify(obj[key], prefix + '[' + key + ']', options));
-        }
-    }
-
-    return values;
-};
-
-
-module.exports = function (obj, options) {
-
-    options = options || {};
-    var delimiter = typeof options.delimiter === 'undefined' ? internals.delimiter : options.delimiter;
-    options.indices = typeof options.indices === 'boolean' ? options.indices : internals.indices;
-
-    var keys = [];
-
-    if (typeof obj !== 'object' ||
-        obj === null) {
-
-        return '';
-    }
-
-    var objKeys = Object.keys(obj);
-    for (var i = 0, il = objKeys.length; i < il; ++i) {
-        var key = objKeys[i];
-        keys = keys.concat(internals.stringify(obj[key], key, options));
-    }
-
-    return keys.join(delimiter);
-};
-
-},{"./utils":"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/utils.js"}],"/Users/ben/Github Projects/skylines/node_modules/react-router/node_modules/qs/lib/utils.js":[function(require,module,exports){
-// Load modules
-
-
-// Declare internals
-
-var internals = {};
-
-
-exports.arrayToObject = function (source) {
-
-    var obj = {};
-    for (var i = 0, il = source.length; i < il; ++i) {
-        if (typeof source[i] !== 'undefined') {
-
-            obj[i] = source[i];
-        }
-    }
-
-    return obj;
-};
-
-
-exports.merge = function (target, source) {
-
-    if (!source) {
-        return target;
-    }
-
-    if (typeof source !== 'object') {
-        if (Array.isArray(target)) {
-            target.push(source);
-        }
-        else {
-            target[source] = true;
-        }
-
-        return target;
-    }
-
-    if (typeof target !== 'object') {
-        target = [target].concat(source);
-        return target;
-    }
-
-    if (Array.isArray(target) &&
-        !Array.isArray(source)) {
-
-        target = exports.arrayToObject(target);
-    }
-
-    var keys = Object.keys(source);
-    for (var k = 0, kl = keys.length; k < kl; ++k) {
-        var key = keys[k];
-        var value = source[key];
-
-        if (!target[key]) {
-            target[key] = value;
-        }
-        else {
-            target[key] = exports.merge(target[key], value);
-        }
-    }
-
-    return target;
-};
-
-
-exports.decode = function (str) {
-
-    try {
-        return decodeURIComponent(str.replace(/\+/g, ' '));
-    } catch (e) {
-        return str;
-    }
-};
-
-
-exports.compact = function (obj, refs) {
-
-    if (typeof obj !== 'object' ||
-        obj === null) {
-
-        return obj;
-    }
-
-    refs = refs || [];
-    var lookup = refs.indexOf(obj);
-    if (lookup !== -1) {
-        return refs[lookup];
-    }
-
-    refs.push(obj);
-
-    if (Array.isArray(obj)) {
-        var compacted = [];
-
-        for (var i = 0, il = obj.length; i < il; ++i) {
-            if (typeof obj[i] !== 'undefined') {
-                compacted.push(obj[i]);
-            }
-        }
-
-        return compacted;
-    }
-
-    var keys = Object.keys(obj);
-    for (i = 0, il = keys.length; i < il; ++i) {
-        var key = keys[i];
-        obj[key] = exports.compact(obj[key], refs);
-    }
-
-    return obj;
-};
-
-
-exports.isRegExp = function (obj) {
-    return Object.prototype.toString.call(obj) === '[object RegExp]';
-};
-
-
-exports.isBuffer = function (obj) {
-
-    if (obj === null ||
-        typeof obj === 'undefined') {
-
-        return false;
-    }
-
-    return !!(obj.constructor &&
-        obj.constructor.isBuffer &&
-        obj.constructor.isBuffer(obj));
-};
-
-},{}],"/Users/ben/Github Projects/skylines/node_modules/react/lib/AutoFocusMixin.js":[function(require,module,exports){
+},{"_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/buffer/index.js","child_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/lib/_empty.js","fs":"/Users/ben/Github Projects/skylines/node_modules/browserify/lib/_empty.js","http":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/http-browserify/index.js","https":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/https-browserify/index.js","url":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/url/url.js"}],"/Users/ben/Github Projects/skylines/node_modules/react/lib/AutoFocusMixin.js":[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -41162,63 +41434,7 @@ function createNodesFromMarkup(markup, handleScript) {
 module.exports = createNodesFromMarkup;
 
 }).call(this,require('_process'))
-},{"./ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","./createArrayFromMixed":"/Users/ben/Github Projects/skylines/node_modules/react/lib/createArrayFromMixed.js","./getMarkupWrap":"/Users/ben/Github Projects/skylines/node_modules/react/lib/getMarkupWrap.js","./invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js","_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js"}],"/Users/ben/Github Projects/skylines/node_modules/react/lib/cx.js":[function(require,module,exports){
-(function (process){
-/**
- * Copyright 2013-2015, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
- * @providesModule cx
- */
-
-/**
- * This function is used to mark string literals representing CSS class names
- * so that they can be transformed statically. This allows for modularization
- * and minification of CSS class names.
- *
- * In static_upstream, this function is actually implemented, but it should
- * eventually be replaced with something more descriptive, and the transform
- * that is used in the main stack should be ported for use elsewhere.
- *
- * @param string|object className to modularize, or an object of key/values.
- *                      In the object case, the values are conditions that
- *                      determine if the className keys should be included.
- * @param [string ...]  Variable list of classNames in the string case.
- * @return string       Renderable space-separated CSS className.
- */
-
-'use strict';
-var warning = require("./warning");
-
-var warned = false;
-
-function cx(classNames) {
-  if ("production" !== process.env.NODE_ENV) {
-    ("production" !== process.env.NODE_ENV ? warning(
-      warned,
-      'React.addons.classSet will be deprecated in a future version. See ' +
-      'http://fb.me/react-addons-classset'
-    ) : null);
-    warned = true;
-  }
-
-  if (typeof classNames == 'object') {
-    return Object.keys(classNames).filter(function(className) {
-      return classNames[className];
-    }).join(' ');
-  } else {
-    return Array.prototype.join.call(arguments, ' ');
-  }
-}
-
-module.exports = cx;
-
-}).call(this,require('_process'))
-},{"./warning":"/Users/ben/Github Projects/skylines/node_modules/react/lib/warning.js","_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js"}],"/Users/ben/Github Projects/skylines/node_modules/react/lib/dangerousStyleValue.js":[function(require,module,exports){
+},{"./ExecutionEnvironment":"/Users/ben/Github Projects/skylines/node_modules/react/lib/ExecutionEnvironment.js","./createArrayFromMixed":"/Users/ben/Github Projects/skylines/node_modules/react/lib/createArrayFromMixed.js","./getMarkupWrap":"/Users/ben/Github Projects/skylines/node_modules/react/lib/getMarkupWrap.js","./invariant":"/Users/ben/Github Projects/skylines/node_modules/react/lib/invariant.js","_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js"}],"/Users/ben/Github Projects/skylines/node_modules/react/lib/dangerousStyleValue.js":[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.

@@ -15,18 +15,18 @@ class GalleryView extends React.Component {
 		}
 
 		componentWillMount() {
-				userStore.listen(this.onUserChange.bind(this))
-				galleryStore.listen(this.onGalleryChange.bind(this))
+				galleryActions.getPhotos(this.props.flickrKey)
 				userActions.current()
 		}
 
-		componentWillUnmount() {
-				userStore.unlisten(this.onUserChange.bind(this))
-				galleryStore.unlisten(this.onGalleryChange)
+		componentDidMount() {
+				userStore.listen(this.onUserChange.bind(this))
+				galleryStore.listen(this.onGalleryChange.bind(this))
 		}
 
-		componentDidMount() {
-				galleryActions.getPhotos()
+		componentWillUnmount() {
+				userStore.unlisten(this.onUserChange)
+				galleryStore.unlisten(this.onGalleryChange)
 		}
 
 		onGalleryChange() {
@@ -38,9 +38,8 @@ class GalleryView extends React.Component {
 		}
 
 		render() {
-				console.log(this.state)
 				var photos = this.state.photo.map((photo) => {
-						return <Photo {...photo} user={this.state.user} key={photo.id} />
+						return <Photo photo={photo} router={this.props.router} user={this.state.user} key={photo.id} />
 				})
 				return (
 						<main className="gallery">
@@ -54,20 +53,23 @@ class GalleryView extends React.Component {
 class Photo extends React.Component {
 		constructor() {
 				super()
-				this.state = {}
 		}
 
 		render() {
-				var owner_url = `https://www.flickr.com/people/${this.props.owner}`
+				var owner_url = `https://www.flickr.com/people/${this.props.photo.owner}`
 				return (
 						<div className="photo">
-								<img src={this.props.url_m} />
-								<h4>{this.props.title}</h4>
-								<a href={owner_url}>
-										<h4>{this.props.ownername}</h4>
+								<img src={this.props.photo.url_m} />
+								<h4 onClick={this.details.bind(this)}>{this.props.photo.title}</h4>
+								<a href={owner_url} target="_blank">
+										<h4>{this.props.photo.ownername}</h4>
 								</a>
 						</div>
 				)
+		}
+
+		details() {
+				this.props.router.transitionTo('photo', {id: this.props.photo.id})
 		}
 }
 

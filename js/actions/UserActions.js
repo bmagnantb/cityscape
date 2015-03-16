@@ -20,6 +20,11 @@ class UserActions {
 				})
 		}
 
+		logout() {
+				Parse.User.logOut()
+				this.dispatch(Parse.User.current())
+		}
+
 		register(username, password, email, router) {
 				var user = new Parse.User()
 				user.set('username', username)
@@ -31,6 +36,15 @@ class UserActions {
 							router.transitionTo('home')
 						},
 						error: (user, error) => console.log(error)
+				})
+		}
+
+		resetPassword(email) {
+				Parse.User.requestPasswordReset(email, {
+						success: () => {
+								router.transitionTo('passemailsent')
+						},
+						error: () => console.log(error)
 				})
 		}
 }

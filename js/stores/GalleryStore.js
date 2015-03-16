@@ -12,8 +12,9 @@ class GalleryStore {
 		}
 
 		onGetPhotos(data) {
-				this.photo = data.photos.photo
-				this.page = data.photos.page
+				for (var key in data) {
+						this[key] = data[key]
+				}
 		}
 }
 

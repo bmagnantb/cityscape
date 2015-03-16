@@ -1,12 +1,12 @@
 ;(function(exports) {
 
 var alt = require('../alt-app').alt
-var SkylinesFC = require('../FlickrClient').FCGallery
+var fcGallery = require('../FlickrClient').fcGallery
 
 class GalleryActions {
-		getPhotos() {
-				SkylinesFC.getPhotos()
-				.then((data) => this.dispatch(data))
+		getPhotos(flickrKey) {
+				fcGallery.request({api_key: flickrKey})
+				.then((data) => this.dispatch(data.photos))
 		}
 }
 

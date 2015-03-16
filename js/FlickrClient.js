@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var $ = require('neo-zepto');
-var FlickrGalleryURL = require('./FlickrSettings').GalleryURL
+var flickrMakeUrl = require('./FlickrSettings').flickrMakeUrl
 
 class FlickrClient {
 		// register with Flickr for api-key
@@ -10,24 +10,44 @@ class FlickrClient {
 				this.url = url
 		}
 
-		getPhotos() {
+		request(settings) {
+				if (this.url instanceof Function) {
+						return $.get(this.url(settings)())
+				}
 				return $.get(this.url)
-		}
-
-		searchPhotos(search) {
-				var query = `&tags=${search}`
-				$.get(this.url+query)
-				.then((data) => {
-						if (data.stat === 'ok') {
-								console.log(data.photos)
-						} else {
-								console.log('Flickr request failed')
-						}
-				})
 		}
 }
 
+// settings for Flickr url maker
+var gallerySettings = {
+		method: 'flickr.photos.search',
+		content_type: '1',
+		extras: [
+				'url_m',
+				'owner_name'
+		].join(','),
+		per_page: '30',
+		sort: 'relevance',
+		tag_mode: 'all',
+		tags: [
+				'skyline',
+				'city',
+				'buildings'
+		].join(',')
+}
+
+var detailSettings = {
+		method: 'flickr.photos.getInfo',
+		extras: [
+				'url_m'
+		]
+}
+
+
 exports.FC = FlickrClient
-exports.FCGallery = new FlickrClient(FlickrGalleryURL)
+
+exports.fcGallery = new FlickrClient(flickrMakeUrl(gallerySettings))
+
+exports.fcDetail = new FlickrClient(flickrMakeUrl(detailSettings))
 
 })(typeof module === 'object' ? module.exports : window)

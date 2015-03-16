@@ -9,7 +9,7 @@ class UserStore {
 				this.user = null
 
 				this.bindListeners({
-						setUser: [userActions.current, userActions.login, userActions.register]
+						setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
 				})
 		}
 
