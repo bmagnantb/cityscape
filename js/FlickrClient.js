@@ -25,7 +25,7 @@ var gallerySettings = {
 		extras: [
 				'url_m',
 				'owner_name'
-		].join(','),
+		],
 		per_page: '30',
 		sort: 'relevance',
 		tag_mode: 'all',
@@ -33,7 +33,7 @@ var gallerySettings = {
 				'skyline',
 				'city',
 				'buildings'
-		].join(',')
+		]
 }
 
 var detailSettings = {

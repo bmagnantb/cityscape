@@ -7,14 +7,31 @@ class GalleryStore {
 		constructor() {
 				this.photo = []
 				this.page = null
+				this.tags = []
+				this.extras = []
 
-				this.bindAction(galleryActions.getPhotos, this.onGetPhotos)
+				this.bindListeners({
+						getPhotos: galleryActions.getPhotos,
+						setTags: galleryActions.setTags
+				})
 		}
 
-		onGetPhotos(data) {
+		getPhotos(data) {
 				for (var key in data) {
 						this[key] = data[key]
 				}
+		}
+
+		setTags(tags) {
+				console.log(this.tags)
+				tags.forEach((val) => {
+						if (val.indexOf('-') === 0) {
+								this.tags.splice(this.tags.indexOf(val.slice(1)), 1)
+						} else {
+								this.tags.push(val)
+						}
+				})
+				console.log(this.tags)
 		}
 }
 

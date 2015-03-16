@@ -12,7 +12,8 @@ class AppView extends React.Component {
 		}
 
 		render() {
-				// console.log(this.props)
+				console.log(this.props)
+				console.log(RouteHandler)
 				return (
 						<div>
 								<Header />

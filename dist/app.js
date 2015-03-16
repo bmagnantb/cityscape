@@ -38,11 +38,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		var gallerySettings = {
 				method: "flickr.photos.search",
 				content_type: "1",
-				extras: ["url_m", "owner_name"].join(","),
+				extras: ["url_m", "owner_name"],
 				per_page: "30",
 				sort: "relevance",
 				tag_mode: "all",
-				tags: ["skyline", "city", "buildings"].join(",")
+				tags: ["skyline", "city", "buildings"]
 		};
 
 		var detailSettings = {
@@ -69,6 +69,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		// allows gradual build of request URL if settings are pulled from different areas of app
 		// first call must provide settings
 		// on subsequent calls, additional settings will be added and any repeat settings are overwritten
+		// extras and tags will never be overwritten, only added to existing extras or tags
 		// passing no parameters builds and returns url as string
 
 		function url(settings) {
@@ -81,7 +82,32 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 								// copy keys/values from newest settings onto original settings object
 								for (var key in settings2) {
-										settings[key] = settings2[key];
+										// add extras/tags rather than overwriting
+										// if extras/tags is Array, join then concat with existing key, otherwise assume string
+										if (key === "extras" || key === "tags") {
+												if (settings2[key] instanceof Array) {
+														settings2[key].forEach(function (val, ind, arr) {
+																if (settings[key].indexOf(val) !== -1) {} else if (val.indexOf("-") === 0) {
+																		console.log(val.slice(1));
+																		console.log(settings[key]);
+																		settings[key].splice(settings[key].indexOf(val.slice(1)), 1);
+																		console.log(settings[key]);
+																} else {
+																		console.log(settings[key]);
+																		settings[key].push(val);
+																		console.log(settings[key]);
+																}
+														});
+												} else {
+														settings[key].push(settings2[key]);
+												}
+										} else {
+												if (key.indexOf("-") === 0) {
+														delete settings[key.slice(1)];
+												} else {
+														settings[key] = settings2[key];
+												}
+										}
 								}
 
 								return build;
@@ -103,6 +129,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								urlBuild = "https://api.flickr.com/services/rest/?&method=" + settings.method + "&api_key=" + settings.api_key;
 
 								for (var key in settings) {
+										settings[key] instanceof Array ? settings[key].join(",") : null;
 										urlBuild += "&" + key + "=" + settings[key];
 								}
 
@@ -210,14 +237,17 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		var GalleryActions = (function () {
 				function GalleryActions() {
 						_classCallCheck(this, GalleryActions);
+
+						this.generateActions("setTags");
 				}
 
 				_createClass(GalleryActions, {
 						getPhotos: {
-								value: function getPhotos(flickrKey) {
+								value: function getPhotos(options) {
 										var _this = this;
 
-										fcGallery.request({ api_key: flickrKey }).then(function (data) {
+										console.log(options);
+										fcGallery.request(options).then(function (data) {
 												return _this.dispatch(data.photos);
 										});
 								}
@@ -352,9 +382,9 @@ function app() {
 
 				if (user && (path === "/login" || path === "/register")) {
 						router.transitionTo("home");
-				} else {
-						React.render(React.createElement(Handler, { params: params, router: this, flickrKey: flickrKey }), document.getElementById("container"));
+						return;
 				}
+				React.render(React.createElement(Handler, { params: params, router: this, flickrKey: flickrKey }), document.getElementById("container"));
 		});
 }
 
@@ -389,7 +419,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(AppView, {
 						render: {
 								value: function render() {
-										// console.log(this.props)
+										console.log(this.props);
+										console.log(RouteHandler);
 										return React.createElement(
 												"div",
 												null,
@@ -605,7 +636,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										galleryActions.getPhotos(this.props.flickrKey);
+										galleryActions.getPhotos({ api_key: this.props.flickrKey });
 										userActions.current();
 								}
 						},
@@ -638,11 +669,52 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var photos = this.state.photo.map(function (photo) {
 												return React.createElement(Photo, { photo: photo, router: _this.props.router, user: _this.state.user, key: photo.id });
 										});
+										var tags = this.state.tags.map(function (tag) {
+												return React.createElement(
+														"span",
+														{ key: tag },
+														" ",
+														tag,
+														" ",
+														React.createElement(
+																"span",
+																{ onClick: _this.removeTag.bind(_this) },
+																"X"
+														),
+														" "
+												);
+										});
 										return React.createElement(
 												"main",
 												{ className: "gallery" },
+												React.createElement(
+														"form",
+														{ onSubmit: this.search.bind(this) },
+														React.createElement("input", { type: "search", ref: "search" })
+												),
+												React.createElement(
+														"div",
+														{ className: "tags" },
+														tags
+												),
 												photos
 										);
+								}
+						},
+						search: {
+								value: function search(e) {
+										e.preventDefault();
+										var tags = this.refs.search.getDOMNode().value.split(" ");
+										galleryActions.setTags(tags);
+										galleryActions.getPhotos({ tags: tags });
+										this.refs.search.getDOMNode().value = "";
+								}
+						},
+						removeTag: {
+								value: function removeTag(e) {
+										var tag = ("-" + e.target.parentNode.innerHTML).split();
+										galleryActions.setTags(tag);
+										galleryActions.getPhotos({ tags: tag });
 								}
 						}
 				});
@@ -3900,16 +3972,36 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 						this.photo = [];
 						this.page = null;
+						this.tags = [];
+						this.extras = [];
 
-						this.bindAction(galleryActions.getPhotos, this.onGetPhotos);
+						this.bindListeners({
+								getPhotos: galleryActions.getPhotos,
+								setTags: galleryActions.setTags
+						});
 				}
 
 				_createClass(GalleryStore, {
-						onGetPhotos: {
-								value: function onGetPhotos(data) {
+						getPhotos: {
+								value: function getPhotos(data) {
 										for (var key in data) {
 												this[key] = data[key];
 										}
+								}
+						},
+						setTags: {
+								value: function setTags(tags) {
+										var _this = this;
+
+										console.log(this.tags);
+										tags.forEach(function (val) {
+												if (val.indexOf("-") === 0) {
+														_this.tags.splice(_this.tags.indexOf(val.slice(1)), 1);
+												} else {
+														_this.tags.push(val);
+												}
+										});
+										console.log(this.tags);
 								}
 						}
 				});

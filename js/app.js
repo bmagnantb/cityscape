@@ -20,8 +20,8 @@ function app() {
 				var { params, path } = state
 				if (user && (path === '/login' || path === '/register')) {
 						router.transitionTo('home')
-				} else {
-						React.render(<Handler params={params} router={this} flickrKey={flickrKey} />, document.getElementById('container'))
+						return
 				}
+				React.render(<Handler params={params} router={this} flickrKey={flickrKey} />, document.getElementById('container'))
 		})
 }

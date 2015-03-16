@@ -4,8 +4,13 @@ var alt = require('../alt-app').alt
 var fcGallery = require('../FlickrClient').fcGallery
 
 class GalleryActions {
-		getPhotos(flickrKey) {
-				fcGallery.request({api_key: flickrKey})
+		constructor() {
+				this.generateActions('setTags')
+		}
+
+		getPhotos(options) {
+				console.log(options)
+				fcGallery.request(options)
 				.then((data) => this.dispatch(data.photos))
 		}
 }

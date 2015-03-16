@@ -15,7 +15,7 @@ class GalleryView extends React.Component {
 		}
 
 		componentWillMount() {
-				galleryActions.getPhotos(this.props.flickrKey)
+				galleryActions.getPhotos({api_key: this.props.flickrKey})
 				userActions.current()
 		}
 
@@ -41,11 +41,39 @@ class GalleryView extends React.Component {
 				var photos = this.state.photo.map((photo) => {
 						return <Photo photo={photo} router={this.props.router} user={this.state.user} key={photo.id} />
 				})
+				var tags = this.state.tags.map((tag) => {
+						return (
+								<span key={tag}>
+										&nbsp;{tag}&nbsp;
+										<span onClick={this.removeTag.bind(this)}>X</span>&nbsp;
+								</span>
+						)
+				})
 				return (
 						<main className="gallery">
+								<form onSubmit={this.search.bind(this)}>
+										<input type="search" ref="search" />
+								</form>
+								<div className="tags">
+										{tags}
+								</div>
 								{photos}
 						</main>
 				)
+		}
+
+		search(e) {
+				e.preventDefault()
+				var tags = this.refs.search.getDOMNode().value.split(' ')
+				galleryActions.setTags(tags)
+				galleryActions.getPhotos({tags: tags})
+				this.refs.search.getDOMNode().value = ''
+		}
+
+		removeTag(e) {
+				var tag = `-${e.target.parentNode.innerHTML}`.split()
+				galleryActions.setTags(tag)
+				galleryActions.getPhotos({tags: tag})
 		}
 }
 
