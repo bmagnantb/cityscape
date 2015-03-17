@@ -19,6 +19,7 @@ class UserStore {
 }
 
 
+exports.UserStore = UserStore
 exports.userStore = alt.createStore(UserStore)
 
 })(typeof module === 'object' ? module.exports : window)

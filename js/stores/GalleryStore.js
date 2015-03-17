@@ -23,7 +23,6 @@ class GalleryStore {
 		}
 
 		setTags(tags) {
-				console.log(this.tags)
 				tags.forEach((val) => {
 						if (val.indexOf('-') === 0) {
 								this.tags.splice(this.tags.indexOf(val.slice(1)), 1)
@@ -31,10 +30,10 @@ class GalleryStore {
 								this.tags.push(val)
 						}
 				})
-				console.log(this.tags)
 		}
 }
 
+exports.GalleryStore = GalleryStore
 exports.galleryStore = alt.createStore(GalleryStore)
 
 })(typeof module === 'object' ? module.exports : window)

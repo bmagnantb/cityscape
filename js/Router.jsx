@@ -4,7 +4,6 @@ var React = require('react')
 // modified react-router for React v0.13 compatibility
 // clone from git@github.com:nhunzaker/react-router.git
 var Router = require('./react-router')
-var Parse = require('Parse')
 var AppView = require('./components/AppView').AppView
 var GalleryView = require('./components/GalleryView').GalleryView
 var LoginView = require('./components/LoginView').LoginView
@@ -24,7 +23,7 @@ var routes = (
 				<Route name="login" handler={LoginView} />
 				<Redirect from="signin" to="login" />
 				<Route name="register" handler={RegisterView} />
-				<Route name="passemailsent" handler={PassEmailSentView} />
+				<Route name="passemailsent" handler={PassEmailView} />
 				<DefaultRoute handler={GalleryView} />
 		</Route>
 )

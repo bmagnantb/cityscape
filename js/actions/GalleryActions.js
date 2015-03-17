@@ -15,6 +15,8 @@ class GalleryActions {
 		}
 }
 
+
+exports.GalleryActions = GalleryActions
 exports.galleryActions = alt.createActions(GalleryActions)
 
 })(typeof module === 'object' ? module.exports : window)
