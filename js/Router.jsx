@@ -10,7 +10,7 @@ var GalleryView = require('./components/GalleryView').GalleryView
 var LoginView = require('./components/LoginView').LoginView
 var RegisterView = require('./components/RegisterView').RegisterView
 var DetailView = require('./components/DetailView').DetailView
-var PassEmailSentView = require('./components/PassEmailSentView').PassEmailSentView
+var PassEmailView = require('./components/PassEmailView').PassEmailView
 
 var DefaultRoute = Router.DefaultRoute
 var Route = Router.Route

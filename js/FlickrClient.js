@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var $ = require('neo-zepto');
-var flickrMakeUrl = require('./FlickrSettings').flickrMakeUrl
+var flickrMakeUrl = require('./FlickrMakeUrl').flickrMakeUrl
 
 class FlickrClient {
 		// register with Flickr for api-key

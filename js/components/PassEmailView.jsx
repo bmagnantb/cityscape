@@ -2,7 +2,7 @@
 
 var React = require('react')
 
-class PassEmailSentView extends React.Component {
+class PassEmailView extends React.Component {
 		constructor() {
 				super()
 		}
@@ -13,6 +13,6 @@ class PassEmailSentView extends React.Component {
 }
 
 
-exports.PassEmailSent = PassEmailSentView
+exports.PassEmailView = PassEmailView
 
 })(typeof module === 'object' ? module.exports : window)
