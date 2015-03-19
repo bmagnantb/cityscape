@@ -42,8 +42,9 @@ class GalleryView extends React.Component {
 						return <Photo photo={photo} router={this.props.router} user={this.state.user} key={photo.id} />
 				})
 				var tags = this.state.tags.map((tag) => {
+						var id = `tag${tag}`
 						return (
-								<span key={tag}>
+								<span key={tag} id={id}>
 										&nbsp;{tag}&nbsp;
 										<span onClick={this.removeTag.bind(this)}>X</span>&nbsp;
 								</span>
@@ -64,14 +65,15 @@ class GalleryView extends React.Component {
 
 		search(e) {
 				e.preventDefault()
-				var tags = this.refs.search.getDOMNode().value.split(' ')
+				var tags = React.findDOMNode(this.refs.search).value.split(' ')
 				galleryActions.setTags(tags)
 				galleryActions.getPhotos({tags: tags})
-				this.refs.search.getDOMNode().value = ''
+				React.findDOMNode(this.refs.search).value = ''
 		}
 
 		removeTag(e) {
-				var tag = `-${e.target.parentNode.innerHTML}`.split()
+				console.log(e.target.parentNode.id.slice(3))
+				var tag = `-${e.target.parentNode.id.slice(3)}`.split()
 				galleryActions.setTags(tag)
 				galleryActions.getPhotos({tags: tag})
 		}

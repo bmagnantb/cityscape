@@ -41,10 +41,10 @@ class RegisterView extends React.Component {
 
 		register(e) {
 				e.preventDefault()
-				var username = this.refs.username.getDOMNode().value
-				var email = this.refs.email.getDOMNode().value
-				var pass = this.refs.pass.getDOMNode().value
-				var pass2 = this.refs.pass2.getDOMNode().value
+				var username = React.findDOMNode(this.refs.username).value
+				var email = React.findDOMNode(this.refs.email).value
+				var pass = React.findDOMNode(this.refs.pass).value
+				var pass2 = React.findDOMNode(this.refs.pass2).value
 				if (pass === pass2) {
 						userActions.register(username, pass, email, this.props.router)
 				} else {

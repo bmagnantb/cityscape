@@ -31,7 +31,6 @@
 
 		"parse": "latest",
 		"react": "latest",
-		"react-tap-event-plugin": "latest",
 		"alt": "latest",
 
 		"mocha": "latest",

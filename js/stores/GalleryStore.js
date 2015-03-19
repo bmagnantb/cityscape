@@ -9,6 +9,7 @@ class GalleryStore {
 				this.page = null
 				this.tags = []
 				this.extras = []
+				this.photoIds = []
 
 				this.bindListeners({
 						getPhotos: galleryActions.getPhotos,
@@ -20,6 +21,10 @@ class GalleryStore {
 				for (var key in data) {
 						this[key] = data[key]
 				}
+				this.photoIds = []
+				data.photo.forEach((val) => {
+						this.photoIds.push(val)
+				})
 		}
 
 		setTags(tags) {
@@ -30,6 +35,10 @@ class GalleryStore {
 								this.tags.push(val)
 						}
 				})
+		}
+
+		getVotes() {
+
 		}
 }
 

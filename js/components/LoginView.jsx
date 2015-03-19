@@ -30,8 +30,8 @@ class LoginView extends React.Component {
 		login(e) {
 				e.preventDefault()
 				userActions.login(
-						this.refs.username.getDOMNode().value,
-						this.refs.password.getDOMNode().value,
+						React.findDOMNode(this.refs.username).value,
+						React.findDOMNode(this.refs.password).value,
 						this.props.router
 				)
 		}

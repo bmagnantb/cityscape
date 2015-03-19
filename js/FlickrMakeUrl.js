@@ -44,7 +44,7 @@ function url(settings) {
 										}
 
 										else if (settings2[key] instanceof Array || settings2[key].split(' ') instanceof Array) {
-												if (settings2[key].split(' ') instanceof Array) {
+												if (settings2[key] instanceof String) {
 														settings2[key] = settings2[key].split(' ')
 												}
 												settings2[key].forEach((val, ind, arr) => {

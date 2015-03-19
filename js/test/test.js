@@ -6,8 +6,7 @@ var Chai = require('chai')
 Chai.use(require('chai-things'))
 Chai.use(require('chai-as-promised'))
 
-var assert = Chai.assert
-var expect = Chai.expect
+var { assert, expect } = Chai
 
 
 // function to create browser environment -- when window is needed
@@ -456,7 +455,6 @@ describe('AppView', () => {
 
 		it('should be instance of React Component', () => {
 				expect(appView).to.be.instanceof(React.Component)
-				console.log(appView)
 		})
 })
 
