@@ -47007,13 +47007,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		var flickrOptions = require("./FlickrSettings").options;
 
 		var FlickrClient = (function () {
-				// register with Flickr for api-key
-				// tags is array
-
 				function FlickrClient(options) {
 						_classCallCheck(this, FlickrClient);
 
 						this.options = options;
+						this.user = "";
 				}
 
 				_createClass(FlickrClient, {

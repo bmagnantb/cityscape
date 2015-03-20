@@ -4,10 +4,9 @@ var $ = require('jquery')
 var flickrOptions = require('./FlickrSettings').options
 
 class FlickrClient {
-		// register with Flickr for api-key
-		// tags is array
 		constructor(options) {
 				this.options = options
+				this.user = ''
 		}
 
 		request(settings) {
