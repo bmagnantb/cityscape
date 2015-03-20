@@ -5,16 +5,16 @@
 	"main": "server.js",
 	"scripts": {
 		"preinstall": "rm -rf node_modules",
-		"postinstall": "[ ! -d scss ] && mkdir scss && touch ./scss/style.scss; [ ! -d dist ] && mkdir dist && touch ./dist/style.css && touch ./dist/app.js; [ ! -d js ] && mkdir js && touch ./js/app.js; [ ! -d js/test ] && mkdir js/test && touch ./js/test/test.js; [ ! -d server.js ] && touch server.js; [ ! -d index.html ] && touch index.html; npm run css:install; echo 'dir/files created'; npm run ignores",
+		"postinstall": "[ ! -d ./scss ] && mkdir ./scss && touch ./scss/style.scss; [ ! -d ./public ] && mkdir ./public; [ ! -d ./public/dist ] && mkdir ./public/dist && touch ./public/dist/style.css && touch ./public/dist/app.js; [ ! -d ./js ] && mkdir ./js && touch ./js/app.js; [ ! -d ./js/test ] && mkdir ./js/test && touch ./js/test/test.js; [ ! -d ./server.js ] && touch ./server.js; [ ! -d ./public/index.html ] && touch ./public/index.html; npm run css:install; echo 'dir/files created'; npm run ignores",
 		"css:install": "npm run css:install-goldilocks; npm run css:install-bourbon",
-		"css:install-bourbon": "[ -d scss/bourbon ] && cp -a ./node_modules/bourbon/app/assets/stylesheets/. ./scss/bourbon",
-		"css:install-goldilocks": "[ -d bower_components/goldilocks-approach-sass ] && install goldilocks-approach-sass && cp -a ./bower_components/goldilocks-approach-sass/stylesheets/scss/. ./scss;",
+		"css:install-bourbon": "[ -d ./scss/bourbon ] && cp -a ./node_modules/bourbon/app/assets/stylesheets/. ./scss/bourbon",
+		"css:install-goldilocks": "[ -d ./bower_components/goldilocks-approach-sass ] && install goldilocks-approach-sass && cp -a ./bower_components/goldilocks-approach-sass/stylesheets/scss/. ./scss;",
 		"start": "node server.js & npm run watch",
 		"watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",
 		"watch:css": "watch 'npm run build:css' ./scss/",
-		"watchify:js": "watchify ./js/app.js --extension=.jsx -t babelify -o ./dist/app.js -v",
-		"build:css": "node ./node_modules/.bin/node-sass ./scss/style.scss ./dist/style.css; csso ./dist/style.css ./dist/style.min.css; echo '------sassy------'",
-		"ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore",
+		"watchify:js": "watchify ./js/app.js --extension=.jsx -t babelify -o ./public/dist/app.js -v",
+		"build:css": "node ./node_modules/.bin/node-sass ./scss/style.scss ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
+		"ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'bower_components' >> .gitignore",
 		"test": "mocha --compilers js:babel/register ./js/test/test.js; echo '------tested------'",
 		"env": "env"
 		},
@@ -39,17 +39,16 @@
 		"jshint": "latest",
 
 		"es5-shim": "latest",
-		"neo-zepto": "latest",
+		"jquery": "latest",
 		"modernizr": "latest",
 
 		"node-sass": "latest",
 		"csso": "latest",
-		"normalize-scss": "latest",
 		"bourbon": "latest",
 		"neat": "latest"
 	},
 	"browserify": {
-		"extension": [ ".jsx" ]
+		"extension": [ ".js", ".jsx" ]
 	},
 	"author": "Ben Magnant-Brown",
 	"license": "MIT"

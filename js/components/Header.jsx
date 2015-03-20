@@ -27,20 +27,20 @@ class Header extends React.Component {
 				var userinfo
 				if (this.state.user) {
 						userinfo = (
-								<div className="header-user">
+								<div className="user">
 										<h6>{this.state.user.get('username')}</h6>
 										<h6 onClick={this.logout}>Logout</h6>
 								</div>
 						)
 				} else {
 						userinfo = (
-								<div className="header-user">
-										<Link to="login">
-												<h6>Login</h6>
-										</Link>
-										<Link to="register">
-												<h6>Register</h6>
-										</Link>
+								<div className="user">
+										<h6>
+												<Link to="login">Login</Link>
+										</h6>
+										<h6>
+												<Link to="register">Register</Link>
+										</h6>
 								</div>
 						)
 				}

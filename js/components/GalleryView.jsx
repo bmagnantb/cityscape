@@ -86,14 +86,22 @@ class Photo extends React.Component {
 		}
 
 		render() {
-				var owner_url = `https://www.flickr.com/people/${this.props.photo.owner}`
+				var owner_url = this.props.photo.owner && `https://www.flickr.com/people/${this.props.photo.owner}`
+
 				return (
 						<div className="photo">
-								<img src={this.props.photo.url_m} />
-								<h4 onClick={this.details.bind(this)}>{this.props.photo.title}</h4>
-								<a href={owner_url} target="_blank">
-										<h4>{this.props.photo.ownername}</h4>
-								</a>
+								<img src={this.props.photo.url_m} onClick={this.details.bind(this)} />
+
+								{this.props.photo.title ?
+										<h4 onClick={this.details.bind(this)}>{this.props.photo.title}</h4> :
+										null}
+								{owner_url ?
+										<a href={owner_url} target="_blank">
+												{this.props.photo.ownername ?
+														<h4>{this.props.photo.ownername}</h4> :
+														null}
+										</a> :
+										null}
 						</div>
 				)
 		}

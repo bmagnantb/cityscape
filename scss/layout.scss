@@ -4,17 +4,29 @@
 
 @media screen and (min-width: $baby_bear_max_width + 2 * $leading) {
 
-	#container {
-		padding: $leading;
-		margin: 0 auto;
-		max-width: $mummy_bear_max_width;
-	}
+			#container {
+				padding: $leading;
+				margin: 0 auto;
+				max-width: 90%;
+			}
+
 }
 
 /* 9. CUSTOM LAYOUT & TYPOGRAPHY (Mummy bear)
  * ---------------------------------------------------------------------------------------- */
 @media screen and (min-width: $daddy_bear_max_width) {
-	#container {
-		width: $daddy_bear_max_width;
-	}
+
+		#container {
+			width: 90%;
+			max-width: none;
+		}
+
+		.gallery {
+				.photo {
+						padding: 0 1rem;
+						width: 50%;
+						display: inline-block;
+						vertical-align: middle;
+				}
+		}
 }

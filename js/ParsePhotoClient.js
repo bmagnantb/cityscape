@@ -1,6 +1,6 @@
 ;(function(exports) {
 
-var $ = require('zepto')
+var $ = require('jquery')
 var Parse = require('Parse').Parse
 var galleryActions = require('./actions/GalleryActions').galleryActions
 var galleryStore = require('./stores/GalleryStore').galleryStore

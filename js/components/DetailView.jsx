@@ -32,14 +32,25 @@ class DetailView extends React.Component {
 				if (this.state.photo) {
 						var ownerUrl = `https://www.flickr.com/people/${photo.owner.path_alias}`
 						return (
-								<main>
+								<main className="photo-detail">
 										<a href={photo.urls.url[0]._content} target="_blank"><h2>{photo.title._content}</h2></a>
 										<a href={ownerUrl} target="_blank"><h4>{photo.owner.username}</h4></a>
 										<a href={ownerUrl} target="_blank"><h6>{photo.owner.realname}</h6></a>
 										<img src={this.state.photoUrl('b')} />
-										<h5>{photo.description}</h5>
-										<h6>{photo.location.locality._content}, {photo.location.country._content}</h6>
-										<h6>Taken {photo.dates.taken}</h6>
+
+										{photo.description ? <h5>{photo.description}</h5> : null}
+
+										{photo.location && photo.location.locality ?
+												<h6>{photo.location.locality._content}</h6> :
+												null}
+
+										{photo.location && photo.location.country ?
+												<h6>{photo.location.country._content}</h6> :
+												null}
+
+										<h6>Taken {photo.dates && photo.dates.taken ?
+												<span>{photo.dates.taken}</span> :
+												null}</h6>
 								</main>
 						)
 				} else {

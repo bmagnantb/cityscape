@@ -13,7 +13,7 @@ class AppView extends React.Component {
 
 		render() {
 				return (
-						<div>
+						<div className="app">
 								<Header />
 									<RouteHandler {...this.props} />
 								<Footer />

@@ -24,6 +24,8 @@
 
 @import "bear_defaults";
 @import "bourbon/_bourbon.scss";
+@import url("http://fonts.googleapis.com/css?family=Lato:100,300,400,700,900");
+@import url("http://fonts.googleapis.com/css?family=Merriweather:400,300,700");
 
 /* 1. RESET
  * ---------------------------------------------------------------------------------------- */
@@ -45,6 +47,10 @@ article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, 
 html {
 	overflow-y: scroll;
 	background: white;
+}
+
+*, *:before, *:after {
+		box-sizing: border-box;
 }
 
 /* /ht Ethan Marcotte - http: //front.ie/l8rJaA */
@@ -125,33 +131,43 @@ a:active, a:focus {
 /* 5. GLOBAL LAYOUT & GLOBAL CUSTOM TYPOGRAPHY
  * ---------------------------------------------------------------------------------------- */
 
+ body {
+ 		font-family: Lato;
+ }
+
+ h1, h2, h3, h4, h5, h6 {
+ 		font-family: Merriweather;
+ 		font-weight: 300;
+ }
+
  h1 {
- 	font-size: $leading * 3;
+ 	font-size: $leading * 2.5;
  }
 
  h2 {
- 	font-size: $leading * 2;
+ 	font-size: $leading * 1.8;
  }
 
  h3 {
- 	font-size: $leading * 1.7;
+ 	font-size: $leading * 1.5;
  }
 
  h4 {
- 	font-size: $leading * 1.4;
- }
-
- h5 {
  	font-size: $leading * 1.2;
  }
 
+ h5 {
+ 	font-size: $leading * 1;
+ }
+
  h6 {
- 	font-size: $leading;
+ 	font-size: $leading * .8;
  }
 
 header, main, footer {
 	text-align: center;
 }
+
 
 
 /* 6. CUSTOM LAYOUT & TYPOGRAPHY (Baby bear)
@@ -160,11 +176,47 @@ header, main, footer {
 	padding: $leading / 2;
 	max-width: $baby_bear_max_width;
 	margin: auto;
+	position: relative;
 }
 
 aside {
 	width: 100%;
 }
+
+header {
+		h1 {
+			margin-bottom: 0;
+		}
+
+		.user {
+				position: absolute;
+				right: 0;
+				top: $leading / 2;
+
+				h6 {
+						display: inline-block;
+						padding: 1em;
+				}
+		}
+}
+
+.gallery {
+		form {
+				margin: 2em 0 .2em;
+				input {
+						font-size: 1rem;
+						border: 1px solid #999;
+						border-radius: 1em;
+						outline: none;
+				}
+		}
+
+		.tags {
+				margin-bottom: 2em;
+		}
+}
+
+
 
 /* 7. BROWSER AND NON-SEMANTIC STYLING
  * ---------------------------------------------------------------------------------------- */

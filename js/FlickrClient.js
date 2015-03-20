@@ -1,6 +1,6 @@
 ;(function(exports) {
 
-var $ = require('neo-zepto');
+var $ = require('jquery')
 var flickrMakeUrl = require('./FlickrMakeUrl').flickrMakeUrl
 
 class FlickrClient {

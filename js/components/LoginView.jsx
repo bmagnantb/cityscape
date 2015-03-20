@@ -15,7 +15,7 @@ class LoginView extends React.Component {
 
 		render() {
 				return (
-						<main>
+						<main className="login">
 								<h4>Login</h4>
 								<form onSubmit={this.login.bind(this)}>
 										<input type="username" ref="username" placeholder="username" />

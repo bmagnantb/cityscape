@@ -25,7 +25,7 @@ class RegisterView extends React.Component {
 
 		render() {
 				return (
-						<main>
+						<main className="register">
 								<h3>Register</h3>
 								<form onSubmit={this.register.bind(this)}>
 										<input type="text" ref="username" placeholder="username" />
