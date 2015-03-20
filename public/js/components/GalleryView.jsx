@@ -25,8 +25,8 @@ class GalleryView extends React.Component {
 		}
 
 		componentWillUnmount() {
-				userStore.unlisten(this.onUserChange)
-				galleryStore.unlisten(this.onGalleryChange)
+				userStore.unlisten(this.onUserChange.bind(this))
+				galleryStore.unlisten(this.onGalleryChange.bind(this))
 		}
 
 		onGalleryChange() {

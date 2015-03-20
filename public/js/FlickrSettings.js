@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 // Construct URL for Flickr API
-// METHOD AND API_KEY ARE REQUIRED FOR ANY REQUEST
+// METHOD IS REQUIRED FOR ANY REQUEST
 // other options may or may not be required based on chosen method, refer to Flickr API docs
 
 // allows gradual build of request URL if settings are pulled from different areas of app
@@ -10,11 +10,9 @@
 // extras and tags will never be overwritten, only added to existing extras or tags
 // passing no arguments builds and returns url as string
 
-function url(settings) {
+function options(settings) {
 
-		function build(settings2) {
-
-				var urlBuild
+		function add(settings2) {
 
 				// if 'options' given as argument, return current settings
 				if (settings === 'options' || settings2 === 'options') {
@@ -72,14 +70,14 @@ function url(settings) {
 								}
 						}
 
-						return build
+						return add
 				}
 
 				// final settings assumed
 				else {
 						// throw if either method or api_key are not defined, required settings for request
-						if (!settings.method || !settings.api_key) {
-								throw new Error('method and api_key are required for Flickr requests')
+						if (!settings.method) {
+								throw new Error('method is required for Flickr requests')
 						}
 
 						// if format undefined, default to json
@@ -87,23 +85,15 @@ function url(settings) {
 						// if nojsoncallback undefined, default to no callback
 						settings.format === 'json' && !settings.nojsoncallback ? settings.nojsoncallback = '1' : null
 
-						// construct URL with finalized settings
-						urlBuild = `https://api.flickr.com/services/rest/?&method=${settings.method}&api_key=${settings.api_key}`
-
-						for (var key in settings) {
-								settings[key] instanceof Array ? settings[key].join(',') : null
-								urlBuild += `&${key}=${settings[key]}`
-						}
-
-						return urlBuild
+						return settings
 				}
 		}
 
-		return build
+		return add
 
 }
 
 
-exports.flickrMakeUrl = url
+exports.options = options
 
 })(typeof module === 'object' ? module.exports : window)

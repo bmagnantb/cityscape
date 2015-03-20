@@ -19,7 +19,7 @@ class DetailView extends React.Component {
 		}
 
 		componentWillUnmount() {
-				detailStore.unlisten(this.onChange)
+				detailStore.unlisten(this.onChange.bind(this))
 				detailActions.resetState()
 		}
 

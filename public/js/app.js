@@ -11,7 +11,6 @@ function app() {
 		console.log('app time')
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
-		var flickrKey = 'eeacdafae711c1ae98c0342fa323569a'
 
 		var router = require('./Router').router
 
@@ -22,6 +21,6 @@ function app() {
 						router.transitionTo('home')
 						return
 				}
-				React.render(<Handler params={params} router={this} flickrKey={flickrKey} />, document.getElementById('container'))
+				React.render(<Handler params={params} router={this} />, document.getElementById('container'))
 		})
 }

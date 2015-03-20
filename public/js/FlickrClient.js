@@ -1,20 +1,24 @@
 ;(function(exports) {
 
 var $ = require('jquery')
-var flickrMakeUrl = require('./FlickrMakeUrl').flickrMakeUrl
+var flickrOptions = require('./FlickrSettings').options
 
 class FlickrClient {
 		// register with Flickr for api-key
 		// tags is array
-		constructor(url) {
-				this.url = url
+		constructor(options) {
+				this.options = options
 		}
 
 		request(settings) {
-				if (this.url instanceof Function) {
-						return $.get(this.url(settings)())
+				var resp
+				if (this.options instanceof Function) {
+						resp = $.get('/photos', this.options(settings)())
+						console.log(resp)
+						return resp
 				}
-				return $.get(this.url)
+				resp = $.get('/photos', this.options)
+				return resp
 		}
 }
 
@@ -46,8 +50,8 @@ var detailSettings = {
 
 exports.FC = FlickrClient
 
-exports.fcGallery = new FlickrClient(flickrMakeUrl(gallerySettings))
+exports.fcGallery = new FlickrClient(flickrOptions(gallerySettings))
 
-exports.fcDetail = new FlickrClient(flickrMakeUrl(detailSettings))
+exports.fcDetail = new FlickrClient(flickrOptions(detailSettings))
 
 })(typeof module === 'object' ? module.exports : window)
