@@ -1,26 +1,20 @@
 ;(function(exports) {
 
-// Construct URL for Flickr API
-// METHOD IS REQUIRED FOR ANY REQUEST
+// Make settings for Flickr API
+// METHOD IS REQUIRED FOR ANY REQUEST (and api key, keep it server-side)
 // other options may or may not be required based on chosen method, refer to Flickr API docs
 
-// allows gradual build of request URL if settings are pulled from different areas of app
-// first call must provide settings
-// on subsequent calls, additional settings will be added and any repeat settings are overwritten
-// extras and tags will never be overwritten, only added to existing extras or tags
-// passing no arguments builds and returns url as string
+// allows gradual build of request settings if pulled from different areas of app
+// first call always returns function for continuing settings change
+// on subsequent calls, any object as argument will add contents to settings and function will return function for continuing settings change
+//additional settings will be added, any repeated settings are overwritten, prepend key with '-' to remove that setting, remove tags and extras by adding '-' to array members, remove all tags and extra by prepending with '--'
 
 function options(settings) {
 
 		function add(settings2) {
 
-				// if 'options' given as argument, return current settings
-				if (settings === 'options' || settings2 === 'options') {
-						return settings || settings2
-				}
-
 				// if argument is object, add/overwrite to original object, return function to take more settings
-				else if (typeof settings2 === 'object') {
+				if (typeof settings2 === 'object') {
 
 						if (typeof settings !== 'object') {
 								settings = {}
@@ -33,7 +27,11 @@ function options(settings) {
 								// if extras/tags is Array, join then concat with existing key, otherwise assume string
 								if (key === 'extras' || key === 'tags') {
 
-										if (!settings[key]) {
+										if (key === '--extras' || key === '--tags') {
+												delete settings[key.slice(2)]
+										}
+
+										else if (!settings[key]) {
 												if (settings2[key] instanceof Array) {
 														settings[key] = settings2[key]
 												} else {
@@ -41,7 +39,7 @@ function options(settings) {
 												}
 										}
 
-										else if (settings2[key] instanceof Array || settings2[key].split(' ') instanceof Array) {
+										else if (settings2[key] instanceof Array || settings2[key] instanceof String) {
 												if (settings2[key] instanceof String) {
 														settings2[key] = settings2[key].split(' ')
 												}
