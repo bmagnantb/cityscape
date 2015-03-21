@@ -19,6 +19,11 @@
     "env": "env"
   },
   "dependencies": {
+    "express": "latest",
+    "parse": "latest",
+    "request": "^2.53.0",
+  },
+  "devDependencies": {
     "alt": "latest",
     "babel": "latest",
     "babelify": "latest",
@@ -27,17 +32,14 @@
     "chai": "latest",
     "csso": "latest",
     "es5-shim": "latest",
-    "express": "latest",
-    "jquery": "latest",
     "jshint": "latest",
+    "jquery": "latest",
     "mocha": "latest",
     "modernizr": "latest",
     "neat": "latest",
     "node-sass": "latest",
     "parallelshell": "latest",
-    "parse": "latest",
     "react": "latest",
-    "request": "^2.53.0",
     "uglifyify": "latest",
     "watch": "latest",
     "watchify": "latest"
