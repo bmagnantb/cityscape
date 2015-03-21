@@ -4,8 +4,6 @@
   "description": "user-voted city skyline photo gallery",
   "main": "server.js",
   "scripts": {
-    "preinstall": "rm -rf node_modules",
-    "postinstall": "[ ! -d ./public/scss ] && mkdir ./public/scss && touch ./public/scss/style.scss; [ ! -d ./public ] && mkdir ./public; [ ! -d ./public/dist ] && mkdir ./public/dist && touch ./public/dist/style.css && touch ./public/dist/app.js; [ ! -d ./public/js ] && mkdir ./public/js && touch ./public/js/app.js; [ ! -d ./public/js/test ] && mkdir ./public/js/test && touch ./public/js/test/test.js; [ ! -d ./server.js ] && touch ./server.js; [ ! -d ./public/index.html ] && touch ./public/index.html; echo 'dir/files created'; npm run ignores",
     "start": "node server.js & npm run watch",
     "watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",
     "watch:css": "watch 'npm run build:css' ./public/scss/",
