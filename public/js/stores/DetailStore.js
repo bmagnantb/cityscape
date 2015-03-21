@@ -1,7 +1,7 @@
 ;(function(exports) {
 
-var alt = require('../alt-app').alt
-var detailActions = require('../actions/DetailActions').detailActions
+var { alt } = require('../alt-app')
+var { detailActions } = require('../actions/DetailActions')
 
 class DetailStore {
 		constructor() {

@@ -2,9 +2,9 @@
 
 var React = require('react')
 var Parse = require('Parse')
-var Link = require('../react-router').Link
-var userActions = require('../actions/UserActions').userActions
-var userStore = require('../stores/UserStore').userStore
+var { Link } = require('../react-router')
+var { userActions } = require('../actions/UserActions')
+var { userStore } = require('../stores/UserStore')
 
 class LoginView extends React.Component {
 		constructor() {

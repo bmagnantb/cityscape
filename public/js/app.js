@@ -1,9 +1,9 @@
 "use strict"
 
 // require files?
-var Parse = require('parse').Parse
+var { Parse } = require('parse')
 var React = require('react')
-var GalleryView = require('./components/GalleryView').GalleryView
+var { GalleryView } = require('./components/GalleryView')
 
 window.onload = app
 
@@ -15,7 +15,7 @@ function app() {
 		var router = require('./Router').router
 
 		router.run(function(Handler, state) {
-				var user = Parse.User.current()
+				var user = Parse.User.current() || ''
 				var { params, path } = state
 				if (user && (path === '/login' || path === '/register')) {
 						router.transitionTo('home')

@@ -1,9 +1,9 @@
 ;(function(exports) {
 
 var React = require('react')
-var Link = require('../react-router').Link
-var userStore = require('../stores/UserStore').userStore
-var userActions = require('../actions/UserActions').userActions
+var { Link } = require('../react-router')
+var { userStore } = require('../stores/UserStore')
+var { userActions } = require('../actions/UserActions')
 
 class Header extends React.Component {
 		constructor() {

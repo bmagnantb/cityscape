@@ -1,8 +1,8 @@
 ;(function(exports) {
 
-var alt = require('../alt-app').alt
-var Parse = require('parse').Parse
-var userActions = require('../actions/UserActions').userActions
+var { alt } = require('../alt-app')
+var { Parse } = require('parse')
+var { userActions } = require('../actions/UserActions')
 
 class UserStore {
 		constructor() {

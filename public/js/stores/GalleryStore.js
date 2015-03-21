@@ -1,12 +1,13 @@
 ;(function(exports) {
 
-var alt = require('../alt-app').alt
-var galleryActions = require('../actions/GalleryActions').galleryActions
+var { alt } = require('../alt-app')
+var { galleryActions } = require('../actions/GalleryActions')
 
 class GalleryStore {
 		constructor() {
 				this.photo = []
 				this.page = null
+				this.pages = null
 				this.tags = []
 				this.extras = []
 				this.photoIds = []
@@ -18,6 +19,7 @@ class GalleryStore {
 		}
 
 		getPhotos(data) {
+				console.log(data)
 				for (var key in data) {
 						this[key] = data[key]
 				}

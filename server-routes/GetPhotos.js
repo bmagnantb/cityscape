@@ -13,6 +13,7 @@ Parse.PhotoCollection = Parse.Collection.extend({
 })
 
 function photos(req, res) {
+		var user = req.params.user
 		req.query.api_key = flickrApiKey
 		var url = 'https://api.flickr.com/services/rest?',
 				counter = 0
@@ -38,11 +39,8 @@ function photos(req, res) {
 						photo_ids.push(val.id)
 				})
 
-				console.log(photo_ids)
-
 				query.containedIn('photo_id', photo_ids).find({
 						success: function(result) {
-								console.log(result)
 								photoCollection = new Parse.PhotoCollection(result)
 								photo_ids.forEach(function(val) {
 										if (photoCollection.pluck('photo_id').indexOf(val) === -1) {

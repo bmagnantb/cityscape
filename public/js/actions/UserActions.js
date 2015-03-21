@@ -1,7 +1,7 @@
 ;(function(exports) {
 
-var alt = require('../alt-app').alt
-var Parse = require('parse').Parse
+var { alt } = require('../alt-app')
+var { Parse } = require('parse')
 
 class UserActions {
 		current() {
@@ -10,7 +10,6 @@ class UserActions {
 		}
 
 		login(username, password, router) {
-				console.log(username, password, router)
 				Parse.User.logIn(username, password, {
 						success: (user) => {
 								this.dispatch(user)

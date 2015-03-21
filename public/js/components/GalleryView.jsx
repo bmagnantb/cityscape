@@ -1,10 +1,10 @@
 ;(function(exports) {
 
 var React = require('react')
-var galleryActions = require('../actions/GalleryActions').galleryActions
-var galleryStore = require('../stores/GalleryStore').galleryStore
-var userActions = require('../actions/UserActions').userActions
-var userStore = require('../stores/UserStore').userStore
+var { galleryActions } = require('../actions/GalleryActions')
+var { galleryStore } = require('../stores/GalleryStore')
+var { userActions } = require('../actions/UserActions')
+var { userStore } = require('../stores/UserStore')
 
 class GalleryView extends React.Component {
 		constructor() {
@@ -15,7 +15,7 @@ class GalleryView extends React.Component {
 		}
 
 		componentWillMount() {
-				galleryActions.getPhotos({api_key: this.props.flickrKey})
+				galleryActions.getPhotos({api_key: this.props.flickrKey}, this.props.user)
 				userActions.current()
 		}
 
@@ -58,16 +58,35 @@ class GalleryView extends React.Component {
 								<div className="tags">
 										{tags}
 								</div>
-								{photos}
+								<div className="photos">
+										{photos}
+								</div>
+								<div>
+										{this.state.page > 1 ?
+												<h6 onClick={this.prevPage.bind(this)}>Prev</h6> :
+												null}
+
+										<h6>{this.state.page}</h6>
+
+										{this.state.page < this.state.pages ?
+												<h6 onClick={this.nextPage.bind(this)}>Next</h6> :
+												null}
+								</div>
 						</main>
 				)
+		}
+
+		renderLoading() {
+				return (
+							<div>Loading</div>
+					)
 		}
 
 		search(e) {
 				e.preventDefault()
 				var tags = React.findDOMNode(this.refs.search).value.split(' ')
 				galleryActions.setTags(tags)
-				galleryActions.getPhotos({tags: tags})
+				galleryActions.getPhotos({tags: tags}, this.state.user)
 				React.findDOMNode(this.refs.search).value = ''
 		}
 
@@ -75,7 +94,19 @@ class GalleryView extends React.Component {
 				console.log(e.target.parentNode.id.slice(3))
 				var tag = `-${e.target.parentNode.id.slice(3)}`.split()
 				galleryActions.setTags(tag)
-				galleryActions.getPhotos({tags: tag})
+				galleryActions.getPhotos({tags: tag}, this.state.user)
+		}
+
+		prevPage() {
+				galleryActions.getPhotos({page: this.state.page - 1})
+				document.documentElement.scrollTop = 0
+				document.body.scrollTop = 0
+		}
+
+		nextPage() {
+				galleryActions.getPhotos({page: this.state.page + 1})
+				document.documentElement.scrollTop = 0
+				document.body.scrollTop = 0
 		}
 }
 
@@ -91,15 +122,15 @@ class Photo extends React.Component {
 				return (
 						<div className="photo">
 								<img src={this.props.photo.url_m} onClick={this.details.bind(this)} />
+								<h6 ref="vote" onClick={this.vote.bind(this)}>Yes</h6>
+								<h6>{this.props.photo.total_votes}</h6>
 
 								{this.props.photo.title ?
 										<h4 onClick={this.details.bind(this)}>{this.props.photo.title}</h4> :
 										null}
-								{owner_url ?
+								{owner_url && this.props.photo.ownername ?
 										<a href={owner_url} target="_blank">
-												{this.props.photo.ownername ?
-														<h4>{this.props.photo.ownername}</h4> :
-														null}
+												<h4>{this.props.photo.ownername}</h4>
 										</a> :
 										null}
 						</div>
@@ -108,6 +139,10 @@ class Photo extends React.Component {
 
 		details() {
 				this.props.router.transitionTo('photo', {id: this.props.photo.id})
+		}
+
+		vote() {
+				galleryActions.vote(this.props.photo.id, this.props.user)
 		}
 }
 

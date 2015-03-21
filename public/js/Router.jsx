@@ -4,12 +4,12 @@ var React = require('react')
 // modified react-router for React v0.13 compatibility
 // clone from git@github.com:nhunzaker/react-router.git
 var Router = require('./react-router')
-var AppView = require('./components/AppView').AppView
-var GalleryView = require('./components/GalleryView').GalleryView
-var LoginView = require('./components/LoginView').LoginView
-var RegisterView = require('./components/RegisterView').RegisterView
-var DetailView = require('./components/DetailView').DetailView
-var PassEmailView = require('./components/PassEmailView').PassEmailView
+var { AppView } = require('./components/AppView')
+var { GalleryView } = require('./components/GalleryView')
+var { LoginView } = require('./components/LoginView')
+var { RegisterView } = require('./components/RegisterView')
+var { DetailView } = require('./components/DetailView')
+var { PassEmailView } = require('./components/PassEmailView')
 
 var DefaultRoute = Router.DefaultRoute
 var Route = Router.Route

@@ -1,8 +1,8 @@
 ;(function(exports) {
 
 var React = require('react')
-var detailStore = require('../stores/DetailStore').detailStore
-var detailActions = require('../actions/DetailActions').detailActions
+var { detailStore } = require('../stores/DetailStore')
+var { detailActions } = require('../actions/DetailActions')
 
 class DetailView extends React.Component {
 		constructor() {

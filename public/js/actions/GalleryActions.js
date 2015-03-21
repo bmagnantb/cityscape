@@ -1,17 +1,23 @@
 ;(function(exports) {
 
-var alt = require('../alt-app').alt
-var fcGallery = require('../FlickrClient').fcGallery
+var { alt } = require('../alt-app')
+var { GalleryClient } = require('../ServerClient')
 
 class GalleryActions {
 		constructor() {
 				this.generateActions('setTags')
 		}
 
-		getPhotos(options) {
-				console.log(options)
-				fcGallery.request(options)
+		getPhotos(options, user) {
+				GalleryClient.requestPhotos(options, user)
 				.then((data) => this.dispatch(data.photos))
+		}
+
+		vote(photoId, user) {
+				GalleryClient.vote(photoId, user).then((promise) => {
+						console.log(promise)
+						this.dispatch()
+				})
 		}
 }
 

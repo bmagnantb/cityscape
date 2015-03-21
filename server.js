@@ -2,7 +2,8 @@ function startServer() {
 		var express = require('express'),
 				Parse = require('parse').Parse,
 				app = express(),
-				photosRoute = require('./server-routes/photos')
+				getPhotos = require('./server-routes/GetPhotos'),
+				putVote = require('./server-routes/PutVote')
 
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
@@ -11,7 +12,9 @@ function startServer() {
 		app.use(express.static(__dirname + '/public'))
 
 
-		app.get('/:user?/photos', photosRoute)
+		app.get('/:user?/photos', getPhotos)
+
+		app.post('/:user/photo/:id', putVote)
 
 
 		app.listen(3000, function() {

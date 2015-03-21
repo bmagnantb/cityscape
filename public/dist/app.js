@@ -46994,68 +46994,7 @@ module.exports = warning;
 },{"./emptyFunction":"/Users/ben/Github Projects/skylines/node_modules/react/lib/emptyFunction.js","_process":"/Users/ben/Github Projects/skylines/node_modules/browserify/node_modules/process/browser.js"}],"/Users/ben/Github Projects/skylines/node_modules/react/react.js":[function(require,module,exports){
 module.exports = require('./lib/React');
 
-},{"./lib/React":"/Users/ben/Github Projects/skylines/node_modules/react/lib/React.js"}],"/Users/ben/Github Projects/skylines/public/js/FlickrClient.js":[function(require,module,exports){
-"use strict";
-
-var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
-
-;(function (exports) {
-
-		var $ = require("jquery");
-		var flickrOptions = require("./FlickrSettings").options;
-
-		var FlickrClient = (function () {
-				function FlickrClient(options) {
-						_classCallCheck(this, FlickrClient);
-
-						this.options = options;
-						this.user = "";
-				}
-
-				_createClass(FlickrClient, {
-						request: {
-								value: function request(settings) {
-										var resp;
-										if (this.options instanceof Function) {
-												resp = $.get("/photos", this.options(settings)());
-												console.log(resp);
-												return resp;
-										}
-										resp = $.get("/photos", this.options);
-										return resp;
-								}
-						}
-				});
-
-				return FlickrClient;
-		})();
-
-		// settings for Flickr url maker
-		var gallerySettings = {
-				method: "flickr.photos.search",
-				content_type: "1",
-				extras: ["url_m", "owner_name"],
-				per_page: "30",
-				sort: "relevance",
-				tag_mode: "all",
-				tags: ["skyline", "city", "buildings"]
-		};
-
-		var detailSettings = {
-				method: "flickr.photos.getInfo",
-				extras: ["url_m"]
-		};
-
-		exports.FC = FlickrClient;
-
-		exports.fcGallery = new FlickrClient(flickrOptions(gallerySettings));
-
-		exports.fcDetail = new FlickrClient(flickrOptions(detailSettings));
-})(typeof module === "object" ? module.exports : window);
-
-},{"./FlickrSettings":"/Users/ben/Github Projects/skylines/public/js/FlickrSettings.js","jquery":"/Users/ben/Github Projects/skylines/node_modules/jquery/dist/jquery.js"}],"/Users/ben/Github Projects/skylines/public/js/FlickrSettings.js":[function(require,module,exports){
+},{"./lib/React":"/Users/ben/Github Projects/skylines/node_modules/react/lib/React.js"}],"/Users/ben/Github Projects/skylines/public/js/FlickrSettings.js":[function(require,module,exports){
 "use strict";
 
 ;(function (exports) {
@@ -47152,12 +47091,30 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		// modified react-router for React v0.13 compatibility
 		// clone from git@github.com:nhunzaker/react-router.git
 		var Router = require("./react-router");
-		var AppView = require("./components/AppView").AppView;
-		var GalleryView = require("./components/GalleryView").GalleryView;
-		var LoginView = require("./components/LoginView").LoginView;
-		var RegisterView = require("./components/RegisterView").RegisterView;
-		var DetailView = require("./components/DetailView").DetailView;
-		var PassEmailView = require("./components/PassEmailView").PassEmailView;
+
+		var _require = require("./components/AppView");
+
+		var AppView = _require.AppView;
+
+		var _require2 = require("./components/GalleryView");
+
+		var GalleryView = _require2.GalleryView;
+
+		var _require3 = require("./components/LoginView");
+
+		var LoginView = _require3.LoginView;
+
+		var _require4 = require("./components/RegisterView");
+
+		var RegisterView = _require4.RegisterView;
+
+		var _require5 = require("./components/DetailView");
+
+		var DetailView = _require5.DetailView;
+
+		var _require6 = require("./components/PassEmailView");
+
+		var PassEmailView = _require6.PassEmailView;
 
 		var DefaultRoute = Router.DefaultRoute;
 		var Route = Router.Route;
@@ -47181,7 +47138,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.router = router;
 })(typeof module === "object" ? module.exports : window);
 
-},{"./components/AppView":"/Users/ben/Github Projects/skylines/public/js/components/AppView.jsx","./components/DetailView":"/Users/ben/Github Projects/skylines/public/js/components/DetailView.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/public/js/components/GalleryView.jsx","./components/LoginView":"/Users/ben/Github Projects/skylines/public/js/components/LoginView.jsx","./components/PassEmailView":"/Users/ben/Github Projects/skylines/public/js/components/PassEmailView.jsx","./components/RegisterView":"/Users/ben/Github Projects/skylines/public/js/components/RegisterView.jsx","./react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js":[function(require,module,exports){
+},{"./components/AppView":"/Users/ben/Github Projects/skylines/public/js/components/AppView.jsx","./components/DetailView":"/Users/ben/Github Projects/skylines/public/js/components/DetailView.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/public/js/components/GalleryView.jsx","./components/LoginView":"/Users/ben/Github Projects/skylines/public/js/components/LoginView.jsx","./components/PassEmailView":"/Users/ben/Github Projects/skylines/public/js/components/PassEmailView.jsx","./components/RegisterView":"/Users/ben/Github Projects/skylines/public/js/components/RegisterView.jsx","./react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/ServerClient.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47190,8 +47147,82 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var alt = require("../alt-app").alt;
-		var fcDetail = require("../FlickrClient").fcDetail;
+		var $ = require("jquery");
+		var flickrOptions = require("./FlickrSettings").options;
+
+		var _require = require("parse");
+
+		var Parse = _require.Parse;
+
+		var ServerClient = (function () {
+				function ServerClient(options) {
+						_classCallCheck(this, ServerClient);
+
+						this.options = options;
+				}
+
+				_createClass(ServerClient, {
+						requestPhotos: {
+								value: function requestPhotos(settings, user) {
+										console.log(user);
+										var username;
+										user ? username = "" + user.get("username") + "/" : username = "";
+										if (this.options instanceof Function) {
+												return $.get("/" + username + "photos", this.options(settings)());
+										}
+										return $.get("/" + username + "photos", this.options);
+								}
+						},
+						vote: {
+								value: function vote(photoId, user) {
+										var username;
+										user ? username = user.get("username") : username = "";
+										return $.post("/" + username + "/photo/" + photoId);
+								}
+						}
+				});
+
+				return ServerClient;
+		})();
+
+		// settings for Flickr url maker
+		var gallerySettings = {
+				method: "flickr.photos.search",
+				content_type: "1",
+				extras: ["url_m", "owner_name"],
+				per_page: "30",
+				sort: "relevance",
+				tag_mode: "all",
+				tags: ["skyline", "city", "buildings"]
+		};
+
+		var detailSettings = {
+				method: "flickr.photos.getInfo",
+				extras: ["url_m"]
+		};
+
+		exports.ServerClient = ServerClient;
+
+		exports.GalleryClient = new ServerClient(flickrOptions(gallerySettings));
+
+		exports.DetailClient = new ServerClient(flickrOptions(detailSettings));
+})(typeof module === "object" ? module.exports : window);
+
+},{"./FlickrSettings":"/Users/ben/Github Projects/skylines/public/js/FlickrSettings.js","jquery":"/Users/ben/Github Projects/skylines/node_modules/jquery/dist/jquery.js","parse":"/Users/ben/Github Projects/skylines/node_modules/parse/build/parse-latest.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+;(function (exports) {
+		var _require = require("../alt-app");
+
+		var alt = _require.alt;
+
+		var _require2 = require("../ServerClient");
+
+		var DetailClient = _require2.DetailClient;
 
 		var DetailActions = (function () {
 				function DetailActions() {
@@ -47203,7 +47234,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function getDetail(flickrKey, photoId) {
 										var _this = this;
 
-										fcDetail.request({ api_key: flickrKey, photo_id: photoId }).then(function (data) {
+										DetailClient.requestPhotos({ api_key: flickrKey, photo_id: photoId }).then(function (data) {
 												return _this.dispatch(data.photo);
 										});
 								}
@@ -47212,6 +47243,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function resetState() {
 										this.dispatch();
 								}
+						},
+						vote: {
+								value: function vote(photoId) {}
 						}
 				});
 
@@ -47221,7 +47255,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.detailActions = alt.createActions(DetailActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../FlickrClient":"/Users/ben/Github Projects/skylines/public/js/FlickrClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js":[function(require,module,exports){
+},{"../ServerClient":"/Users/ben/Github Projects/skylines/public/js/ServerClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47229,9 +47263,13 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
+		var _require = require("../alt-app");
 
-		var alt = require("../alt-app").alt;
-		var fcGallery = require("../FlickrClient").fcGallery;
+		var alt = _require.alt;
+
+		var _require2 = require("../ServerClient");
+
+		var GalleryClient = _require2.GalleryClient;
 
 		var GalleryActions = (function () {
 				function GalleryActions() {
@@ -47242,12 +47280,21 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				_createClass(GalleryActions, {
 						getPhotos: {
-								value: function getPhotos(options) {
+								value: function getPhotos(options, user) {
 										var _this = this;
 
-										console.log(options);
-										fcGallery.request(options).then(function (data) {
+										GalleryClient.requestPhotos(options, user).then(function (data) {
 												return _this.dispatch(data.photos);
+										});
+								}
+						},
+						vote: {
+								value: function vote(photoId, user) {
+										var _this = this;
+
+										GalleryClient.vote(photoId, user).then(function (promise) {
+												console.log(promise);
+												_this.dispatch();
 										});
 								}
 						}
@@ -47260,7 +47307,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.galleryActions = alt.createActions(GalleryActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../FlickrClient":"/Users/ben/Github Projects/skylines/public/js/FlickrClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js":[function(require,module,exports){
+},{"../ServerClient":"/Users/ben/Github Projects/skylines/public/js/ServerClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47268,9 +47315,13 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
+		var _require = require("../alt-app");
 
-		var alt = require("../alt-app").alt;
-		var Parse = require("parse").Parse;
+		var alt = _require.alt;
+
+		var _require2 = require("parse");
+
+		var Parse = _require2.Parse;
 
 		var UserActions = (function () {
 				function UserActions() {
@@ -47288,7 +47339,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function login(username, password, router) {
 										var _this = this;
 
-										console.log(username, password, router);
 										Parse.User.logIn(username, password, {
 												success: function (user) {
 														_this.dispatch(user);
@@ -47361,9 +47411,16 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 "use strict";
 
 // require files?
-var Parse = require("parse").Parse;
+
+var _require = require("parse");
+
+var Parse = _require.Parse;
+
 var React = require("react");
-var GalleryView = require("./components/GalleryView").GalleryView;
+
+var _require2 = require("./components/GalleryView");
+
+var GalleryView = _require2.GalleryView;
 
 window.onload = app;
 
@@ -47375,7 +47432,7 @@ function app() {
 		var router = require("./Router").router;
 
 		router.run(function (Handler, state) {
-				var user = Parse.User.current();
+				var user = Parse.User.current() || "";
 				var params = state.params;
 				var path = state.path;
 
@@ -47401,9 +47458,22 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var RouteHandler = require("../react-router").RouteHandler;
-		var Header = require("./Header").Header;
-		var Footer = require("./Footer").Footer;
+
+		var _require = require("../react-router");
+
+		var RouteHandler = _require.RouteHandler;
+
+		var _require2 = require("./Header");
+
+		var Header = _require2.Header;
+
+		var _require3 = require("./Footer");
+
+		var Footer = _require3.Footer;
+
+		var _require4 = require("../actions/UserActions");
+
+		var userActions = _require4.userActions;
 
 		var AppView = (function (_React$Component) {
 				function AppView() {
@@ -47411,6 +47481,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 						_get(Object.getPrototypeOf(AppView.prototype), "constructor", this).call(this);
 						this.state = {};
+						userActions.current();
 				}
 
 				_inherits(AppView, _React$Component);
@@ -47435,7 +47506,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.AppView = AppView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","./Footer":"/Users/ben/Github Projects/skylines/public/js/components/Footer.jsx","./Header":"/Users/ben/Github Projects/skylines/public/js/components/Header.jsx","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/DetailView.jsx":[function(require,module,exports){
+},{"../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","./Footer":"/Users/ben/Github Projects/skylines/public/js/components/Footer.jsx","./Header":"/Users/ben/Github Projects/skylines/public/js/components/Header.jsx","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/DetailView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47449,8 +47520,14 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var detailStore = require("../stores/DetailStore").detailStore;
-		var detailActions = require("../actions/DetailActions").detailActions;
+
+		var _require = require("../stores/DetailStore");
+
+		var detailStore = _require.detailStore;
+
+		var _require2 = require("../actions/DetailActions");
+
+		var detailActions = _require2.detailActions;
 
 		var DetailView = (function (_React$Component) {
 				function DetailView() {
@@ -47616,10 +47693,22 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var galleryActions = require("../actions/GalleryActions").galleryActions;
-		var galleryStore = require("../stores/GalleryStore").galleryStore;
-		var userActions = require("../actions/UserActions").userActions;
-		var userStore = require("../stores/UserStore").userStore;
+
+		var _require = require("../actions/GalleryActions");
+
+		var galleryActions = _require.galleryActions;
+
+		var _require2 = require("../stores/GalleryStore");
+
+		var galleryStore = _require2.galleryStore;
+
+		var _require3 = require("../actions/UserActions");
+
+		var userActions = _require3.userActions;
+
+		var _require4 = require("../stores/UserStore");
+
+		var userStore = _require4.userStore;
 
 		var GalleryView = (function (_React$Component) {
 				function GalleryView() {
@@ -47640,7 +47729,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										galleryActions.getPhotos({ api_key: this.props.flickrKey });
+										galleryActions.getPhotos({ api_key: this.props.flickrKey }, this.props.user);
 										userActions.current();
 								}
 						},
@@ -47702,7 +47791,39 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ className: "tags" },
 														tags
 												),
-												photos
+												React.createElement(
+														"div",
+														{ className: "photos" },
+														photos
+												),
+												React.createElement(
+														"div",
+														null,
+														this.state.page > 1 ? React.createElement(
+																"h6",
+																{ onClick: this.prevPage.bind(this) },
+																"Prev"
+														) : null,
+														React.createElement(
+																"h6",
+																null,
+																this.state.page
+														),
+														this.state.page < this.state.pages ? React.createElement(
+																"h6",
+																{ onClick: this.nextPage.bind(this) },
+																"Next"
+														) : null
+												)
+										);
+								}
+						},
+						renderLoading: {
+								value: function renderLoading() {
+										return React.createElement(
+												"div",
+												null,
+												"Loading"
 										);
 								}
 						},
@@ -47711,7 +47832,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										e.preventDefault();
 										var tags = React.findDOMNode(this.refs.search).value.split(" ");
 										galleryActions.setTags(tags);
-										galleryActions.getPhotos({ tags: tags });
+										galleryActions.getPhotos({ tags: tags }, this.state.user);
 										React.findDOMNode(this.refs.search).value = "";
 								}
 						},
@@ -47720,7 +47841,21 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										console.log(e.target.parentNode.id.slice(3));
 										var tag = ("-" + e.target.parentNode.id.slice(3)).split();
 										galleryActions.setTags(tag);
-										galleryActions.getPhotos({ tags: tag });
+										galleryActions.getPhotos({ tags: tag }, this.state.user);
+								}
+						},
+						prevPage: {
+								value: function prevPage() {
+										galleryActions.getPhotos({ page: this.state.page - 1 });
+										document.documentElement.scrollTop = 0;
+										document.body.scrollTop = 0;
+								}
+						},
+						nextPage: {
+								value: function nextPage() {
+										galleryActions.getPhotos({ page: this.state.page + 1 });
+										document.documentElement.scrollTop = 0;
+										document.body.scrollTop = 0;
 								}
 						}
 				});
@@ -47746,19 +47881,29 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"div",
 												{ className: "photo" },
 												React.createElement("img", { src: this.props.photo.url_m, onClick: this.details.bind(this) }),
+												React.createElement(
+														"h6",
+														{ ref: "vote", onClick: this.vote.bind(this) },
+														"Yes"
+												),
+												React.createElement(
+														"h6",
+														null,
+														this.props.photo.total_votes
+												),
 												this.props.photo.title ? React.createElement(
 														"h4",
 														{ onClick: this.details.bind(this) },
 														this.props.photo.title
 												) : null,
-												owner_url ? React.createElement(
+												owner_url && this.props.photo.ownername ? React.createElement(
 														"a",
 														{ href: owner_url, target: "_blank" },
-														this.props.photo.ownername ? React.createElement(
+														React.createElement(
 																"h4",
 																null,
 																this.props.photo.ownername
-														) : null
+														)
 												) : null
 										);
 								}
@@ -47766,6 +47911,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						details: {
 								value: function details() {
 										this.props.router.transitionTo("photo", { id: this.props.photo.id });
+								}
+						},
+						vote: {
+								value: function vote() {
+										galleryActions.vote(this.props.photo.id, this.props.user);
 								}
 						}
 				});
@@ -47790,9 +47940,18 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var Link = require("../react-router").Link;
-		var userStore = require("../stores/UserStore").userStore;
-		var userActions = require("../actions/UserActions").userActions;
+
+		var _require = require("../react-router");
+
+		var Link = _require.Link;
+
+		var _require2 = require("../stores/UserStore");
+
+		var userStore = _require2.userStore;
+
+		var _require3 = require("../actions/UserActions");
+
+		var userActions = _require3.userActions;
 
 		var Header = (function (_React$Component) {
 				function Header() {
@@ -47903,9 +48062,18 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var React = require("react");
 		var Parse = require("Parse");
-		var Link = require("../react-router").Link;
-		var userActions = require("../actions/UserActions").userActions;
-		var userStore = require("../stores/UserStore").userStore;
+
+		var _require = require("../react-router");
+
+		var Link = _require.Link;
+
+		var _require2 = require("../actions/UserActions");
+
+		var userActions = _require2.userActions;
+
+		var _require3 = require("../stores/UserStore");
+
+		var userStore = _require3.userStore;
 
 		var LoginView = (function (_React$Component) {
 				function LoginView() {
@@ -48017,9 +48185,18 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var React = require("react");
-		var Link = require("../react-router").Link;
-		var userActions = require("../actions/UserActions").userActions;
-		var userStore = require("../stores/UserStore").userStore;
+
+		var _require = require("../react-router");
+
+		var Link = _require.Link;
+
+		var _require2 = require("../actions/UserActions");
+
+		var userActions = _require2.userActions;
+
+		var _require3 = require("../stores/UserStore");
+
+		var userStore = _require3.userStore;
 
 		var RegisterView = (function (_React$Component) {
 				function RegisterView() {
@@ -50922,9 +51099,13 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
+		var _require = require("../alt-app");
 
-		var alt = require("../alt-app").alt;
-		var detailActions = require("../actions/DetailActions").detailActions;
+		var alt = _require.alt;
+
+		var _require2 = require("../actions/DetailActions");
+
+		var detailActions = _require2.detailActions;
 
 		var DetailStore = (function () {
 				function DetailStore() {
@@ -50972,9 +51153,13 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
+		var _require = require("../alt-app");
 
-		var alt = require("../alt-app").alt;
-		var galleryActions = require("../actions/GalleryActions").galleryActions;
+		var alt = _require.alt;
+
+		var _require2 = require("../actions/GalleryActions");
+
+		var galleryActions = _require2.galleryActions;
 
 		var GalleryStore = (function () {
 				function GalleryStore() {
@@ -50982,6 +51167,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 						this.photo = [];
 						this.page = null;
+						this.pages = null;
 						this.tags = [];
 						this.extras = [];
 						this.photoIds = [];
@@ -50997,6 +51183,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function getPhotos(data) {
 										var _this = this;
 
+										console.log(data);
 										for (var key in data) {
 												this[key] = data[key];
 										}
@@ -51039,10 +51226,17 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
+		var _require = require("../alt-app");
 
-		var alt = require("../alt-app").alt;
-		var Parse = require("parse").Parse;
-		var userActions = require("../actions/UserActions").userActions;
+		var alt = _require.alt;
+
+		var _require2 = require("parse");
+
+		var Parse = _require2.Parse;
+
+		var _require3 = require("../actions/UserActions");
+
+		var userActions = _require3.userActions;
 
 		var UserStore = (function () {
 				function UserStore() {
