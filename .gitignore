@@ -2,4 +2,4 @@ node_modules
 .DS_Store
 npm-debug/
 ./js/react-router-oldcustom/
-./js/react-router./js/react-router-oldcustom/
+./js/react-router

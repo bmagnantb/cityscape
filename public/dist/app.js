@@ -47176,7 +47176,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						vote: {
 								value: function vote(photoId, user) {
 										var username;
-										user ? username = user.get("username") : username = "";
+										if (!user) {
+												console.log("user not logged in");
+												return;
+										}
+										user.get("emailVerified") ? username = user.get("username") : username = undefined;
 										return $.post("/" + username + "/photo/" + photoId);
 								}
 						}
@@ -47365,9 +47369,16 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										user.set("password", password);
 										user.set("email", email);
 										user.signUp(null, {
-												success: function (user) {
-														_this.dispatch(user);
-														router.transitionTo("home");
+												success: function () {
+														Parse.User.logIn(username, password, {
+																success: function (user) {
+																		_this.dispatch(user);
+																		router.transitionTo("home");
+																},
+																error: function (userIn, error) {
+																		return console.log(error);
+																}
+														});
 												},
 												error: function (user, error) {
 														return console.log(error);

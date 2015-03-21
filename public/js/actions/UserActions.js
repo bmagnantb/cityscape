@@ -30,9 +30,14 @@ class UserActions {
 				user.set('password', password)
 				user.set('email', email)
 				user.signUp(null, {
-						success: (user) => {
-							this.dispatch(user)
-							router.transitionTo('home')
+						success: () => {
+								Parse.User.logIn(username, password, {
+										success: (user) => {
+												this.dispatch(user)
+												router.transitionTo('home')
+										},
+										error: (userIn, error) => console.log(error)
+								})
 						},
 						error: (user, error) => console.log(error)
 				})
