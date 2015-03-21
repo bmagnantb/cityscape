@@ -47164,13 +47164,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(ServerClient, {
 						requestPhotos: {
 								value: function requestPhotos(settings, user) {
-										console.log(user);
 										var username;
 										user ? username = "" + user.get("username") + "/" : username = "";
-										if (this.options instanceof Function) {
-												return $.get("/" + username + "photos", this.options(settings)());
-										}
-										return $.get("/" + username + "photos", this.options);
+										return $.get("/" + username + "photos", this.options(settings)());
 								}
 						},
 						vote: {
@@ -47196,8 +47192,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				extras: ["url_m", "owner_name"],
 				per_page: "30",
 				sort: "relevance",
-				tag_mode: "all",
-				tags: ["skyline", "city", "buildings"]
+				tag_mode: "all"
 		};
 
 		var detailSettings = {

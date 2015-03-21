@@ -10,13 +10,9 @@ class ServerClient {
 		}
 
 		requestPhotos(settings, user) {
-				console.log(user)
 				var username
 				user ? username = `${user.get('username')}/` : username = ''
-				if (this.options instanceof Function) {
-						return $.get(`/${username}photos`, this.options(settings)())
-				}
-				return $.get(`/${username}photos`, this.options)
+				return $.get(`/${username}photos`, this.options(settings)())
 		}
 
 		vote(photoId, user) {
@@ -40,12 +36,7 @@ var gallerySettings = {
 		],
 		per_page: '30',
 		sort: 'relevance',
-		tag_mode: 'all',
-		tags: [
-				'skyline',
-				'city',
-				'buildings'
-		]
+		tag_mode: 'all'
 }
 
 var detailSettings = {
