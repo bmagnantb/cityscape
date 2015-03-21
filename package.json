@@ -17,6 +17,8 @@
     "express": "latest",
     "parse": "latest",
     "request": "^2.53.0",
+  },
+  "devDependencies": {
     "alt": "latest",
     "babel": "latest",
     "babelify": "latest",
