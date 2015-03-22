@@ -47163,21 +47163,27 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				_createClass(ServerClient, {
 						requestPhotos: {
-								value: function requestPhotos(settings, user) {
-										var username;
-										user ? username = "" + user.get("username") + "/" : username = "";
-										return $.get("/" + username + "photos", this.options(settings)());
+								value: function requestPhotos(settings) {
+										return $.get("/photos", this.options(settings)());
+								}
+						},
+						requestPhoto: {
+								value: function requestPhoto(settings, votes) {
+										!votes ? votes = "" : votes = "/" + votes;
+										return $.get("/photo" + votes, this.options(settings)());
 								}
 						},
 						vote: {
 								value: function vote(photoId, user) {
-										var username;
 										if (!user) {
 												console.log("user not logged in");
 												return;
 										}
-										user.get("emailVerified") ? username = user.get("username") : username = undefined;
-										return $.post("/" + username + "/photo/" + photoId);
+										if (!user.get("emailVerified")) {
+												console.log("user email not verified");
+												return;
+										}
+										return $.post("/" + user.get("username") + "/photo/" + photoId);
 								}
 						}
 				});
@@ -47230,21 +47236,22 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				_createClass(DetailActions, {
 						getDetail: {
-								value: function getDetail(flickrKey, photoId) {
+								value: function getDetail(photoId, votes) {
 										var _this = this;
 
-										DetailClient.requestPhotos({ api_key: flickrKey, photo_id: photoId }).then(function (data) {
+										DetailClient.requestPhoto({ photo_id: photoId }, votes).then(function (data) {
 												return _this.dispatch(data.photo);
 										});
 								}
 						},
-						resetState: {
-								value: function resetState() {
-										this.dispatch();
-								}
-						},
 						vote: {
-								value: function vote(photoId) {}
+								value: function vote(photoId, user) {
+										var _this = this;
+
+										DetailClient.vote(photoId, user).then(function (resp) {
+												return _this.dispatch(resp);
+										});
+								}
 						}
 				});
 
@@ -47279,10 +47286,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				_createClass(GalleryActions, {
 						getPhotos: {
-								value: function getPhotos(options, user) {
+								value: function getPhotos(options) {
 										var _this = this;
 
-										GalleryClient.requestPhotos(options, user).then(function (data) {
+										GalleryClient.requestPhotos(options).then(function (data) {
 												return _this.dispatch(data.photos);
 										});
 								}
@@ -47291,9 +47298,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function vote(photoId, user) {
 										var _this = this;
 
-										GalleryClient.vote(photoId, user).then(function (promise) {
-												console.log(promise);
-												_this.dispatch();
+										GalleryClient.vote(photoId, user).then(function (resp) {
+												return _this.dispatch(resp);
 										});
 								}
 						}
@@ -47535,12 +47541,27 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var detailActions = _require2.detailActions;
 
+		var _require3 = require("../stores/GalleryStore");
+
+		var galleryStore = _require3.galleryStore;
+
+		var _require4 = require("../stores/userStore");
+
+		var userStore = _require4.userStore;
+
 		var DetailView = (function (_React$Component) {
 				function DetailView() {
 						_classCallCheck(this, DetailView);
 
 						_get(Object.getPrototypeOf(DetailView.prototype), "constructor", this).call(this);
-						this.state = detailStore.getState();
+						this.state = galleryStore.getState();
+						this.state.detail = detailStore.getState();
+
+						var _userStore$getState = userStore.getState();
+
+						var user = _userStore$getState.user;
+
+						this.state.user = user;
 				}
 
 				_inherits(DetailView, _React$Component);
@@ -47548,7 +47569,18 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(DetailView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										detailActions.getDetail(this.props.flickrKey, this.props.params.id);
+										var _this = this;
+
+										var galleryMatch = this.state.photo.filter(function (val) {
+												return val.id === _this.props.params.id;
+										})[0];
+
+										var galleryMatchVotes;
+										galleryMatch && galleryMatch.total_votes && galleryMatch.user_votes ? galleryMatchVotes = true : null;
+
+										if (!this.state.detail[this.props.params.id]) {
+												detailActions.getDetail(this.props.params.id, galleryMatchVotes);
+										}
 								}
 						},
 						componentDidMount: {
@@ -47559,29 +47591,34 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						componentWillUnmount: {
 								value: function componentWillUnmount() {
 										detailStore.unlisten(this.onChange.bind(this));
-										detailActions.resetState();
 								}
 						},
 						onChange: {
 								value: function onChange() {
-										this.setState(detailStore.getState());
+										this.setState({ detail: detailStore.getState() });
 								}
 						},
 						render: {
 								value: function render() {
-										var photo = this.state.photo;
-										if (this.state.photo) {
-												var ownerUrl = "https://www.flickr.com/people/" + photo.owner.path_alias;
+										var _this = this;
+
+										console.log(this.state);
+										var photo = this.state.photo.filter(function (val) {
+												return val.id === _this.props.params.id;
+										})[0];
+										var photoDetail = this.state.detail[this.props.params.id];
+										if (photoDetail) {
+												var ownerUrl = "https://www.flickr.com/people/" + photoDetail.owner.path_alias;
 												return React.createElement(
 														"main",
 														{ className: "photo-detail" },
 														React.createElement(
 																"a",
-																{ href: photo.urls.url[0]._content, target: "_blank" },
+																{ href: photoDetail.urls.url[0]._content, target: "_blank" },
 																React.createElement(
 																		"h2",
 																		null,
-																		photo.title._content
+																		photoDetail.title._content
 																)
 														),
 														React.createElement(
@@ -47590,7 +47627,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 																React.createElement(
 																		"h4",
 																		null,
-																		photo.owner.username
+																		photoDetail.owner.username
 																)
 														),
 														React.createElement(
@@ -47599,33 +47636,42 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 																React.createElement(
 																		"h6",
 																		null,
-																		photo.owner.realname
+																		photoDetail.owner.realname
 																)
 														),
-														React.createElement("img", { src: this.state.photoUrl("b") }),
-														photo.description ? React.createElement(
+														React.createElement("img", { src: photoDetail.photoUrl("b") }),
+														photo ? React.createElement(
+																"h6",
+																null,
+																photo.total_votes
+														) : photoDetail.total_votes ? React.createElement(
+																"h6",
+																null,
+																photoDetail.total_votes
+														) : null,
+														photoDetail.description ? React.createElement(
 																"h5",
 																null,
-																photo.description
+																photoDetail.description
 														) : null,
-														photo.location && photo.location.locality ? React.createElement(
+														photoDetail.location && photoDetail.location.locality ? React.createElement(
 																"h6",
 																null,
-																photo.location.locality._content
+																photoDetail.location.locality._content
 														) : null,
-														photo.location && photo.location.country ? React.createElement(
+														photoDetail.location && photoDetail.location.country ? React.createElement(
 																"h6",
 																null,
-																photo.location.country._content
+																photoDetail.location.country._content
 														) : null,
 														React.createElement(
 																"h6",
 																null,
 																"Taken ",
-																photo.dates && photo.dates.taken ? React.createElement(
+																photoDetail.dates && photoDetail.dates.taken ? React.createElement(
 																		"span",
 																		null,
-																		photo.dates.taken
+																		photoDetail.dates.taken
 																) : null
 														)
 												);
@@ -47642,7 +47688,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.DetailView = DetailView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js","../stores/DetailStore":"/Users/ben/Github Projects/skylines/public/js/stores/DetailStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Footer.jsx":[function(require,module,exports){
+},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js","../stores/DetailStore":"/Users/ben/Github Projects/skylines/public/js/stores/DetailStore.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js","../stores/userStore":"/Users/ben/Github Projects/skylines/public/js/stores/userStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Footer.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47716,6 +47762,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var userStore = _require4.userStore;
 
+		var _require5 = require("../react-router");
+
+		var Link = _require5.Link;
+
 		var GalleryView = (function (_React$Component) {
 				function GalleryView() {
 						_classCallCheck(this, GalleryView);
@@ -47735,7 +47785,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										galleryActions.getPhotos({ api_key: this.props.flickrKey }, this.props.user);
+										galleryActions.getPhotos({ api_key: this.props.flickrKey });
 										userActions.current();
 								}
 						},
@@ -47886,7 +47936,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										return React.createElement(
 												"div",
 												{ className: "photo" },
-												React.createElement("img", { src: this.props.photo.url_m, onClick: this.details.bind(this) }),
+												React.createElement(
+														Link,
+														{ to: "/photo/:id", params: { id: this.props.photo.id } },
+														React.createElement("img", { src: this.props.photo.url_m })
+												),
 												React.createElement(
 														"h6",
 														{ ref: "vote", onClick: this.vote.bind(this) },
@@ -47897,12 +47951,16 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														null,
 														this.props.photo.total_votes
 												),
-												this.props.photo.title ? React.createElement(
-														"h4",
-														{ onClick: this.details.bind(this) },
-														this.props.photo.title
-												) : null,
-												owner_url && this.props.photo.ownername ? React.createElement(
+												React.createElement(
+														Link,
+														{ to: "/photo/:id", params: { id: this.props.photo.id } },
+														React.createElement(
+																"h4",
+																null,
+																this.props.photo.title
+														)
+												),
+												React.createElement(
 														"a",
 														{ href: owner_url, target: "_blank" },
 														React.createElement(
@@ -47910,16 +47968,16 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 																null,
 																this.props.photo.ownername
 														)
-												) : null
+												)
 										);
 								}
 						},
-						details: {
-								value: function details() {
-										this.props.router.transitionTo("photo", { id: this.props.photo.id });
-								}
-						},
 						vote: {
+
+								// details() {
+								// 		this.props.router.transitionTo('photo', {id: this.props.photo.id})
+								// }
+
 								value: function vote() {
 										galleryActions.vote(this.props.photo.id, this.props.user);
 								}
@@ -47932,7 +47990,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.GalleryView = GalleryView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Header.jsx":[function(require,module,exports){
+},{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Header.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -48034,7 +48092,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												React.createElement(
 														"h1",
 														null,
-														"SKYLINES"
+														"CITYSCAPE"
 												),
 												userinfo
 										);
@@ -51113,32 +51171,24 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var detailActions = _require2.detailActions;
 
+		var _require3 = require("../actions/GalleryActions");
+
+		var galleryActions = _require3.galleryActions;
+
 		var DetailStore = (function () {
 				function DetailStore() {
 						_classCallCheck(this, DetailStore);
 
-						this.resetState();
-
 						this.bindListeners({
-								getInfo: detailActions.getDetail,
-								resetState: detailActions.resetState
-						});
+								getInfo: detailActions.getDetail });
 				}
 
 				_createClass(DetailStore, {
 						getInfo: {
 								value: function getInfo(data) {
-										this.photo = data;
-										this.photoUrl = function (size) {
+										this[data.id] = data;
+										this[data.id].photoUrl = function (size) {
 												return "https://farm" + data.farm + ".staticflickr.com/" + data.server + "/" + data.id + "_" + data.secret + "_" + size + "." + (data.originalformat ? data.originalformat : "jpg");
-										};
-								}
-						},
-						resetState: {
-								value: function resetState() {
-										this.photo = null;
-										this.photoUrl = function () {
-												return "";
 										};
 								}
 						}
@@ -51151,7 +51201,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.detailStore = alt.createStore(DetailStore);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js":[function(require,module,exports){
+},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js","../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -51189,7 +51239,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function getPhotos(data) {
 										var _this = this;
 
-										console.log(data);
 										for (var key in data) {
 												this[key] = data[key];
 										}
@@ -51225,6 +51274,52 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 })(typeof module === "object" ? module.exports : window);
 
 },{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+;(function (exports) {
+		var _require = require("../alt-app");
+
+		var alt = _require.alt;
+
+		var _require2 = require("parse");
+
+		var Parse = _require2.Parse;
+
+		var _require3 = require("../actions/UserActions");
+
+		var userActions = _require3.userActions;
+
+		var UserStore = (function () {
+				function UserStore() {
+						_classCallCheck(this, UserStore);
+
+						this.user = null;
+
+						this.bindListeners({
+								setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
+						});
+				}
+
+				_createClass(UserStore, {
+						setUser: {
+								value: function setUser(user) {
+										this.user = user;
+								}
+						}
+				});
+
+				return UserStore;
+		})();
+
+		exports.UserStore = UserStore;
+		exports.userStore = alt.createStore(UserStore);
+})(typeof module === "object" ? module.exports : window);
+
+},{"../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js","parse":"/Users/ben/Github Projects/skylines/node_modules/parse/build/parse-latest.js"}],"/Users/ben/Github Projects/skylines/public/js/stores/userStore.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();

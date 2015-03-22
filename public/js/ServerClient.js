@@ -9,20 +9,25 @@ class ServerClient {
 				this.options = options
 		}
 
-		requestPhotos(settings, user) {
-				var username
-				user ? username = `${user.get('username')}/` : username = ''
-				return $.get(`/${username}photos`, this.options(settings)())
+		requestPhotos(settings) {
+				return $.get(`/photos`, this.options(settings)())
+		}
+
+		requestPhoto(settings, votes) {
+				!votes ? votes = '' : votes = `/${votes}`
+				return $.get(`/photo${votes}`, this.options(settings)())
 		}
 
 		vote(photoId, user) {
-				var username
 				if (!user) {
 						console.log('user not logged in')
 						return
 				}
-				user.get('emailVerified') ? username = user.get('username') : username = undefined
-				return $.post(`/${username}/photo/${photoId}`)
+				if (!user.get('emailVerified')) {
+						console.log('user email not verified')
+						return
+				}
+				return $.post(`/${user.get('username')}/photo/${photoId}`)
 		}
 }
 

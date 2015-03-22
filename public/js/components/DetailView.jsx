@@ -3,15 +3,29 @@
 var React = require('react')
 var { detailStore } = require('../stores/DetailStore')
 var { detailActions } = require('../actions/DetailActions')
+var { galleryStore } = require('../stores/GalleryStore')
+var { userStore } = require('../stores/userStore')
 
 class DetailView extends React.Component {
 		constructor() {
 				super()
-				this.state = detailStore.getState()
+				this.state = galleryStore.getState()
+				this.state.detail = detailStore.getState()
+				var { user } = userStore.getState()
+				this.state.user = user
 		}
 
 		componentWillMount() {
-				detailActions.getDetail(this.props.flickrKey, this.props.params.id)
+				var galleryMatch = this.state.photo.filter((val) => {
+						return val.id === this.props.params.id
+				})[0]
+
+				var galleryMatchVotes
+				galleryMatch && galleryMatch.total_votes && galleryMatch.user_votes ? galleryMatchVotes = true : null
+
+				if (!this.state.detail[this.props.params.id]) {
+						detailActions.getDetail(this.props.params.id, galleryMatchVotes)
+						}
 		}
 
 		componentDidMount() {
@@ -20,36 +34,42 @@ class DetailView extends React.Component {
 
 		componentWillUnmount() {
 				detailStore.unlisten(this.onChange.bind(this))
-				detailActions.resetState()
 		}
 
 		onChange() {
-				this.setState(detailStore.getState())
+				this.setState({detail: detailStore.getState()})
 		}
 
 		render() {
-				var photo = this.state.photo
-				if (this.state.photo) {
-						var ownerUrl = `https://www.flickr.com/people/${photo.owner.path_alias}`
+				console.log(this.state)
+				var photo = this.state.photo.filter((val) => {
+						return val.id === this.props.params.id
+				})[0]
+				var photoDetail = this.state.detail[this.props.params.id]
+				if (photoDetail) {
+						var ownerUrl = `https://www.flickr.com/people/${photoDetail.owner.path_alias}`
 						return (
 								<main className="photo-detail">
-										<a href={photo.urls.url[0]._content} target="_blank"><h2>{photo.title._content}</h2></a>
-										<a href={ownerUrl} target="_blank"><h4>{photo.owner.username}</h4></a>
-										<a href={ownerUrl} target="_blank"><h6>{photo.owner.realname}</h6></a>
-										<img src={this.state.photoUrl('b')} />
+										<a href={photoDetail.urls.url[0]._content} target="_blank"><h2>{photoDetail.title._content}</h2></a>
+										<a href={ownerUrl} target="_blank"><h4>{photoDetail.owner.username}</h4></a>
+										<a href={ownerUrl} target="_blank"><h6>{photoDetail.owner.realname}</h6></a>
+										<img src={photoDetail.photoUrl('b')} />
 
-										{photo.description ? <h5>{photo.description}</h5> : null}
+										{photo ? <h6>{photo.total_votes}</h6> :
+												photoDetail.total_votes ? <h6>{photoDetail.total_votes}</h6> : null}
 
-										{photo.location && photo.location.locality ?
-												<h6>{photo.location.locality._content}</h6> :
+										{photoDetail.description ? <h5>{photoDetail.description}</h5> : null}
+
+										{photoDetail.location && photoDetail.location.locality ?
+												<h6>{photoDetail.location.locality._content}</h6> :
 												null}
 
-										{photo.location && photo.location.country ?
-												<h6>{photo.location.country._content}</h6> :
+										{photoDetail.location && photoDetail.location.country ?
+												<h6>{photoDetail.location.country._content}</h6> :
 												null}
 
-										<h6>Taken {photo.dates && photo.dates.taken ?
-												<span>{photo.dates.taken}</span> :
+										<h6>Taken {photoDetail.dates && photoDetail.dates.taken ?
+												<span>{photoDetail.dates.taken}</span> :
 												null}</h6>
 								</main>
 						)

@@ -8,16 +8,14 @@ class GalleryActions {
 				this.generateActions('setTags')
 		}
 
-		getPhotos(options, user) {
-				GalleryClient.requestPhotos(options, user)
+		getPhotos(options) {
+				GalleryClient.requestPhotos(options)
 				.then((data) => this.dispatch(data.photos))
 		}
 
 		vote(photoId, user) {
-				GalleryClient.vote(photoId, user).then((promise) => {
-						console.log(promise)
-						this.dispatch()
-				})
+				GalleryClient.vote(photoId, user)
+				.then((resp) => this.dispatch(resp))
 		}
 }
 

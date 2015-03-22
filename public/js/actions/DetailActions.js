@@ -4,17 +4,14 @@ var { alt } = require('../alt-app')
 var { DetailClient } = require('../ServerClient')
 
 class DetailActions {
-		getDetail(flickrKey, photoId) {
-				DetailClient.requestPhotos({api_key: flickrKey, photo_id: photoId})
+		getDetail(photoId, votes) {
+				DetailClient.requestPhoto({photo_id: photoId}, votes)
 				.then((data) => this.dispatch(data.photo))
 		}
 
-		resetState() {
-				this.dispatch()
-		}
-
-		vote(photoId) {
-
+		vote(photoId, user) {
+				DetailClient.vote(photoId, user)
+				.then((resp) => this.dispatch(resp))
 		}
 }
 

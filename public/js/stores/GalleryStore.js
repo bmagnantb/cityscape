@@ -19,7 +19,6 @@ class GalleryStore {
 		}
 
 		getPhotos(data) {
-				console.log(data)
 				for (var key in data) {
 						this[key] = data[key]
 				}

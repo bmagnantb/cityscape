@@ -13,12 +13,10 @@ Parse.PhotoCollection = Parse.Collection.extend({
 })
 
 function photos(req, res) {
-		var user = req.params.user
 		req.query.api_key = flickrApiKey
 		!req.query.tags ? req.query.tags = [] : null
 		req.query.tags.indexOf('city') === -1 ? req.query.tags.push('city') : null
 		req.query.tags.indexOf('buildings') === -1 ? req.query.tags.push('buildings') : null
-		console.log(req.query.tags)
 		var url = 'https://api.flickr.com/services/rest?',
 				counter = 0
 

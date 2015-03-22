@@ -5,6 +5,7 @@ var { galleryActions } = require('../actions/GalleryActions')
 var { galleryStore } = require('../stores/GalleryStore')
 var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
+var { Link } = require('../react-router')
 
 class GalleryView extends React.Component {
 		constructor() {
@@ -15,7 +16,7 @@ class GalleryView extends React.Component {
 		}
 
 		componentWillMount() {
-				galleryActions.getPhotos({api_key: this.props.flickrKey}, this.props.user)
+				galleryActions.getPhotos({api_key: this.props.flickrKey})
 				userActions.current()
 		}
 
@@ -121,25 +122,24 @@ class Photo extends React.Component {
 
 				return (
 						<div className="photo">
-								<img src={this.props.photo.url_m} onClick={this.details.bind(this)} />
+								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
+										<img src={this.props.photo.url_m} />
+								</Link>
 								<h6 ref="vote" onClick={this.vote.bind(this)}>Yes</h6>
 								<h6>{this.props.photo.total_votes}</h6>
-
-								{this.props.photo.title ?
-										<h4 onClick={this.details.bind(this)}>{this.props.photo.title}</h4> :
-										null}
-								{owner_url && this.props.photo.ownername ?
-										<a href={owner_url} target="_blank">
-												<h4>{this.props.photo.ownername}</h4>
-										</a> :
-										null}
+								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
+										<h4>{this.props.photo.title}</h4>
+								</Link>
+								<a href={owner_url} target="_blank">
+										<h4>{this.props.photo.ownername}</h4>
+								</a>
 						</div>
 				)
 		}
 
-		details() {
-				this.props.router.transitionTo('photo', {id: this.props.photo.id})
-		}
+		// details() {
+		// 		this.props.router.transitionTo('photo', {id: this.props.photo.id})
+		// }
 
 		vote() {
 				galleryActions.vote(this.props.photo.id, this.props.user)

@@ -3,6 +3,7 @@ function startServer() {
 				Parse = require('parse').Parse,
 				app = express(),
 				getPhotos = require('./server-routes/GetPhotos'),
+				getDetail = require('./server-routes/GetDetail'),
 				putVote = require('./server-routes/PutVote')
 
 
@@ -12,7 +13,9 @@ function startServer() {
 		app.use(express.static(__dirname + '/public'))
 
 
-		app.get('/:user?/photos', getPhotos)
+		app.get('/photos', getPhotos)
+
+		app.get('/photo/:votes?', getDetail)
 
 		app.post('/:user/photo/:id', putVote)
 
