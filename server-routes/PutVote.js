@@ -5,8 +5,15 @@ function vote(req, res) {
 		var user = req.params.user
 		var photoId = req.params.id
 
+		console.log(user)
 		if (user === 'undefined') {
+				res.send('user not logged in')
+				return
+		}
+
+		if (user === 'noemail') {
 				res.send('user email not verified')
+				return
 		}
 
 		else {
