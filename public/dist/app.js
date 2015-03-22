@@ -47180,7 +47180,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										if (!user.get("emailVerified")) {
 												username = "noemail";
 										}
-										console.log(username);
 										return $.post("/" + username + "/photo/" + photoId);
 								}
 						}
@@ -47892,7 +47891,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						removeTag: {
 								value: function removeTag(e) {
-										console.log(e.target.parentNode.id.slice(3));
 										var tag = ("-" + e.target.parentNode.id.slice(3)).split();
 										galleryActions.setTags(tag);
 										galleryActions.getPhotos({ tags: tag }, this.state.user);

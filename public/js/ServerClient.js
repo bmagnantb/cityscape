@@ -24,7 +24,6 @@ class ServerClient {
 				if (!user.get('emailVerified')) {
 						 username = 'noemail'
 				}
-				console.log(username)
 				return $.post(`/${username}/photo/${photoId}`)
 		}
 }

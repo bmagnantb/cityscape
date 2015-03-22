@@ -92,7 +92,6 @@ class GalleryView extends React.Component {
 		}
 
 		removeTag(e) {
-				console.log(e.target.parentNode.id.slice(3))
 				var tag = `-${e.target.parentNode.id.slice(3)}`.split()
 				galleryActions.setTags(tag)
 				galleryActions.getPhotos({tags: tag}, this.state.user)
