@@ -48,7 +48,7 @@ function photos(req, res) {
 				data.photos.photo.forEach(function(val) {
 						photo_ids.push(val.id)
 				})
-
+				console.log('1st query')
 				query.containedIn('photo_id', photo_ids).find({
 						success: function(result) {
 								photoCollection = new Parse.PhotoCollection(result)
@@ -74,15 +74,17 @@ function photos(req, res) {
 										val.user_votes = model.get('user_votes')
 										val.total_votes = model.get('total_votes')
 								})
-								if (!req.query.page || req.query.page === 1) {
+								if (!req.query.page || req.query.page === '1') {
 										var queryVoted = new Parse.Query(Parse.Photo)
 										var sevenDays = new Date() - (1000 * 60 * 60 * 24 * 7)
 										queryVoted.descending('total_votes')
 										queryVoted.greaterThan('dateupload', sevenDays.toString())
 										queryVoted.descending('dateupload')
 										queryVoted.limit(500)
+										console.log('2nd query')
 										queryVoted.find({
 												success: function(result) {
+														console.log('2nd query success')
 														result = result.map(function(val) {
 																return val.attributes;
 														})
@@ -114,6 +116,7 @@ function photos(req, res) {
 												}
 										})
 								}
+								else res.send(data)
 						},
 						error: function() {
 								console.log(arguments)
