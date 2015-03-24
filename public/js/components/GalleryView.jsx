@@ -152,7 +152,7 @@ class Photo extends React.Component {
 										<img src={this.props.photo.url_m} />
 								</Link>
 
-								{this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1 ?
+								{this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1 ?
 										<h6 ref="vote" onClick={this.vote.bind(this)}>Yes</h6> :
 										null}
 

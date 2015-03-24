@@ -47353,7 +47353,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						current: {
 								value: function current() {
 										var user = Parse.User.current();
-										if (!user.emailVerified) {
+										if (user && !user.emailVerified) {
 												user.fetch();
 										}
 										this.dispatch(user);
@@ -47948,7 +47948,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ to: "/photo/:id", params: { id: this.props.photo.id } },
 														React.createElement("img", { src: this.props.photo.url_m })
 												),
-												this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
+												this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
 														"h6",
 														{ ref: "vote", onClick: this.vote.bind(this) },
 														"Yes"

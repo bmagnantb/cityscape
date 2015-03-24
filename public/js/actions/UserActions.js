@@ -6,7 +6,7 @@ var { Parse } = require('parse')
 class UserActions {
 		current() {
 				var user = Parse.User.current()
-				if (!user.emailVerified) {
+				if (user && !user.emailVerified) {
 						user.fetch()
 				}
 				this.dispatch(user)
