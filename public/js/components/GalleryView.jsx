@@ -14,7 +14,7 @@ class GalleryView extends React.Component {
 		constructor() {
 				super()
 				this.state = galleryStore.getState()
-				this.state.user = userStore.getState()
+				this.state.user = userStore.getState().user
 		}
 
 
@@ -151,7 +151,11 @@ class Photo extends React.Component {
 								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
 										<img src={this.props.photo.url_m} />
 								</Link>
-								<h6 ref="vote" onClick={this.vote.bind(this)}>Yes</h6>
+
+								{this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1 ?
+										<h6 ref="vote" onClick={this.vote.bind(this)}>Yes</h6> :
+										null}
+
 								<h6>{this.props.photo.total_votes}</h6>
 								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
 										<h4>{this.props.photo.title}</h4>

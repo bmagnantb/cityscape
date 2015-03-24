@@ -49,11 +49,13 @@ function photos(req, res) {
 						photo_ids.push(val.id)
 				})
 				console.log('1st query')
-				query.containedIn('photo_id', photo_ids).find({
+				query.containedIn('photo_id', photo_ids)
+				query.limit(500).find({
 						success: function(result) {
 								photoCollection = new Parse.PhotoCollection(result)
 								data.photos.photo.forEach(function(val) {
-										if (photoCollection.pluck('photo_id').indexOf(val.id) === -1) {
+										var photoMatch = photoCollection.pluck('photo_id').indexOf(val.id)
+										if (photoMatch === -1) {
 												var photo = {}
 												for (var key in val) {
 														photo[key] = val[key]
@@ -61,19 +63,27 @@ function photos(req, res) {
 												photo.photo_id = photo.id
 												delete photo.id
 												photoCollection.create(photo, {
+														success: function(model) {
+																val.user_votes = model.get('user_votes')
+																val.total_votes = model.get('total_votes')
+														},
 														error: function() {
 																console.log(arguments[1])
 														}
 												})
 										}
+										else {
+												val.total_votes = photoCollection.models[photoMatch].get('total_votes')
+												val.user_votes = photoCollection.models[photoMatch].get('user_votes')
+										}
 								})
-								data.photos.photo.forEach(function(val) {
-										var model = photoCollection.models.filter(function(m) {
-												return m.get('photo_id') === val.id
-										})[0]
-										val.user_votes = model.get('user_votes')
-										val.total_votes = model.get('total_votes')
-								})
+								// data.photos.photo.forEach(function(val) {
+								// 		var model = photoCollection.models.filter(function(m) {
+								// 				return m.get('photo_id') === val.id
+								// 		})[0]
+								// 		val.user_votes = model.get('user_votes')
+								// 		val.total_votes = model.get('total_votes')
+								// })
 								if (!req.query.page || req.query.page === '1') {
 										var queryVoted = new Parse.Query(Parse.Photo)
 										var sevenDays = new Date() - (1000 * 60 * 60 * 24 * 7)
@@ -84,7 +94,7 @@ function photos(req, res) {
 										queryVoted.find({
 												success: function(results) {
 														console.log('2nd query success')
-														if (result.length) {
+														if (results.length) {
 																results = results.map(function(val) {
 																		return val.attributes;
 																})

@@ -10,7 +10,6 @@ class LoginView extends React.Component {
 		constructor() {
 				super()
 				this.state = userStore.getState()
-
 		}
 
 		render() {

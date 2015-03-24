@@ -6,27 +6,12 @@ var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
 
 class RegisterView extends React.Component {
+
 		constructor() {
 				super()
 				this.state = userStore.getState()
 		}
 
-		componentWillMount() {
-				userStore.listen(this.onChange.bind(this))
-				console.log(this.context.router.getLocation())
-				// .addChangeListener((change) => {
-				// 	console.log(change)
-				// 	console.log(arguments)
-				// })
-		}
-
-		componentWillUnmount() {
-				userStore.unlisten(this.onChange.bind(this))
-		}
-
-		onChange() {
-				this.setState(userStore.getState())
-		}
 
 		render() {
 				return (
@@ -44,6 +29,7 @@ class RegisterView extends React.Component {
 				)
 		}
 
+
 		register(e) {
 				e.preventDefault()
 				var username = React.findDOMNode(this.refs.username).value
@@ -51,12 +37,17 @@ class RegisterView extends React.Component {
 				var pass = React.findDOMNode(this.refs.pass).value
 				var pass2 = React.findDOMNode(this.refs.pass2).value
 				if (pass === pass2) {
-						userActions.register(username, pass, email, this.props.router)
+						userActions.register(username, pass, email, this.context.router)
 				} else {
 						console.log('passwords must match)')
 				}
 		}
 }
+
+RegisterView.contextTypes = {
+		router: React.PropTypes.func.isRequired
+}
+
 
 
 exports.RegisterView = RegisterView

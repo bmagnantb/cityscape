@@ -33,21 +33,30 @@ class GalleryStore {
 
 				this.bindListeners({
 						getPhotos: galleryActions.getPhotos,
-						changePage: galleryActions.changePage
+						changePage: galleryActions.changePage,
+						vote: galleryActions.vote
 				})
 		}
 
 
-
 		getPhotos(obj) {
 				var { params, data } = obj
-
 				this._dataToState(data, params)
 		}
 
 
 		changePage(routerPage) {
 				this._paginate(routerPage)
+		}
+
+
+		vote(resp) {
+				this.paginate.currentPhotos.forEach((val) => {
+						if (val.id === resp.photo_id) {
+								val.total_votes = resp.total_votes
+								val.user_votes = val.user_votes
+						}
+				})
 		}
 
 

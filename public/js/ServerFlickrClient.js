@@ -20,7 +20,7 @@ class ServerClient {
 		vote(photoId, user) {
 				var username
 				user ? username = user.get('username') : username = undefined
-				if (!user.get('emailVerified')) {
+				if (user && !user.get('emailVerified')) {
 						 username = 'noemail'
 				}
 				return $.post(`/${username}/photo/${photoId}`)

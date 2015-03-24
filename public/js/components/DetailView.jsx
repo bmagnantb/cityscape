@@ -16,7 +16,7 @@ class DetailView extends React.Component {
 		}
 
 		componentWillMount() {
-				var galleryMatch = this.state.photo.filter((val) => {
+				var galleryMatch = this.state.paginate.currentPhotos.filter((val) => {
 						return val.id === this.props.params.id
 				})[0]
 
@@ -42,7 +42,7 @@ class DetailView extends React.Component {
 
 		render() {
 				console.log(this.state)
-				var photo = this.state.photo.filter((val) => {
+				var photo = this.state.paginate.currentPhotos.filter((val) => {
 						return val.id === this.props.params.id
 				})[0]
 				var photoDetail = this.state.detail[this.props.params.id]

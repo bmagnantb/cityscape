@@ -47179,7 +47179,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function vote(photoId, user) {
 										var username;
 										user ? username = user.get("username") : username = undefined;
-										if (!user.get("emailVerified")) {
+										if (user && !user.get("emailVerified")) {
 												username = "noemail";
 										}
 										return $.post("/" + username + "/photo/" + photoId);
@@ -47353,6 +47353,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						current: {
 								value: function current() {
 										var user = Parse.User.current();
+										if (!user.emailVerified) {
+												user.fetch();
+										}
 										this.dispatch(user);
 								}
 						},
@@ -47585,7 +47588,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function componentWillMount() {
 										var _this = this;
 
-										var galleryMatch = this.state.photo.filter(function (val) {
+										var galleryMatch = this.state.paginate.currentPhotos.filter(function (val) {
 												return val.id === _this.props.params.id;
 										})[0];
 
@@ -47617,7 +47620,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var _this = this;
 
 										console.log(this.state);
-										var photo = this.state.photo.filter(function (val) {
+										var photo = this.state.paginate.currentPhotos.filter(function (val) {
 												return val.id === _this.props.params.id;
 										})[0];
 										var photoDetail = this.state.detail[this.props.params.id];
@@ -47786,7 +47789,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 						_get(Object.getPrototypeOf(GalleryView.prototype), "constructor", this).call(this);
 						this.state = galleryStore.getState();
-						this.state.user = userStore.getState();
+						this.state.user = userStore.getState().user;
 				}
 
 				_inherits(GalleryView, _React$Component);
@@ -47945,11 +47948,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ to: "/photo/:id", params: { id: this.props.photo.id } },
 														React.createElement("img", { src: this.props.photo.url_m })
 												),
-												React.createElement(
+												this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
 														"h6",
 														{ ref: "vote", onClick: this.vote.bind(this) },
 														"Yes"
-												),
+												) : null,
 												React.createElement(
 														"h6",
 														null,
@@ -48280,22 +48283,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_inherits(RegisterView, _React$Component);
 
 				_createClass(RegisterView, {
-						componentWillMount: {
-								value: function componentWillMount() {
-										userStore.listen(this.onChange.bind(this));
-										console.log(this.context.router.getLocation());
-								}
-						},
-						componentWillUnmount: {
-								value: function componentWillUnmount() {
-										userStore.unlisten(this.onChange.bind(this));
-								}
-						},
-						onChange: {
-								value: function onChange() {
-										this.setState(userStore.getState());
-								}
-						},
 						render: {
 								value: function render() {
 										return React.createElement(
@@ -48335,7 +48322,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var pass = React.findDOMNode(this.refs.pass).value;
 										var pass2 = React.findDOMNode(this.refs.pass2).value;
 										if (pass === pass2) {
-												userActions.register(username, pass, email, this.props.router);
+												userActions.register(username, pass, email, this.context.router);
 										} else {
 												console.log("passwords must match)");
 										}
@@ -48346,12 +48333,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				return RegisterView;
 		})(React.Component);
 
+		RegisterView.contextTypes = {
+				router: React.PropTypes.func.isRequired
+		};
+
 		exports.RegisterView = RegisterView;
 })(typeof module === "object" ? module.exports : window);
-// .addChangeListener((change) => {
-// 	console.log(change)
-// 	console.log(arguments)
-// })
 
 },{"../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/react-router/modules/Cancellation.js":[function(require,module,exports){
 "use strict";
@@ -51263,7 +51250,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 						this.bindListeners({
 								getPhotos: galleryActions.getPhotos,
-								changePage: galleryActions.changePage
+								changePage: galleryActions.changePage,
+								vote: galleryActions.vote
 						});
 				}
 
@@ -51279,6 +51267,16 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						changePage: {
 								value: function changePage(routerPage) {
 										this._paginate(routerPage);
+								}
+						},
+						vote: {
+								value: function vote(resp) {
+										this.paginate.currentPhotos.forEach(function (val) {
+												if (val.id === resp.photo_id) {
+														val.total_votes = resp.total_votes;
+														val.user_votes = val.user_votes;
+												}
+										});
 								}
 						},
 						_dataToState: {
