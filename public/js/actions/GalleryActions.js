@@ -1,21 +1,39 @@
 ;(function(exports) {
 
 var { alt } = require('../alt-app')
-var { GalleryClient } = require('../ServerClient')
+var { GalleryClient } = require('../ServerFlickrClient')
 
 class GalleryActions {
 		constructor() {
-				this.generateActions('setTags')
+				this.generateActions('prevPage', 'nextPage')
 		}
 
-		getPhotos(options) {
+		getPhotos(options, params) {
+				for (var key in params) {
+						options[key] = params[key]
+				}
+				if (options.page) {
+						options.page = Math.ceil(options.page / 25)
+				}
 				GalleryClient.requestPhotos(options)
-				.then((data) => this.dispatch(data.photos))
+				.then((data) => {
+						data = data.photos
+						var obj = { params, data }
+						this.dispatch(obj)
+				})
 		}
 
 		vote(photoId, user) {
 				GalleryClient.vote(photoId, user)
 				.then((resp) => this.dispatch(resp))
+		}
+
+		changePage(newPage, needRequest) {
+				if (needRequest === 'request') {
+						this.getPhotos({}, {page: newPage})
+						return
+				}
+				this.dispatch(newPage)
 		}
 }
 

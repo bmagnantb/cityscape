@@ -32,9 +32,13 @@ class LoginView extends React.Component {
 				userActions.login(
 						React.findDOMNode(this.refs.username).value,
 						React.findDOMNode(this.refs.password).value,
-						this.props.router
+						this.context.router
 				)
 		}
+}
+
+LoginView.contextTypes = {
+		router: React.PropTypes.func.isRequired
 }
 
 

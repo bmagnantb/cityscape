@@ -13,7 +13,7 @@ class UserActions {
 				Parse.User.logIn(username, password, {
 						success: (user) => {
 								this.dispatch(user)
-								router.transitionTo('home')
+								router.transitionTo('gallery')
 						},
 						error: (user, error) => console.log(error)
 				})
@@ -34,7 +34,7 @@ class UserActions {
 								Parse.User.logIn(username, password, {
 										success: (user) => {
 												this.dispatch(user)
-												router.transitionTo('home')
+												router.transitionTo('gallery')
 										},
 										error: (userIn, error) => console.log(error)
 								})

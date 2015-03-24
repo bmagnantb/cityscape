@@ -17,14 +17,18 @@ var Redirect = Router.Redirect
 
 var routes = (
 		<Route name="app" path="/" handler={AppView}>
-				<Route name="home" handler={GalleryView} />
-				<Route name="photo" path="photo/:id" handler={DetailView} />
+				<Route name="gallery" path="/gallery" handler={GalleryView}>
+						<Route name="gallerysearch" path="/gallery/search=:tags" handler={GalleryView} />
+						<Route name="gallerypage" path="/gallery/page:page" handler={GalleryView} />
+						<Route name="gallerysearchpage" path="/gallery/search=:tags/page:page" handler={GalleryView} />
+				</Route>
+				<Route name="photo" path="/photo/:id" handler={DetailView} />
 				<Redirect from="details" to="photo" />
-				<Route name="login" handler={LoginView} />
+				<Route name="login" path="/login" handler={LoginView} />
 				<Redirect from="signin" to="login" />
-				<Route name="register" handler={RegisterView} />
-				<Route name="passemailsent" handler={PassEmailView} />
-				<DefaultRoute handler={GalleryView} />
+				<Route name="register" path="/register" handler={RegisterView} />
+				<Route name="passemailsent" path="/passemailsent" handler={PassEmailView} />
+				<Redirect from="*" to="gallery" />
 		</Route>
 )
 

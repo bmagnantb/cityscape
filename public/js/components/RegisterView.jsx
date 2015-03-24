@@ -13,6 +13,11 @@ class RegisterView extends React.Component {
 
 		componentWillMount() {
 				userStore.listen(this.onChange.bind(this))
+				console.log(this.context.router.getLocation())
+				// .addChangeListener((change) => {
+				// 	console.log(change)
+				// 	console.log(arguments)
+				// })
 		}
 
 		componentWillUnmount() {

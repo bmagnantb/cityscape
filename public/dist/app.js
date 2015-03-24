@@ -47123,14 +47123,20 @@ module.exports = require('./lib/React');
 		var routes = React.createElement(
 				Route,
 				{ name: "app", path: "/", handler: AppView },
-				React.createElement(Route, { name: "home", handler: GalleryView }),
-				React.createElement(Route, { name: "photo", path: "photo/:id", handler: DetailView }),
+				React.createElement(
+						Route,
+						{ name: "gallery", path: "/gallery", handler: GalleryView },
+						React.createElement(Route, { name: "gallerysearch", path: "/gallery/search=:tags", handler: GalleryView }),
+						React.createElement(Route, { name: "gallerypage", path: "/gallery/page:page", handler: GalleryView }),
+						React.createElement(Route, { name: "gallerysearchpage", path: "/gallery/search=:tags/page:page", handler: GalleryView })
+				),
+				React.createElement(Route, { name: "photo", path: "/photo/:id", handler: DetailView }),
 				React.createElement(Redirect, { from: "details", to: "photo" }),
-				React.createElement(Route, { name: "login", handler: LoginView }),
+				React.createElement(Route, { name: "login", path: "/login", handler: LoginView }),
 				React.createElement(Redirect, { from: "signin", to: "login" }),
-				React.createElement(Route, { name: "register", handler: RegisterView }),
-				React.createElement(Route, { name: "passemailsent", handler: PassEmailView }),
-				React.createElement(DefaultRoute, { handler: GalleryView })
+				React.createElement(Route, { name: "register", path: "/register", handler: RegisterView }),
+				React.createElement(Route, { name: "passemailsent", path: "/passemailsent", handler: PassEmailView }),
+				React.createElement(Redirect, { from: "*", to: "gallery" })
 		);
 
 		var router = Router.create(routes);
@@ -47138,7 +47144,7 @@ module.exports = require('./lib/React');
 		exports.router = router;
 })(typeof module === "object" ? module.exports : window);
 
-},{"./components/AppView":"/Users/ben/Github Projects/skylines/public/js/components/AppView.jsx","./components/DetailView":"/Users/ben/Github Projects/skylines/public/js/components/DetailView.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/public/js/components/GalleryView.jsx","./components/LoginView":"/Users/ben/Github Projects/skylines/public/js/components/LoginView.jsx","./components/PassEmailView":"/Users/ben/Github Projects/skylines/public/js/components/PassEmailView.jsx","./components/RegisterView":"/Users/ben/Github Projects/skylines/public/js/components/RegisterView.jsx","./react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/ServerClient.js":[function(require,module,exports){
+},{"./components/AppView":"/Users/ben/Github Projects/skylines/public/js/components/AppView.jsx","./components/DetailView":"/Users/ben/Github Projects/skylines/public/js/components/DetailView.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/public/js/components/GalleryView.jsx","./components/LoginView":"/Users/ben/Github Projects/skylines/public/js/components/LoginView.jsx","./components/PassEmailView":"/Users/ben/Github Projects/skylines/public/js/components/PassEmailView.jsx","./components/RegisterView":"/Users/ben/Github Projects/skylines/public/js/components/RegisterView.jsx","./react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/ServerFlickrClient.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47149,10 +47155,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var $ = require("jquery");
 		var flickrOptions = require("./FlickrSettings").options;
-
-		var _require = require("parse");
-
-		var Parse = _require.Parse;
 
 		var ServerClient = (function () {
 				function ServerClient(options) {
@@ -47193,7 +47195,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				method: "flickr.photos.search",
 				content_type: "1",
 				extras: ["url_m", "owner_name"],
-				per_page: "30",
+				per_page: "500",
 				sort: "relevance",
 				tag_mode: "all"
 		};
@@ -47210,7 +47212,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.DetailClient = new ServerClient(flickrOptions(detailSettings));
 })(typeof module === "object" ? module.exports : window);
 
-},{"./FlickrSettings":"/Users/ben/Github Projects/skylines/public/js/FlickrSettings.js","jquery":"/Users/ben/Github Projects/skylines/node_modules/jquery/dist/jquery.js","parse":"/Users/ben/Github Projects/skylines/node_modules/parse/build/parse-latest.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js":[function(require,module,exports){
+},{"./FlickrSettings":"/Users/ben/Github Projects/skylines/public/js/FlickrSettings.js","jquery":"/Users/ben/Github Projects/skylines/node_modules/jquery/dist/jquery.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47222,7 +47224,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var alt = _require.alt;
 
-		var _require2 = require("../ServerClient");
+		var _require2 = require("../ServerFlickrClient");
 
 		var DetailClient = _require2.DetailClient;
 
@@ -47258,7 +47260,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.detailActions = alt.createActions(DetailActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../ServerClient":"/Users/ben/Github Projects/skylines/public/js/ServerClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js":[function(require,module,exports){
+},{"../ServerFlickrClient":"/Users/ben/Github Projects/skylines/public/js/ServerFlickrClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47270,7 +47272,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var alt = _require.alt;
 
-		var _require2 = require("../ServerClient");
+		var _require2 = require("../ServerFlickrClient");
 
 		var GalleryClient = _require2.GalleryClient;
 
@@ -47278,16 +47280,24 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				function GalleryActions() {
 						_classCallCheck(this, GalleryActions);
 
-						this.generateActions("setTags");
+						this.generateActions("prevPage", "nextPage");
 				}
 
 				_createClass(GalleryActions, {
 						getPhotos: {
-								value: function getPhotos(options) {
+								value: function getPhotos(options, params) {
 										var _this = this;
 
+										for (var key in params) {
+												options[key] = params[key];
+										}
+										if (options.page) {
+												options.page = Math.ceil(options.page / 25);
+										}
 										GalleryClient.requestPhotos(options).then(function (data) {
-												return _this.dispatch(data.photos);
+												data = data.photos;
+												var obj = { params: params, data: data };
+												_this.dispatch(obj);
 										});
 								}
 						},
@@ -47299,6 +47309,15 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												return _this.dispatch(resp);
 										});
 								}
+						},
+						changePage: {
+								value: function changePage(newPage, needRequest) {
+										if (needRequest === "request") {
+												this.getPhotos({}, { page: newPage });
+												return;
+										}
+										this.dispatch(newPage);
+								}
 						}
 				});
 
@@ -47309,7 +47328,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.galleryActions = alt.createActions(GalleryActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../ServerClient":"/Users/ben/Github Projects/skylines/public/js/ServerClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js":[function(require,module,exports){
+},{"../ServerFlickrClient":"/Users/ben/Github Projects/skylines/public/js/ServerFlickrClient.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47344,7 +47363,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										Parse.User.logIn(username, password, {
 												success: function (user) {
 														_this.dispatch(user);
-														router.transitionTo("home");
+														router.transitionTo("gallery");
 												},
 												error: function (user, error) {
 														return console.log(error);
@@ -47371,7 +47390,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														Parse.User.logIn(username, password, {
 																success: function (user) {
 																		_this.dispatch(user);
-																		router.transitionTo("home");
+																		router.transitionTo("gallery");
 																},
 																error: function (userIn, error) {
 																		return console.log(error);
@@ -47427,10 +47446,6 @@ var Parse = _require.Parse;
 
 var React = require("react");
 
-var _require2 = require("./components/GalleryView");
-
-var GalleryView = _require2.GalleryView;
-
 window.onload = app;
 
 function app() {
@@ -47438,22 +47453,24 @@ function app() {
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm");
 
+		var user = Parse.User.current() || "";
+
 		var router = require("./Router").router;
 
 		router.run(function (Handler, state) {
-				var user = Parse.User.current() || "";
-				var params = state.params;
 				var path = state.path;
+				var params = state.params;
 
 				if (user && (path === "/login" || path === "/register")) {
-						router.transitionTo("home");
+						router.transitionTo("/gallery");
 						return;
 				}
+
 				React.render(React.createElement(Handler, { params: params, router: this }), document.getElementById("container"));
 		});
 }
 
-},{"./Router":"/Users/ben/Github Projects/skylines/public/js/Router.jsx","./components/GalleryView":"/Users/ben/Github Projects/skylines/public/js/components/GalleryView.jsx","parse":"/Users/ben/Github Projects/skylines/node_modules/parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/AppView.jsx":[function(require,module,exports){
+},{"./Router":"/Users/ben/Github Projects/skylines/public/js/Router.jsx","parse":"/Users/ben/Github Projects/skylines/node_modules/parse/build/parse-latest.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/AppView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47769,12 +47786,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 						_get(Object.getPrototypeOf(GalleryView.prototype), "constructor", this).call(this);
 						this.state = galleryStore.getState();
-
-						var _userStore$getState = userStore.getState();
-
-						var user = _userStore$getState.user;
-
-						this.state.user = user;
+						this.state.user = userStore.getState();
 				}
 
 				_inherits(GalleryView, _React$Component);
@@ -47782,7 +47794,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										galleryActions.getPhotos({ api_key: this.props.flickrKey });
+										var routerParams = this.context.router.getCurrentParams();
+										if (!routerParams.page) routerParams.page = 1;
+
+										galleryActions.getPhotos({}, routerParams);
 										userActions.current();
 								}
 						},
@@ -47812,9 +47827,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function render() {
 										var _this = this;
 
-										var photos = this.state.photo.map(function (photo) {
-												return React.createElement(Photo, { photo: photo, router: _this.props.router, user: _this.state.user, key: photo.id });
+										var photos = this.state.paginate.currentPhotos.map(function (photo) {
+												return React.createElement(Photo, { photo: photo, user: _this.state.user, key: photo.id });
 										});
+
 										var tags = this.state.tags.map(function (tag) {
 												var id = "tag" + tag;
 												return React.createElement(
@@ -47831,6 +47847,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														" "
 												);
 										});
+
 										return React.createElement(
 												"main",
 												{ className: "gallery" },
@@ -47852,68 +47869,61 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												React.createElement(
 														"div",
 														null,
-														this.state.page > 1 ? React.createElement(
-																"h6",
-																{ onClick: this.prevPage.bind(this) },
+														this.state.paginate.prevPageExists ? React.createElement(
+																Link,
+																{ to: this.state.paginate.prevPageRoute, onClick: this.prevPage.bind(this) },
 																"Prev"
 														) : null,
 														React.createElement(
 																"h6",
 																null,
-																this.state.page
+																this.state.paginate.currentPage
 														),
-														this.state.page < this.state.pages ? React.createElement(
-																"h6",
-																{ onClick: this.nextPage.bind(this) },
+														this.state.paginate.nextPageExists ? React.createElement(
+																Link,
+																{ to: this.state.paginate.nextPageRoute, onClick: this.nextPage.bind(this) },
 																"Next"
 														) : null
 												)
 										);
 								}
 						},
-						renderLoading: {
-								value: function renderLoading() {
-										return React.createElement(
-												"div",
-												null,
-												"Loading"
-										);
-								}
-						},
 						search: {
 								value: function search(e) {
 										e.preventDefault();
-										var tags = React.findDOMNode(this.refs.search).value.split(" ");
-										galleryActions.setTags(tags);
-										galleryActions.getPhotos({ tags: tags }, this.state.user);
+										var addedTags = React.findDOMNode(this.refs.search).value.split(" ");
+										var tags = this.state.tags.concat(addedTags);
+										this.context.router.transitionTo("gallery", { tags: tags });
+										galleryActions.getPhotos({ tags: addedTags });
 										React.findDOMNode(this.refs.search).value = "";
 								}
 						},
 						removeTag: {
 								value: function removeTag(e) {
-										var tag = ("-" + e.target.parentNode.id.slice(3)).split();
-										galleryActions.setTags(tag);
-										galleryActions.getPhotos({ tags: tag }, this.state.user);
+										var tag = e.target.parentNode.id.slice(3);
+										var tags = this.state.tags.splice(this.state.tags.indexOf(tag), 1);
+										this.context.router.transitionTo("gallery", { tags: tags });
+										galleryActions.getPhotos({ tags: ("-" + tag).split() });
 								}
 						},
 						prevPage: {
 								value: function prevPage() {
-										galleryActions.getPhotos({ page: this.state.page - 1 });
-										document.documentElement.scrollTop = 0;
-										document.body.scrollTop = 0;
+										galleryActions.changePage(this.state.paginate.currentPage - 1, this.state.prevPageExists);
 								}
 						},
 						nextPage: {
 								value: function nextPage() {
-										galleryActions.getPhotos({ page: this.state.page + 1 });
-										document.documentElement.scrollTop = 0;
-										document.body.scrollTop = 0;
+										galleryActions.changePage(this.state.paginate.currentPage + 1, this.state.nextPageExists);
 								}
 						}
 				});
 
 				return GalleryView;
 		})(React.Component);
+
+		GalleryView.contextTypes = {
+				router: React.PropTypes.func.isRequired
+		};
 
 		var Photo = (function (_React$Component2) {
 				function Photo() {
@@ -47927,8 +47937,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(Photo, {
 						render: {
 								value: function render() {
-										var owner_url = this.props.photo.owner && "https://www.flickr.com/people/" + this.props.photo.owner;
-
 										return React.createElement(
 												"div",
 												{ className: "photo" },
@@ -47958,7 +47966,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												),
 												React.createElement(
 														"a",
-														{ href: owner_url, target: "_blank" },
+														{ href: this.props.photo.owner_url, target: "_blank" },
 														React.createElement(
 																"h4",
 																null,
@@ -47969,11 +47977,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								}
 						},
 						vote: {
-
-								// details() {
-								// 		this.props.router.transitionTo('photo', {id: this.props.photo.id})
-								// }
-
 								value: function vote() {
 										galleryActions.vote(this.props.photo.id, this.props.user);
 								}
@@ -48086,9 +48089,13 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"header",
 												null,
 												React.createElement(
-														"h1",
-														null,
-														"CITYSCAPE"
+														Link,
+														{ to: "gallery" },
+														React.createElement(
+																"h1",
+																null,
+																"CITYSCAPE"
+														)
 												),
 												userinfo
 										);
@@ -48178,13 +48185,17 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						login: {
 								value: function login(e) {
 										e.preventDefault();
-										userActions.login(React.findDOMNode(this.refs.username).value, React.findDOMNode(this.refs.password).value, this.props.router);
+										userActions.login(React.findDOMNode(this.refs.username).value, React.findDOMNode(this.refs.password).value, this.context.router);
 								}
 						}
 				});
 
 				return LoginView;
 		})(React.Component);
+
+		LoginView.contextTypes = {
+				router: React.PropTypes.func.isRequired
+		};
 
 		exports.LoginView = LoginView;
 })(typeof module === "object" ? module.exports : window);
@@ -48272,6 +48283,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						componentWillMount: {
 								value: function componentWillMount() {
 										userStore.listen(this.onChange.bind(this));
+										console.log(this.context.router.getLocation());
 								}
 						},
 						componentWillUnmount: {
@@ -48336,6 +48348,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		exports.RegisterView = RegisterView;
 })(typeof module === "object" ? module.exports : window);
+// .addChangeListener((change) => {
+// 	console.log(change)
+// 	console.log(arguments)
+// })
 
 },{"../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/react-router/modules/Cancellation.js":[function(require,module,exports){
 "use strict";
@@ -51193,7 +51209,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				return DetailStore;
 		})();
 
-		exports.DetailStore = DetailStore;
 		exports.detailStore = alt.createStore(DetailStore);
 })(typeof module === "object" ? module.exports : window);
 
@@ -51205,6 +51220,9 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
+
+		var $ = require("jquery");
+
 		var _require = require("../alt-app");
 
 		var alt = _require.alt;
@@ -51215,61 +51233,137 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var GalleryStore = (function () {
 				function GalleryStore() {
+						var _this = this;
+
 						_classCallCheck(this, GalleryStore);
 
-						this.photo = [];
-						this.page = null;
-						this.pages = null;
+						this.requests = [];
+						this.requestPage = null;
+						this.requestPages = null;
 						this.tags = [];
-						this.extras = [];
-						this.photoIds = [];
+						this.isSearch = "";
+
+						// browser-side pagination
+						this.paginate = {
+								constants: {
+										photosPerPage: 20,
+										photosPerRequest: 500,
+										pagesPerRequest: function () {
+												return _this.paginate.constants.photosPerRequest / _this.paginate.constants.photosPerPage;
+										}
+								},
+								totalPages: null,
+								currentPage: 1,
+								currentPhotos: [],
+								nextPageExists: false,
+								prevPageExists: false,
+								nextPageRoute: null,
+								prevPageRoute: null
+						};
 
 						this.bindListeners({
 								getPhotos: galleryActions.getPhotos,
-								setTags: galleryActions.setTags
+								changePage: galleryActions.changePage
 						});
 				}
 
 				_createClass(GalleryStore, {
 						getPhotos: {
-								value: function getPhotos(data) {
-										var _this = this;
+								value: function getPhotos(obj) {
+										var params = obj.params;
+										var data = obj.data;
+
+										this._dataToState(data, params);
+								}
+						},
+						changePage: {
+								value: function changePage(routerPage) {
+										this._paginate(routerPage);
+								}
+						},
+						_dataToState: {
+								value: function _dataToState(data, routerParams) {
+										if (data.tags !== this.tags) this.requests = [];
+										this.requests[data.page] = {};
+
+										data.photo.forEach(function (val) {
+												if (val.owner) val.owner_url = "https://www.flickr.com/people/" + val.owner;
+										});
 
 										for (var key in data) {
-												this[key] = data[key];
+												this.requests[data.page][key] = data[key];
 										}
-										this.photoIds = [];
-										data.photo.forEach(function (val) {
-												_this.photoIds.push(val);
-										});
-								}
-						},
-						setTags: {
-								value: function setTags(tags) {
-										var _this = this;
 
-										tags.forEach(function (val) {
-												if (val.indexOf("-") === 0) {
-														_this.tags.splice(_this.tags.indexOf(val.slice(1)), 1);
-												} else {
-														_this.tags.push(val);
-												}
-										});
+										this.requestPage = data.page;
+										this.requestPages = data.pages;
+										this.tags = data.tags;
+										this.tags.length === 0 ? this.isSearch = "" : this.isSearch = "/search=" + this.tags.join(",");
+
+										this._paginate(routerParams.page);
 								}
 						},
-						getVotes: {
-								value: function getVotes() {}
+						_paginate: {
+								value: function _paginate(routerPage) {
+										this.paginate.totalPages = this._paginateTotalPages();
+										this.paginate.currentPage = routerPage;
+										this.paginate.currentPhotos = this._paginateCurrentPhotos(routerPage), this.paginate.nextPageExists = this._paginatePageExists("+", routerPage);
+										this.paginate.prevPageExists = this._paginatePageExists("-", routerPage);
+										this.paginate.nextPageRoute = this._paginatePageRoute("+", routerPage);
+										this.paginate.prevPageRoute = this._paginatePageRoute("-", routerPage);
+								}
+						},
+						_paginateTotalPages: {
+								value: function _paginateTotalPages() {
+										// pages in current request
+										var pages = Math.ceil(this.requests[this.requestPage].photo.length / this.paginate.constants.photosPerPage);
+										// pages in request and requests before
+										console.log(pages);
+										return pages;
+								}
+						},
+						_paginateCurrentPhotos: {
+								value: function _paginateCurrentPhotos(routerPage) {
+										// photo position == currentBrowserPage - totalBrowserPages in previous requests - 1 (index alignment) * photos per page
+										var pageConst = this.paginate.constants;
+										var startPhotoIndex = (routerPage - (this.requestPage - 1) * pageConst.pagesPerRequest() - 1) * pageConst.photosPerPage;
+
+										return this.requests[this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage);
+								}
+						},
+						_paginatePageExists: {
+								value: function _paginatePageExists(change, routerPage) {
+										if (change === "+") {
+												if (routerPage < this.paginate.totalPages) {
+														return "no-request";
+												}if (this.page < this.pages) {
+														return "request";
+												}return false;
+										}
+										if (change === "-") {
+												if (routerPage - 1 > (this.requestPage - 1) * 20) {
+														return "no-request";
+												}if (this.requests[this.requestPage - 1]) {
+														return "no-request";
+												}if (routerPage - 1 === 0) {
+														return false;
+												}return "request";
+										}
+								}
+						},
+						_paginatePageRoute: {
+								value: function _paginatePageRoute(change, routerPage) {
+										return "/gallery" + this.isSearch + "/page" + eval(routerPage + change + 1);
+								}
 						}
 				});
 
 				return GalleryStore;
 		})();
 
-		exports.GalleryStore = GalleryStore;
 		exports.galleryStore = alt.createStore(GalleryStore);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js"}],"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js":[function(require,module,exports){
+},{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../alt-app":"/Users/ben/Github Projects/skylines/public/js/alt-app.js","jquery":"/Users/ben/Github Projects/skylines/node_modules/jquery/dist/jquery.js"}],"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -51311,7 +51405,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				return UserStore;
 		})();
 
-		exports.UserStore = UserStore;
 		exports.userStore = alt.createStore(UserStore);
 })(typeof module === "object" ? module.exports : window);
 
@@ -51357,7 +51450,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				return UserStore;
 		})();
 
-		exports.UserStore = UserStore;
 		exports.userStore = alt.createStore(UserStore);
 })(typeof module === "object" ? module.exports : window);
 

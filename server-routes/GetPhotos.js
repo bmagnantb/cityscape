@@ -37,6 +37,8 @@ function photos(req, res) {
 						query = new Parse.Query(Parse.Photo),
 						photoCollection = {}
 
+				data.photos.tags = req.query.tags.slice(0, -2)
+
 				data.photos.photo.forEach(function(val) {
 						photo_ids.push(val.id)
 				})

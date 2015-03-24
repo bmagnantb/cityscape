@@ -20,7 +20,6 @@ class DetailStore {
 }
 
 
-exports.DetailStore = DetailStore
 exports.detailStore = alt.createStore(DetailStore)
 
 })(typeof module === 'object' ? module.exports : window)

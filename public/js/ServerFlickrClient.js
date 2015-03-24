@@ -2,7 +2,6 @@
 
 var $ = require('jquery')
 var flickrOptions = require('./FlickrSettings').options
-var { Parse } = require('parse')
 
 class ServerClient {
 		constructor(options) {
@@ -36,7 +35,7 @@ var gallerySettings = {
 				'url_m',
 				'owner_name'
 		],
-		per_page: '30',
+		per_page: '500',
 		sort: 'relevance',
 		tag_mode: 'all'
 }
