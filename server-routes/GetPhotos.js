@@ -82,13 +82,13 @@ function photos(req, res) {
 										queryVoted.descending('dateupload')
 										queryVoted.limit(500)
 										queryVoted.find({
-												success: function(result) {
+												success: function(results) {
 														console.log('2nd query success')
-														result = result.map(function(val) {
-																return val.attributes;
-														})
 														if (result.length) {
-																result.forEach(function(val) {
+																results = results.map(function(val) {
+																		return val.attributes;
+																})
+																results.forEach(function(val) {
 																		if (photoCollection.pluck('photo_id').indexOf(val.photo_id) === -1) {
 																				val.id = val.photo_id
 																				delete val.photo_id
@@ -96,7 +96,6 @@ function photos(req, res) {
 																		}
 																})
 																data.photos.photo.sort(function(a, b) {
-																		var num
 																		if (a.total_votes > b.total_votes) return -1
 																		if (b.total_votes > a.total_votes) return 1
 																		if (a.dateupload > b.dateupload) return -1
