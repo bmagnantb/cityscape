@@ -81,14 +81,12 @@ function photos(req, res) {
 										queryVoted.greaterThan('dateupload', sevenDays.toString())
 										queryVoted.descending('dateupload')
 										queryVoted.limit(500)
-										console.log('2nd query')
 										queryVoted.find({
 												success: function(result) {
 														console.log('2nd query success')
 														result = result.map(function(val) {
 																return val.attributes;
 														})
-														console.log(result)
 														if (result.length) {
 																result.forEach(function(val) {
 																		if (photoCollection.pluck('photo_id').indexOf(val.photo_id) === -1) {
