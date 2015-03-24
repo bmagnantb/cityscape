@@ -53,6 +53,7 @@ class GalleryStore {
 
 
 		_dataToState(data, routerParams) {
+				console.log(data)
 				if (data.tags !== this.tags) this.requests = []
 				this.requests[data.page] = {}
 
@@ -90,7 +91,6 @@ class GalleryStore {
 				// pages in current request
 				var pages = Math.ceil(this.requests[this.requestPage].photo.length / this.paginate.constants.photosPerPage)
 				// pages in request and requests before
-				console.log(pages)
 				return pages
 		}
 

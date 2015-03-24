@@ -33,7 +33,8 @@ var gallerySettings = {
 		content_type: '1',
 		extras: [
 				'url_m',
-				'owner_name'
+				'owner_name',
+				'date_upload'
 		],
 		per_page: '500',
 		sort: 'relevance',

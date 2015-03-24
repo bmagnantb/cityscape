@@ -47194,7 +47194,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		var gallerySettings = {
 				method: "flickr.photos.search",
 				content_type: "1",
-				extras: ["url_m", "owner_name"],
+				extras: ["url_m", "owner_name", "date_upload"],
 				per_page: "500",
 				sort: "relevance",
 				tag_mode: "all"
@@ -51283,6 +51283,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						_dataToState: {
 								value: function _dataToState(data, routerParams) {
+										console.log(data);
 										if (data.tags !== this.tags) this.requests = [];
 										this.requests[data.page] = {};
 
@@ -51317,7 +51318,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										// pages in current request
 										var pages = Math.ceil(this.requests[this.requestPage].photo.length / this.paginate.constants.photosPerPage);
 										// pages in request and requests before
-										console.log(pages);
 										return pages;
 								}
 						},
