@@ -72,6 +72,8 @@ class GalleryView extends React.Component {
 						)
 				})
 
+				if (this.state.isLoading) return <main className="loading"><h2>Loading...</h2></main>
+
 				return (
 						<main className="gallery">
 								<form onSubmit={this.search.bind(this)}>
@@ -81,7 +83,6 @@ class GalleryView extends React.Component {
 										{tags}
 								</div>
 								<div className="photos">
-										{this.state.isLoading}
 										{photos}
 								</div>
 								<div>
@@ -108,7 +109,7 @@ class GalleryView extends React.Component {
 				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
 				else this.context.router.transitionTo('gallerynosearch', {page: 1})
 				React.findDOMNode(this.refs.search).value = ''
-				this.setState({isLoading: <h2>Loading</h2>})
+				this.setState({isLoading: true})
 		}
 
 
@@ -122,14 +123,14 @@ class GalleryView extends React.Component {
 				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
 				else this.context.router.transitionTo('gallerynosearch', {page: 1})
 				// this.context.router.transitionTo('gallery', {tags: tags})
-				this.setState({isLoading: <h2>Loading</h2>})
+				this.setState({isLoading: true})
 		}
 
 
 
 		changePage() {
-				if (this.nextPageExists === 'request') this.setState({isLoading: <h2>Loading</h2>})
-				if (this.prevPageExists === 'request') this.setState({isLoading: <h2>Loading</h2>})
+				if (this.nextPageExists === 'request') this.setState({isLoading: true})
+				if (this.prevPageExists === 'request') this.setState({isLoading: true})
 		}
 		// prevPage() {
 		// 		var routerParams = this.context.router.getCurrentParams()

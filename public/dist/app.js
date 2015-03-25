@@ -47860,7 +47860,17 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												);
 										});
 
-										return React.createElement(
+										if (this.state.isLoading) {
+												return React.createElement(
+														"main",
+														{ className: "loading" },
+														React.createElement(
+																"h2",
+																null,
+																"Loading..."
+														)
+												);
+										}return React.createElement(
 												"main",
 												{ className: "gallery" },
 												React.createElement(
@@ -47876,7 +47886,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												React.createElement(
 														"div",
 														{ className: "photos" },
-														this.state.isLoading,
 														photos
 												),
 												React.createElement(
@@ -47908,11 +47917,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var tags = this.state.tags.concat(addedTags);
 										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
 										React.findDOMNode(this.refs.search).value = "";
-										this.setState({ isLoading: React.createElement(
-														"h2",
-														null,
-														"Loading"
-												) });
+										this.setState({ isLoading: true });
 								}
 						},
 						removeTag: {
@@ -47924,25 +47929,13 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										prevParams.deletedTag = "-" + tag;
 										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
 										// this.context.router.transitionTo('gallery', {tags: tags})
-										this.setState({ isLoading: React.createElement(
-														"h2",
-														null,
-														"Loading"
-												) });
+										this.setState({ isLoading: true });
 								}
 						},
 						changePage: {
 								value: function changePage() {
-										if (this.nextPageExists === "request") this.setState({ isLoading: React.createElement(
-														"h2",
-														null,
-														"Loading"
-												) });
-										if (this.prevPageExists === "request") this.setState({ isLoading: React.createElement(
-														"h2",
-														null,
-														"Loading"
-												) });
+										if (this.nextPageExists === "request") this.setState({ isLoading: true });
+										if (this.prevPageExists === "request") this.setState({ isLoading: true });
 								}
 								// prevPage() {
 								// 		var routerParams = this.context.router.getCurrentParams()
