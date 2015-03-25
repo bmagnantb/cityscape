@@ -47026,7 +47026,7 @@ module.exports = require('./lib/React');
 										// if extras/tags is Array, join then concat with existing key, otherwise assume string
 										if (key === "extras" || key === "tags") {
 
-												if (key === "--extras" || key === "--tags") {
+												if (key === "-extras" || key === "-tags") {
 														delete settings[key.slice(2)];
 												} else if (!settings[key]) {
 														if (settings2[key] instanceof Array) {
@@ -47035,6 +47035,7 @@ module.exports = require('./lib/React');
 																settings[key] = settings2[key].split(" ");
 														}
 												} else if (settings2[key] instanceof Array || settings2[key] instanceof String) {
+														console.log(settings2[key]);
 														if (settings2[key] instanceof String) {
 																settings2[key] = settings2[key].split(" ");
 														}
@@ -47123,20 +47124,15 @@ module.exports = require('./lib/React');
 		var routes = React.createElement(
 				Route,
 				{ name: "app", path: "/", handler: AppView },
-				React.createElement(
-						Route,
-						{ name: "gallery", path: "/gallery", handler: GalleryView },
-						React.createElement(Route, { name: "gallerysearch", path: "/gallery/search=:tags", handler: GalleryView }),
-						React.createElement(Route, { name: "gallerypage", path: "/gallery/page:page", handler: GalleryView }),
-						React.createElement(Route, { name: "gallerysearchpage", path: "/gallery/search=:tags/page:page", handler: GalleryView })
-				),
+				React.createElement(Route, { name: "gallerynosearch", path: "/gallery/page:page", handler: GalleryView }),
+				React.createElement(Route, { name: "gallerysearch", path: "/gallery/:tags/page:page", handler: GalleryView }),
 				React.createElement(Route, { name: "photo", path: "/photo/:id", handler: DetailView }),
 				React.createElement(Redirect, { from: "details", to: "photo" }),
 				React.createElement(Route, { name: "login", path: "/login", handler: LoginView }),
 				React.createElement(Redirect, { from: "signin", to: "login" }),
 				React.createElement(Route, { name: "register", path: "/register", handler: RegisterView }),
 				React.createElement(Route, { name: "passemailsent", path: "/passemailsent", handler: PassEmailView }),
-				React.createElement(Redirect, { from: "*", to: "gallery" })
+				React.createElement(Redirect, { from: "*", to: "gallerynosearch", params: { page: 1 } })
 		);
 
 		var router = Router.create(routes);
@@ -47288,9 +47284,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function getPhotos(options, params) {
 										var _this = this;
 
+										console.log(options);
 										for (var key in params) {
 												options[key] = params[key];
 										}
+										console.log(options);
 										if (options.page) {
 												options.page = Math.ceil(options.page / 25);
 										}
@@ -47465,11 +47463,12 @@ function app() {
 				var params = state.params;
 
 				if (user && (path === "/login" || path === "/register")) {
-						router.transitionTo("/gallery");
+						router.transitionTo("gallerynosearch", { page: 1 });
 						return;
 				}
 
-				React.render(React.createElement(Handler, { params: params, router: this }), document.getElementById("container"));
+				console.log(state.params);
+				React.render(React.createElement(Handler, null), document.querySelector("#container"));
 		});
 }
 
@@ -47522,7 +47521,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"div",
 												{ className: "app" },
 												React.createElement(Header, null),
-												React.createElement(RouteHandler, this.props),
+												React.createElement(RouteHandler, null),
 												React.createElement(Footer, null)
 										);
 								}
@@ -47790,6 +47789,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						_get(Object.getPrototypeOf(GalleryView.prototype), "constructor", this).call(this);
 						this.state = galleryStore.getState();
 						this.state.user = userStore.getState().user;
+						this.state.isLoading = React.createElement(
+								"h2",
+								null,
+								"Loading"
+						);
 				}
 
 				_inherits(GalleryView, _React$Component);
@@ -47798,9 +47802,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						componentWillMount: {
 								value: function componentWillMount() {
 										var routerParams = this.context.router.getCurrentParams();
-										if (!routerParams.page) routerParams.page = 1;
-
-										galleryActions.getPhotos({}, routerParams);
 										userActions.current();
 								}
 						},
@@ -47819,6 +47820,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						onGalleryChange: {
 								value: function onGalleryChange() {
 										this.setState(galleryStore.getState());
+										prevParams.nextPageExists = this.state.paginate.nextPageExists;
+										prevParams.prevPageExists = this.state.paginate.prevPageExists;
 								}
 						},
 						onUserChange: {
@@ -47833,6 +47836,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var photos = this.state.paginate.currentPhotos.map(function (photo) {
 												return React.createElement(Photo, { photo: photo, user: _this.state.user, key: photo.id });
 										});
+
+										if (!photos.length && !this.state.isLoading) photos = React.createElement(
+												"h2",
+												null,
+												"No results"
+										);
 
 										var tags = this.state.tags.map(function (tag) {
 												var id = "tag" + tag;
@@ -47867,6 +47876,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												React.createElement(
 														"div",
 														{ className: "photos" },
+														this.state.isLoading,
 														photos
 												),
 												React.createElement(
@@ -47874,7 +47884,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														null,
 														this.state.paginate.prevPageExists ? React.createElement(
 																Link,
-																{ to: this.state.paginate.prevPageRoute, onClick: this.prevPage.bind(this) },
+																{ to: this.state.paginate.prevPageRoute, onClick: this.changePage.bind(this) },
 																"Prev"
 														) : null,
 														React.createElement(
@@ -47884,7 +47894,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														),
 														this.state.paginate.nextPageExists ? React.createElement(
 																Link,
-																{ to: this.state.paginate.nextPageRoute, onClick: this.nextPage.bind(this) },
+																{ to: this.state.paginate.nextPageRoute, onClick: this.changePage.bind(this) },
 																"Next"
 														) : null
 												)
@@ -47896,28 +47906,54 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										e.preventDefault();
 										var addedTags = React.findDOMNode(this.refs.search).value.split(" ");
 										var tags = this.state.tags.concat(addedTags);
-										this.context.router.transitionTo("gallery", { tags: tags });
-										galleryActions.getPhotos({ tags: addedTags });
+										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
 										React.findDOMNode(this.refs.search).value = "";
+										this.setState({ isLoading: React.createElement(
+														"h2",
+														null,
+														"Loading"
+												) });
 								}
 						},
 						removeTag: {
 								value: function removeTag(e) {
+										console.log("click");
 										var tag = e.target.parentNode.id.slice(3);
-										var tags = this.state.tags.splice(this.state.tags.indexOf(tag), 1);
-										this.context.router.transitionTo("gallery", { tags: tags });
-										galleryActions.getPhotos({ tags: ("-" + tag).split() });
+										var tags = this.state.tags.slice();
+										tags.splice(this.state.tags.indexOf(tag), 1);
+										prevParams.deletedTag = "-" + tag;
+										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
+										// this.context.router.transitionTo('gallery', {tags: tags})
+										this.setState({ isLoading: React.createElement(
+														"h2",
+														null,
+														"Loading"
+												) });
 								}
 						},
-						prevPage: {
-								value: function prevPage() {
-										galleryActions.changePage(this.state.paginate.currentPage - 1, this.state.prevPageExists);
+						changePage: {
+								value: function changePage() {
+										if (this.nextPageExists === "request") this.setState({ isLoading: React.createElement(
+														"h2",
+														null,
+														"Loading"
+												) });
+										if (this.prevPageExists === "request") this.setState({ isLoading: React.createElement(
+														"h2",
+														null,
+														"Loading"
+												) });
 								}
-						},
-						nextPage: {
-								value: function nextPage() {
-										galleryActions.changePage(this.state.paginate.currentPage + 1, this.state.nextPageExists);
-								}
+								// prevPage() {
+								// 		var routerParams = this.context.router.getCurrentParams()
+								// 		this.context.router.transitionTo(this.isSearch)
+								// 		galleryActions.changePage(this.state.paginate.currentPage - 1, this.state.prevPageExists)
+								// }
+
+								// nextPage() {
+								// 		galleryActions.changePage(this.state.paginate.currentPage + 1, this.state.nextPageExists)
+								// }
+
 						}
 				});
 
@@ -47926,6 +47962,28 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		GalleryView.contextTypes = {
 				router: React.PropTypes.func.isRequired
+		};
+
+		var prevParams = {};
+		GalleryView.willTransitionTo = function (transition, params) {
+				if (!prevParams.page) prevParams.page = params.page;
+				if (!prevParams.tags) prevParams.tags = params.tags;
+				if (prevParams.tags === params.tags && prevParams.page !== params.page) {
+						console.log("page change");
+						if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists);
+						if (prevParams.page < params.page) galleryActions.changePage(params.page, prevParams.nextPageExists);
+				} else {
+						if (params.tags) params.tags = params.tags.split(",");
+						if (prevParams.deletedTag) {
+								if (!params.tags) params.tags = [];
+								params.tags.push(prevParams.deletedTag);
+								delete prevParams.deletedTag;
+						}
+						if (!params.tags) delete params.tags;
+						console.log(params);
+						galleryActions.getPhotos({}, params);
+				}
+				prevParams = params;
 		};
 
 		var Photo = (function (_React$Component2) {
@@ -48093,7 +48151,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												null,
 												React.createElement(
 														Link,
-														{ to: "gallery" },
+														{ to: "gallerynosearch", params: { page: 1 } },
 														React.createElement(
 																"h1",
 																null,
@@ -51296,9 +51354,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										this.requestPage = data.page;
 										this.requestPages = data.pages;
 										this.tags = data.tags;
-										this.tags.length === 0 ? this.isSearch = "" : this.isSearch = "/search=" + this.tags.join(",");
+										this.tags.length === 0 ? this.isSearch = false : this.isSearch = true;
 
 										this._paginate(routerParams.page);
+										this.isLoading = false;
 								}
 						},
 						_paginate: {
@@ -51350,7 +51409,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						_paginatePageRoute: {
 								value: function _paginatePageRoute(change, routerPage) {
-										return "/gallery" + this.isSearch + "/page" + eval(routerPage + change + 1);
+										if (this.isSearch) {
+												return "/gallery/" + this.tags.join(",") + "/page" + eval(routerPage + change + 1);
+										} else {
+												return "/gallery/page" + eval(routerPage + change + 1);
+										}
 								}
 						}
 				});

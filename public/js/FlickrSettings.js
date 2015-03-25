@@ -27,7 +27,7 @@ function options(settings) {
 								// if extras/tags is Array, join then concat with existing key, otherwise assume string
 								if (key === 'extras' || key === 'tags') {
 
-										if (key === '--extras' || key === '--tags') {
+										if (key === '-extras' || key === '-tags') {
 												delete settings[key.slice(2)]
 										}
 
@@ -40,6 +40,7 @@ function options(settings) {
 										}
 
 										else if (settings2[key] instanceof Array || settings2[key] instanceof String) {
+												console.log(settings2[key])
 												if (settings2[key] instanceof String) {
 														settings2[key] = settings2[key].split(' ')
 												}

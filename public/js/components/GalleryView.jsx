@@ -15,15 +15,13 @@ class GalleryView extends React.Component {
 				super()
 				this.state = galleryStore.getState()
 				this.state.user = userStore.getState().user
+				this.state.isLoading = <h2>Loading</h2>
 		}
 
 
 
 		componentWillMount() {
 				var routerParams = this.context.router.getCurrentParams()
-				if (!routerParams.page) routerParams.page = 1
-
-				galleryActions.getPhotos({}, routerParams)
 				userActions.current()
 		}
 
@@ -45,6 +43,8 @@ class GalleryView extends React.Component {
 
 		onGalleryChange() {
 				this.setState(galleryStore.getState())
+				prevParams.nextPageExists = this.state.paginate.nextPageExists
+				prevParams.prevPageExists = this.state.paginate.prevPageExists
 		}
 
 
@@ -59,6 +59,8 @@ class GalleryView extends React.Component {
 				var photos = this.state.paginate.currentPhotos.map((photo) => {
 						return <Photo photo={photo} user={this.state.user} key={photo.id} />
 				})
+
+				if (!photos.length && !this.state.isLoading) photos = <h2>No results</h2>
 
 				var tags = this.state.tags.map((tag) => {
 						var id = `tag${tag}`
@@ -79,17 +81,18 @@ class GalleryView extends React.Component {
 										{tags}
 								</div>
 								<div className="photos">
+										{this.state.isLoading}
 										{photos}
 								</div>
 								<div>
 										{this.state.paginate.prevPageExists ?
-												<Link to={this.state.paginate.prevPageRoute} onClick={this.prevPage.bind(this)}>Prev</Link> :
+												<Link to={this.state.paginate.prevPageRoute} onClick={this.changePage.bind(this)}>Prev</Link> :
 												null}
 
 										<h6>{this.state.paginate.currentPage}</h6>
 
 										{this.state.paginate.nextPageExists ?
-												<Link to={this.state.paginate.nextPageRoute} onClick={this.nextPage.bind(this)}>Next</Link> :
+												<Link to={this.state.paginate.nextPageRoute} onClick={this.changePage.bind(this)}>Next</Link> :
 												null}
 								</div>
 						</main>
@@ -102,37 +105,76 @@ class GalleryView extends React.Component {
 				e.preventDefault()
 				var addedTags = React.findDOMNode(this.refs.search).value.split(' ')
 				var tags = this.state.tags.concat(addedTags)
-				this.context.router.transitionTo('gallery', {tags: tags})
-				galleryActions.getPhotos({tags: addedTags})
+				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
+				else this.context.router.transitionTo('gallerynosearch', {page: 1})
 				React.findDOMNode(this.refs.search).value = ''
+				this.setState({isLoading: <h2>Loading</h2>})
 		}
 
 
 
 		removeTag(e) {
+				console.log('click')
 				var tag = e.target.parentNode.id.slice(3)
-				var tags = this.state.tags.splice(this.state.tags.indexOf(tag), 1)
-				this.context.router.transitionTo('gallery', {tags: tags})
-				galleryActions.getPhotos({tags: `-${tag}`.split()})
+				var tags = this.state.tags.slice()
+				tags.splice(this.state.tags.indexOf(tag), 1)
+				prevParams.deletedTag = `-${tag}`
+				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
+				else this.context.router.transitionTo('gallerynosearch', {page: 1})
+				// this.context.router.transitionTo('gallery', {tags: tags})
+				this.setState({isLoading: <h2>Loading</h2>})
 		}
 
 
 
-		prevPage() {
-				galleryActions.changePage(this.state.paginate.currentPage - 1, this.state.prevPageExists)
+		changePage() {
+				if (this.nextPageExists === 'request') this.setState({isLoading: <h2>Loading</h2>})
+				if (this.prevPageExists === 'request') this.setState({isLoading: <h2>Loading</h2>})
 		}
+		// prevPage() {
+		// 		var routerParams = this.context.router.getCurrentParams()
+		// 		this.context.router.transitionTo(this.isSearch)
+		// 		galleryActions.changePage(this.state.paginate.currentPage - 1, this.state.prevPageExists)
+		// }
 
 
 
-		nextPage() {
-				galleryActions.changePage(this.state.paginate.currentPage + 1, this.state.nextPageExists)
-		}
+		// nextPage() {
+		// 		galleryActions.changePage(this.state.paginate.currentPage + 1, this.state.nextPageExists)
+		// }
 }
 
 
 GalleryView.contextTypes = {
 				router: React.PropTypes.func.isRequired
 		}
+
+var prevParams = {}
+GalleryView.willTransitionTo = function(transition, params) {
+		if (!prevParams.page) prevParams.page = params.page
+		if (!prevParams.tags) prevParams.tags = params.tags
+		if ((prevParams.tags === params.tags) && (prevParams.page !== params.page)) {
+				console.log('page change')
+				if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists)
+				if (prevParams.page < params.page) galleryActions.changePage(params.page, prevParams.nextPageExists)
+		}
+		else {
+				if (params.tags) params.tags = params.tags.split(',')
+				if (prevParams.deletedTag) {
+						if (!params.tags) params.tags = []
+						params.tags.push(prevParams.deletedTag)
+						delete prevParams.deletedTag
+				}
+				if (!params.tags) delete params.tags
+				console.log(params)
+				galleryActions.getPhotos({}, params)
+		}
+		prevParams = params
+}
+
+
+
+
 
 
 
@@ -172,8 +214,6 @@ class Photo extends React.Component {
 				galleryActions.vote(this.props.photo.id, this.props.user)
 		}
 }
-
-
 
 
 exports.GalleryView = GalleryView

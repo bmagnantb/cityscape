@@ -17,7 +17,7 @@ class AppView extends React.Component {
 				return (
 						<div className="app">
 								<Header />
-									<RouteHandler {...this.props} />
+								<RouteHandler />
 								<Footer />
 						</div>
 				)

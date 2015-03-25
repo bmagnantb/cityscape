@@ -47,7 +47,7 @@ class Header extends React.Component {
 
 				return (
 						<header>
-								<Link to="gallery"><h1>CITYSCAPE</h1></Link>
+								<Link to="gallerynosearch" params={{page: 1}}><h1>CITYSCAPE</h1></Link>
 								{userinfo}
 						</header>
 				)

@@ -77,9 +77,10 @@ class GalleryStore {
 				this.requestPage = data.page
 				this.requestPages = data.pages
 				this.tags = data.tags
-				this.tags.length === 0 ? this.isSearch = '' : this.isSearch = `/search=${this.tags.join(',')}`
+				this.tags.length === 0 ? this.isSearch = false : this.isSearch = true
 
 				this._paginate(routerParams.page)
+				this.isLoading = false
 		}
 
 
@@ -135,7 +136,8 @@ class GalleryStore {
 
 
 		_paginatePageRoute(change, routerPage) {
-				return `/gallery${this.isSearch}/page${eval(routerPage+change+1)}`
+				if (this.isSearch) return `/gallery/${this.tags.join(',')}/page${eval(routerPage+change+1)}`
+				else return `/gallery/page${eval(routerPage+change+1)}`
 		}
 }
 

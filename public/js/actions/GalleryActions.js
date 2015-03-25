@@ -9,9 +9,11 @@ class GalleryActions {
 		}
 
 		getPhotos(options, params) {
+				console.log(options)
 				for (var key in params) {
 						options[key] = params[key]
 				}
+				console.log(options)
 				if (options.page) {
 						options.page = Math.ceil(options.page / 25)
 				}

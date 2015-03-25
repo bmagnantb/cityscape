@@ -18,10 +18,11 @@ function app() {
 		router.run(function(Handler, state) {
 				var { path, params } = state
 				if (user && (path === '/login' || path === '/register')) {
-						router.transitionTo('/gallery')
+						router.transitionTo('gallerynosearch', {page: 1})
 						return
 				}
 
-				React.render(<Handler params={params} router={this} />, document.getElementById('container'))
+				console.log(state.params)
+				React.render(<Handler />, document.querySelector('#container'))
 		})
 }

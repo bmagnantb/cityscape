@@ -3,7 +3,6 @@ var request = require('request'),
 		flickrApiKey = 'eeacdafae711c1ae98c0342fa323569a'
 
 
-
 Parse.Photo = Parse.Object.extend('Photo', {
 		initialize: function() {
 				this.set('user_votes', [])
@@ -17,12 +16,17 @@ Parse.PhotoCollection = Parse.Collection.extend({
 })
 
 
-
 function photos(req, res) {
 		req.query.api_key = flickrApiKey
-		!req.query.tags ? req.query.tags = [] : null
-		req.query.tags.indexOf('city') === -1 ? req.query.tags.push('city') : null
-		req.query.tags.indexOf('buildings') === -1 ? req.query.tags.push('buildings') : null
+
+		if (!req.query.tags) req.query.tags = []
+		if (req.query.tags.indexOf('buildings') === -1) req.query.tags.unshift('buildings')
+		if (req.query.tags.indexOf('city') === -1) req.query.tags.unshift('city')
+
+		if (!req.query.extras) req.query.extras = []
+		if (req.query.extras.indexOf('tags') === -1) req.query.extras.push('tags')
+
+		console.log(req.query)
 		var url = 'https://api.flickr.com/services/rest?',
 				counter = 0
 
@@ -43,7 +47,7 @@ function photos(req, res) {
 						query = new Parse.Query(Parse.Photo),
 						photoCollection = {}
 
-				data.photos.tags = req.query.tags.slice(0, -2)
+				data.photos.tags = req.query.tags.slice(2)
 
 				data.photos.photo.forEach(function(val) {
 						photo_ids.push(val.id)
@@ -58,7 +62,8 @@ function photos(req, res) {
 										if (photoMatch === -1) {
 												var photo = {}
 												for (var key in val) {
-														photo[key] = val[key]
+														if (key === 'tags') photo[key] = val[key].split(' ')
+														else photo[key] = val[key]
 												}
 												photo.photo_id = photo.id
 												delete photo.id
@@ -77,16 +82,11 @@ function photos(req, res) {
 												val.user_votes = photoCollection.models[photoMatch].get('user_votes')
 										}
 								})
-								// data.photos.photo.forEach(function(val) {
-								// 		var model = photoCollection.models.filter(function(m) {
-								// 				return m.get('photo_id') === val.id
-								// 		})[0]
-								// 		val.user_votes = model.get('user_votes')
-								// 		val.total_votes = model.get('total_votes')
-								// })
+
 								if (!req.query.page || req.query.page === '1') {
 										var queryVoted = new Parse.Query(Parse.Photo)
 										var sevenDays = new Date() - (1000 * 60 * 60 * 24 * 7)
+										if (data.photos.tags.length) queryVoted.containsAll('tags', data.photos.tags)
 										queryVoted.descending('total_votes')
 										queryVoted.greaterThan('dateupload', sevenDays.toString())
 										queryVoted.descending('dateupload')
@@ -112,13 +112,15 @@ function photos(req, res) {
 																		if (b.dateupload > a.dateupload) return 1
 																		return 0
 																})
-																data.photos.photo.slice(0, 500)
 														}
+														data.photos.photo = data.photos.photo.slice(0, 500)
+														console.log('sending')
 														res.send(data)
 												},
 
 												error: function() {
 														console.log(arguments)
+														console.log('sending, error getting votes')
 														res.send(data)
 												}
 										})
