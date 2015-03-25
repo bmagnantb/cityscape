@@ -17,13 +17,13 @@ class ServerClient {
 				return $.get(`/photo${votes}`, this.options(settings)())
 		}
 
-		vote(photoId, user) {
+		vote(photoId, user, tags) {
 				var username
 				user ? username = user.get('username') : username = undefined
 				if (user && !user.get('emailVerified')) {
 						 username = 'noemail'
 				}
-				return $.post(`/${username}/photo/${photoId}`)
+				return $.post(`/${username}/photo/${photoId}/${tags}`)
 		}
 }
 

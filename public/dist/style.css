@@ -96,7 +96,7 @@ small {
  * ---------------------------------------------------------------------------------------- */
 a, a:visited {
   outline: none;
-  color: #439bbd;
+  color: #333;
   text-decoration: underline; }
 
 a:hover {

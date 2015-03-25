@@ -16,7 +16,7 @@ class UserActions {
 				Parse.User.logIn(username, password, {
 						success: (user) => {
 								this.dispatch(user)
-								router.transitionTo('gallery')
+								router.transitionTo('gallerynosearch', {page: 1})
 						},
 						error: (user, error) => console.log(error)
 				})
@@ -37,7 +37,7 @@ class UserActions {
 								Parse.User.logIn(username, password, {
 										success: (user) => {
 												this.dispatch(user)
-												router.transitionTo('gallery')
+												router.transitionTo('gallerynosearch', {page: 1})
 										},
 										error: (userIn, error) => console.log(error)
 								})

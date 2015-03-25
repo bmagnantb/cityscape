@@ -22,7 +22,6 @@ function app() {
 						return
 				}
 
-				console.log(state.params)
 				React.render(<Handler />, document.querySelector('#container'))
 		})
 }

@@ -47172,13 +47172,13 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								}
 						},
 						vote: {
-								value: function vote(photoId, user) {
+								value: function vote(photoId, user, tags) {
 										var username;
 										user ? username = user.get("username") : username = undefined;
 										if (user && !user.get("emailVerified")) {
 												username = "noemail";
 										}
-										return $.post("/" + username + "/photo/" + photoId);
+										return $.post("/" + username + "/photo/" + photoId + "/" + tags);
 								}
 						}
 				});
@@ -47240,10 +47240,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								}
 						},
 						vote: {
-								value: function vote(photoId, user) {
+								value: function vote(photoId, user, tags) {
 										var _this = this;
 
-										DetailClient.vote(photoId, user).then(function (resp) {
+										DetailClient.vote(photoId, user, tags).then(function (resp) {
 												return _this.dispatch(resp);
 										});
 								}
@@ -47284,11 +47284,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function getPhotos(options, params) {
 										var _this = this;
 
-										console.log(options);
 										for (var key in params) {
 												options[key] = params[key];
 										}
-										console.log(options);
 										if (options.page) {
 												options.page = Math.ceil(options.page / 25);
 										}
@@ -47300,10 +47298,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								}
 						},
 						vote: {
-								value: function vote(photoId, user) {
+								value: function vote(photoId, user, tags) {
 										var _this = this;
 
-										GalleryClient.vote(photoId, user).then(function (resp) {
+										GalleryClient.vote(photoId, user, tags).then(function (resp) {
 												return _this.dispatch(resp);
 										});
 								}
@@ -47364,7 +47362,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										Parse.User.logIn(username, password, {
 												success: function (user) {
 														_this.dispatch(user);
-														router.transitionTo("gallery");
+														router.transitionTo("gallerynosearch", { page: 1 });
 												},
 												error: function (user, error) {
 														return console.log(error);
@@ -47391,7 +47389,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														Parse.User.logIn(username, password, {
 																success: function (user) {
 																		_this.dispatch(user);
-																		router.transitionTo("gallery");
+																		router.transitionTo("gallerynosearch", { page: 1 });
 																},
 																error: function (userIn, error) {
 																		return console.log(error);
@@ -47467,7 +47465,6 @@ function app() {
 						return;
 				}
 
-				console.log(state.params);
 				React.render(React.createElement(Handler, null), document.querySelector("#container"));
 		});
 }
@@ -47585,17 +47582,16 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(DetailView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										var _this = this;
-
+										var routerParams = this.context.router.getCurrentParams();
 										var galleryMatch = this.state.paginate.currentPhotos.filter(function (val) {
-												return val.id === _this.props.params.id;
+												return val.id === routerParams.id;
 										})[0];
 
 										var galleryMatchVotes;
 										galleryMatch && galleryMatch.total_votes && galleryMatch.user_votes ? galleryMatchVotes = true : null;
 
-										if (!this.state.detail[this.props.params.id]) {
-												detailActions.getDetail(this.props.params.id, galleryMatchVotes);
+										if (!this.state.detail[routerParams.id]) {
+												detailActions.getDetail(routerParams.id, galleryMatchVotes);
 										}
 								}
 						},
@@ -47616,13 +47612,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						render: {
 								value: function render() {
-										var _this = this;
-
-										console.log(this.state);
+										var routerParams = this.context.router.getCurrentParams();
 										var photo = this.state.paginate.currentPhotos.filter(function (val) {
-												return val.id === _this.props.params.id;
+												return val.id === routerParams.id;
 										})[0];
-										var photoDetail = this.state.detail[this.props.params.id];
+										var photoDetail = this.state.detail[routerParams.id];
 										if (photoDetail) {
 												var ownerUrl = "https://www.flickr.com/people/" + photoDetail.owner.path_alias;
 												return React.createElement(
@@ -47700,6 +47694,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				return DetailView;
 		})(React.Component);
+
+		DetailView.contextTypes = {
+				router: React.PropTypes.func.isRequired
+		};
 
 		exports.DetailView = DetailView;
 })(typeof module === "object" ? module.exports : window);
@@ -47801,7 +47799,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										var routerParams = this.context.router.getCurrentParams();
 										userActions.current();
 								}
 						},
@@ -47834,7 +47831,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var _this = this;
 
 										var photos = this.state.paginate.currentPhotos.map(function (photo) {
-												return React.createElement(Photo, { photo: photo, user: _this.state.user, key: photo.id });
+												return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.id });
 										});
 
 										if (!photos.length && !this.state.isLoading) photos = React.createElement(
@@ -47853,7 +47850,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														" ",
 														React.createElement(
 																"span",
-																{ onClick: _this.removeTag.bind(_this) },
+																{ onClick: _this._removeTag.bind(_this) },
 																"X"
 														),
 														" "
@@ -47875,7 +47872,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												{ className: "gallery" },
 												React.createElement(
 														"form",
-														{ onSubmit: this.search.bind(this) },
+														{ onSubmit: this._search.bind(this) },
 														React.createElement("input", { type: "search", ref: "search" })
 												),
 												React.createElement(
@@ -47893,7 +47890,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														null,
 														this.state.paginate.prevPageExists ? React.createElement(
 																Link,
-																{ to: this.state.paginate.prevPageRoute, onClick: this.changePage.bind(this) },
+																{ to: this.state.paginate.prevPageRoute, onClick: this._changePage.bind(this) },
 																"Prev"
 														) : null,
 														React.createElement(
@@ -47903,15 +47900,15 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														),
 														this.state.paginate.nextPageExists ? React.createElement(
 																Link,
-																{ to: this.state.paginate.nextPageRoute, onClick: this.changePage.bind(this) },
+																{ to: this.state.paginate.nextPageRoute, onClick: this._changePage.bind(this) },
 																"Next"
 														) : null
 												)
 										);
 								}
 						},
-						search: {
-								value: function search(e) {
+						_search: {
+								value: function _search(e) {
 										e.preventDefault();
 										var addedTags = React.findDOMNode(this.refs.search).value.split(" ");
 										var tags = this.state.tags.concat(addedTags);
@@ -47920,8 +47917,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										this.setState({ isLoading: true });
 								}
 						},
-						removeTag: {
-								value: function removeTag(e) {
+						_removeTag: {
+								value: function _removeTag(e) {
 										console.log("click");
 										var tag = e.target.parentNode.id.slice(3);
 										var tags = this.state.tags.slice();
@@ -47932,21 +47929,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										this.setState({ isLoading: true });
 								}
 						},
-						changePage: {
-								value: function changePage() {
+						_changePage: {
+								value: function _changePage() {
 										if (this.nextPageExists === "request") this.setState({ isLoading: true });
 										if (this.prevPageExists === "request") this.setState({ isLoading: true });
 								}
-								// prevPage() {
-								// 		var routerParams = this.context.router.getCurrentParams()
-								// 		this.context.router.transitionTo(this.isSearch)
-								// 		galleryActions.changePage(this.state.paginate.currentPage - 1, this.state.prevPageExists)
-								// }
-
-								// nextPage() {
-								// 		galleryActions.changePage(this.state.paginate.currentPage + 1, this.state.nextPageExists)
-								// }
-
 						}
 				});
 
@@ -47961,6 +47948,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		GalleryView.willTransitionTo = function (transition, params) {
 				if (!prevParams.page) prevParams.page = params.page;
 				if (!prevParams.tags) prevParams.tags = params.tags;
+
 				if (prevParams.tags === params.tags && prevParams.page !== params.page) {
 						console.log("page change");
 						if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists);
@@ -47973,9 +47961,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								delete prevParams.deletedTag;
 						}
 						if (!params.tags) delete params.tags;
-						console.log(params);
 						galleryActions.getPhotos({}, params);
 				}
+
 				prevParams = params;
 		};
 
@@ -47983,7 +47971,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				function Photo() {
 						_classCallCheck(this, Photo);
 
-						_get(Object.getPrototypeOf(Photo.prototype), "constructor", this).call(this);
+						if (_React$Component2 != null) {
+								_React$Component2.apply(this, arguments);
+						}
 				}
 
 				_inherits(Photo, _React$Component2);
@@ -48001,13 +47991,13 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												),
 												this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
 														"h6",
-														{ ref: "vote", onClick: this.vote.bind(this) },
+														{ ref: "vote", onClick: this._vote.bind(this) },
 														"Yes"
 												) : null,
 												React.createElement(
 														"h6",
 														null,
-														this.props.photo.total_votes
+														this.props.photo.weighted_votes
 												),
 												React.createElement(
 														Link,
@@ -48030,9 +48020,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										);
 								}
 						},
-						vote: {
-								value: function vote() {
-										galleryActions.vote(this.props.photo.id, this.props.user);
+						_vote: {
+								value: function _vote() {
+										galleryActions.vote(this.props.photo.id, this.props.user, this.props.tags);
 								}
 						}
 				});

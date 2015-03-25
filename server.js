@@ -17,7 +17,7 @@ function startServer() {
 
 		app.get('/photo/:votes?', getDetail)
 
-		app.post('/:user/photo/:id', putVote)
+		app.post('/:user/photo/:id/:tags?', putVote)
 
 
 		app.listen(process.env.PORT || 3000, function() {

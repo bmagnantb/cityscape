@@ -4,8 +4,8 @@ var request = require('request'),
 function vote(req, res) {
 		var user = req.params.user
 		var photoId = req.params.id
-
-		console.log(req.params)
+		var tags
+		req.params.tags ? tags = req.params.tags.split(',') : tags = []
 
 		if (user === 'undefined') {
 				res.send('user not logged in')
@@ -21,9 +21,14 @@ function vote(req, res) {
 		query.equalTo('photo_id', photoId).first({
 				success: function(result) {
 						if (result.get('user_votes').indexOf(user) === -1) {
+								var tag_votes = result.get('tag_votes')
+								tags.forEach(function(val) {
+										tag_votes.indexOf() ? tag_votes[val]++ : tag_votes[val] = 1
+								})
 								result.save({
 										total_votes: result.get('total_votes') + 1,
-										user_votes: result.get('user_votes').concat(user)
+										user_votes: result.get('user_votes').concat(user),
+										tag_votes: tag_votes
 								}, {
 										success: function(results) {
 												res.send(results)

@@ -21,7 +21,6 @@ class GalleryView extends React.Component {
 
 
 		componentWillMount() {
-				var routerParams = this.context.router.getCurrentParams()
 				userActions.current()
 		}
 
@@ -57,7 +56,7 @@ class GalleryView extends React.Component {
 
 		render() {
 				var photos = this.state.paginate.currentPhotos.map((photo) => {
-						return <Photo photo={photo} user={this.state.user} key={photo.id} />
+						return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.id} />
 				})
 
 				if (!photos.length && !this.state.isLoading) photos = <h2>No results</h2>
@@ -67,7 +66,7 @@ class GalleryView extends React.Component {
 						return (
 								<span key={tag} id={id}>
 										&nbsp;{tag}&nbsp;
-										<span onClick={this.removeTag.bind(this)}>X</span>&nbsp;
+										<span onClick={this._removeTag.bind(this)}>X</span>&nbsp;
 								</span>
 						)
 				})
@@ -76,7 +75,7 @@ class GalleryView extends React.Component {
 
 				return (
 						<main className="gallery">
-								<form onSubmit={this.search.bind(this)}>
+								<form onSubmit={this._search.bind(this)}>
 										<input type="search" ref="search" />
 								</form>
 								<div className="tags">
@@ -87,13 +86,13 @@ class GalleryView extends React.Component {
 								</div>
 								<div>
 										{this.state.paginate.prevPageExists ?
-												<Link to={this.state.paginate.prevPageRoute} onClick={this.changePage.bind(this)}>Prev</Link> :
+												<Link to={this.state.paginate.prevPageRoute} onClick={this._changePage.bind(this)}>Prev</Link> :
 												null}
 
 										<h6>{this.state.paginate.currentPage}</h6>
 
 										{this.state.paginate.nextPageExists ?
-												<Link to={this.state.paginate.nextPageRoute} onClick={this.changePage.bind(this)}>Next</Link> :
+												<Link to={this.state.paginate.nextPageRoute} onClick={this._changePage.bind(this)}>Next</Link> :
 												null}
 								</div>
 						</main>
@@ -102,7 +101,7 @@ class GalleryView extends React.Component {
 
 
 
-		search(e) {
+		_search(e) {
 				e.preventDefault()
 				var addedTags = React.findDOMNode(this.refs.search).value.split(' ')
 				var tags = this.state.tags.concat(addedTags)
@@ -114,7 +113,7 @@ class GalleryView extends React.Component {
 
 
 
-		removeTag(e) {
+		_removeTag(e) {
 				console.log('click')
 				var tag = e.target.parentNode.id.slice(3)
 				var tags = this.state.tags.slice()
@@ -128,37 +127,29 @@ class GalleryView extends React.Component {
 
 
 
-		changePage() {
+		_changePage() {
 				if (this.nextPageExists === 'request') this.setState({isLoading: true})
 				if (this.prevPageExists === 'request') this.setState({isLoading: true})
 		}
-		// prevPage() {
-		// 		var routerParams = this.context.router.getCurrentParams()
-		// 		this.context.router.transitionTo(this.isSearch)
-		// 		galleryActions.changePage(this.state.paginate.currentPage - 1, this.state.prevPageExists)
-		// }
-
-
-
-		// nextPage() {
-		// 		galleryActions.changePage(this.state.paginate.currentPage + 1, this.state.nextPageExists)
-		// }
 }
 
 
 GalleryView.contextTypes = {
-				router: React.PropTypes.func.isRequired
-		}
+		router: React.PropTypes.func.isRequired
+}
+
 
 var prevParams = {}
 GalleryView.willTransitionTo = function(transition, params) {
 		if (!prevParams.page) prevParams.page = params.page
 		if (!prevParams.tags) prevParams.tags = params.tags
+
 		if ((prevParams.tags === params.tags) && (prevParams.page !== params.page)) {
 				console.log('page change')
 				if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists)
 				if (prevParams.page < params.page) galleryActions.changePage(params.page, prevParams.nextPageExists)
 		}
+
 		else {
 				if (params.tags) params.tags = params.tags.split(',')
 				if (prevParams.deletedTag) {
@@ -167,9 +158,9 @@ GalleryView.willTransitionTo = function(transition, params) {
 						delete prevParams.deletedTag
 				}
 				if (!params.tags) delete params.tags
-				console.log(params)
 				galleryActions.getPhotos({}, params)
 		}
+
 		prevParams = params
 }
 
@@ -183,11 +174,6 @@ GalleryView.willTransitionTo = function(transition, params) {
 
 class Photo extends React.Component {
 
-		constructor() {
-				super()
-		}
-
-
 		render() {
 				return (
 						<div className="photo">
@@ -196,10 +182,10 @@ class Photo extends React.Component {
 								</Link>
 
 								{this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1 ?
-										<h6 ref="vote" onClick={this.vote.bind(this)}>Yes</h6> :
+										<h6 ref="vote" onClick={this._vote.bind(this)}>Yes</h6> :
 										null}
 
-								<h6>{this.props.photo.total_votes}</h6>
+								<h6>{this.props.photo.weighted_votes}</h6>
 								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
 										<h4>{this.props.photo.title}</h4>
 								</Link>
@@ -210,9 +196,8 @@ class Photo extends React.Component {
 				)
 		}
 
-
-		vote() {
-				galleryActions.vote(this.props.photo.id, this.props.user)
+		_vote() {
+				galleryActions.vote(this.props.photo.id, this.props.user, this.props.tags)
 		}
 }
 

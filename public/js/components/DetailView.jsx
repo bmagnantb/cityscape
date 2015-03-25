@@ -16,16 +16,17 @@ class DetailView extends React.Component {
 		}
 
 		componentWillMount() {
+				var routerParams = this.context.router.getCurrentParams()
 				var galleryMatch = this.state.paginate.currentPhotos.filter((val) => {
-						return val.id === this.props.params.id
+						return val.id === routerParams.id
 				})[0]
 
 				var galleryMatchVotes
 				galleryMatch && galleryMatch.total_votes && galleryMatch.user_votes ? galleryMatchVotes = true : null
 
-				if (!this.state.detail[this.props.params.id]) {
-						detailActions.getDetail(this.props.params.id, galleryMatchVotes)
-						}
+				if (!this.state.detail[routerParams.id]) {
+						detailActions.getDetail(routerParams.id, galleryMatchVotes)
+				}
 		}
 
 		componentDidMount() {
@@ -41,11 +42,11 @@ class DetailView extends React.Component {
 		}
 
 		render() {
-				console.log(this.state)
+				var routerParams = this.context.router.getCurrentParams()
 				var photo = this.state.paginate.currentPhotos.filter((val) => {
-						return val.id === this.props.params.id
+						return val.id === routerParams.id
 				})[0]
-				var photoDetail = this.state.detail[this.props.params.id]
+				var photoDetail = this.state.detail[routerParams.id]
 				if (photoDetail) {
 						var ownerUrl = `https://www.flickr.com/people/${photoDetail.owner.path_alias}`
 						return (
@@ -77,6 +78,10 @@ class DetailView extends React.Component {
 						return <span></span>
 				}
 		}
+}
+
+DetailView.contextTypes = {
+		router: React.PropTypes.func.isRequired
 }
 
 

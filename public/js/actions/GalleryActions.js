@@ -9,11 +9,9 @@ class GalleryActions {
 		}
 
 		getPhotos(options, params) {
-				console.log(options)
 				for (var key in params) {
 						options[key] = params[key]
 				}
-				console.log(options)
 				if (options.page) {
 						options.page = Math.ceil(options.page / 25)
 				}
@@ -25,8 +23,8 @@ class GalleryActions {
 				})
 		}
 
-		vote(photoId, user) {
-				GalleryClient.vote(photoId, user)
+		vote(photoId, user, tags) {
+				GalleryClient.vote(photoId, user, tags)
 				.then((resp) => this.dispatch(resp))
 		}
 

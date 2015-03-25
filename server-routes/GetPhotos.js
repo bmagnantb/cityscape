@@ -7,6 +7,7 @@ Parse.Photo = Parse.Object.extend('Photo', {
 		initialize: function() {
 				this.set('user_votes', [])
 				this.set('total_votes', 0)
+				this.set('tag_votes', {tag: 0})
 		}
 })
 
@@ -71,15 +72,17 @@ function photos(req, res) {
 														success: function(model) {
 																val.user_votes = model.get('user_votes')
 																val.total_votes = model.get('total_votes')
+																val.tag_votes = model.get('tag_votes')
 														},
 														error: function() {
-																console.log(arguments[1])
+																console.log(arguments)
 														}
 												})
 										}
 										else {
 												val.total_votes = photoCollection.models[photoMatch].get('total_votes')
 												val.user_votes = photoCollection.models[photoMatch].get('user_votes')
+												val.tag_votes = photoCollection.models[photoMatch].get('tag_votes')
 										}
 								})
 
@@ -87,17 +90,19 @@ function photos(req, res) {
 										var queryVoted = new Parse.Query(Parse.Photo)
 										var sevenDays = new Date() - (1000 * 60 * 60 * 24 * 7)
 										if (data.photos.tags.length) queryVoted.containsAll('tags', data.photos.tags)
-										queryVoted.descending('total_votes')
+										queryVoted.greaterThan('total_votes', 0)
 										queryVoted.greaterThan('dateupload', sevenDays.toString())
-										queryVoted.descending('dateupload')
-										queryVoted.limit(500)
+										queryVoted.descending('total_votes')
+										queryVoted.limit(1000)
 										queryVoted.find({
 												success: function(results) {
 														console.log('2nd query success')
+
 														if (results.length) {
 																results = results.map(function(val) {
 																		return val.attributes;
 																})
+
 																results.forEach(function(val) {
 																		if (photoCollection.pluck('photo_id').indexOf(val.photo_id) === -1) {
 																				val.id = val.photo_id
@@ -105,7 +110,35 @@ function photos(req, res) {
 																				data.photos.photo.push(val)
 																		}
 																})
+
+																// set weighted votes
+																data.photos.photo.forEach(function(val) {
+																		val.weighted_votes = 0
+																		// if request tags exist, weight the votes
+																		if (data.photos.tags.length) {
+																				// total vote holder for subtracting weighted votes
+																				var totalVote = val.total_votes
+																				// check tag votes for each request tag
+																				data.photos.tags.forEach(function(tag) {
+																						// if photo has matching tag vote, weight and subtract from total votes
+																						if (val.tag_votes[tag]) {
+																								val.weighted_votes = val.tag_votes[tag] * 2
+																								totalVote -= val.tag_votes[tag]
+																						}
+																				})
+																			// after weighting, add tenth of remaining total votes
+																			val.weighted_votes += Math.round(totalVote / 5)
+																			console.log(val.weighted_votes)
+																			console.log(val.total_votes)
+																		}
+																		// if request tags don't exist, use total votes
+																		else val.weighted_votes = val.total_votes
+																})
+
+																// sort photos by votes
 																data.photos.photo.sort(function(a, b) {
+																		if (a.weighted_votes > b.weighted_votes) return -1
+																		if (b.weighted_votes > a.weighted_votes) return 1
 																		if (a.total_votes > b.total_votes) return -1
 																		if (b.total_votes > a.total_votes) return 1
 																		if (a.dateupload > b.dateupload) return -1
