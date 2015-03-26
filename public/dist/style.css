@@ -43,8 +43,7 @@ html {
   background: white; }
 
 *, *:before, *:after {
-  box-sizing: border-box;
-  border: 1px dotted black; }
+  box-sizing: border-box; }
 
 /* /ht Ethan Marcotte - http: //front.ie/l8rJaA */
 img, embed, object, video {
@@ -227,7 +226,6 @@ footer {
  * ---------------------------------------------------------------------------------------- */
 @media screen and (min-width: 33.236em) {
   #container {
-    padding: 1.618em;
     margin: 0 auto;
     max-width: 90%; } }
 
