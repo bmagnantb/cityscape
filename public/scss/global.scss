@@ -23,7 +23,6 @@
  */
 
 @import "bear_defaults";
-@import "bourbon/bourbon";
 @import url("//fonts.googleapis.com/css?family=Lato:100,300,400,700,900");
 @import url("//fonts.googleapis.com/css?family=Merriweather:400,300,700");
 
@@ -51,6 +50,7 @@ html {
 
 *, *:before, *:after {
 		box-sizing: border-box;
+		border: 1px dotted black;
 }
 
 /* /ht Ethan Marcotte - http: //front.ie/l8rJaA */
@@ -116,7 +116,7 @@ small {
 a, a:visited {
 	outline: none;
 	color: #333;
-	text-decoration: underline;
+	text-decoration: none;
 }
 
 a:hover {
@@ -141,27 +141,27 @@ a:active, a:focus {
  }
 
  h1 {
- 	font-size: $leading * 2.5;
+ 	font-size: $leading * 2;
  }
 
  h2 {
- 	font-size: $leading * 1.8;
+ 	font-size: $leading * 1.7;
  }
 
  h3 {
- 	font-size: $leading * 1.5;
+ 	font-size: $leading * 1.4;
  }
 
  h4 {
- 	font-size: $leading * 1.2;
+ 	font-size: $leading * 1.1;
  }
 
  h5 {
- 	font-size: $leading * 1;
+ 	font-size: $leading * .9;
  }
 
  h6 {
- 	font-size: $leading * .8;
+ 	font-size: $leading * .6;
  }
 
 header, main, footer {
@@ -172,37 +172,43 @@ header, main, footer {
 
 /* 6. CUSTOM LAYOUT & TYPOGRAPHY (Baby bear)
  * ---------------------------------------------------------------------------------------- */
+
 #container {
-	padding: $leading / 2;
+	padding: $leading / 4 $leading / 2;
 	max-width: $baby_bear_max_width;
-	margin: auto;
+	margin: 0 auto;
 	position: relative;
 }
 
-aside {
-	width: 100%;
-}
-
 header {
+		position: relative;
+
 		h1 {
-			margin-bottom: 0;
+				margin: .2em 0;
+				padding-top: .5em;
 		}
 
 		.user {
 				position: absolute;
+				top: 0;
 				right: 0;
-				top: $leading / 2;
+				// width: 100%;
+				// transform: translateX(-50%);
 
 				h6 {
 						display: inline-block;
-						padding: 1em;
+						padding: 0 .3em;
+				}
+
+				.logout {
+						cursor: pointer;
 				}
 		}
 }
 
 .gallery {
 		form {
-				margin: 2em 0 .2em;
+				margin: .5em 0 0;
 				input {
 						font-size: 1rem;
 						border: 1px solid #999;
@@ -212,7 +218,88 @@ header {
 		}
 
 		.tags {
-				margin-bottom: 2em;
+				margin-top: .5em;
+		}
+
+		.tag {
+				border: 1px solid #999;
+				border-radius: .3em;
+				padding: 0 .2em .1em;
+				margin: 0 .1em;
+
+				span:first-of-type {
+						padding: 0 .3em 0 .1em;
+				}
+
+				span:last-of-type {
+						padding-right: .1em;
+				}
+		}
+
+		.x {
+				color: #666;
+				font-weight: 300;
+				cursor: pointer;
+		}
+
+		.photos {
+				margin-top: 1em;
+		}
+
+		.photo {
+				margin-bottom: 3.5em;
+
+				.info {
+						position: relative;
+				}
+
+				.votes {
+						margin: 0 0 .3em;
+
+						h6 {
+								margin: 0 .3em;
+								display: inline-block;
+						}
+				}
+
+				.photo-title {
+						margin-bottom: .4em;
+				}
+		}
+}
+
+
+.photo-detail {
+		margin-top: 1.5em;
+
+		.info {
+				position: relative;
+		}
+
+		.votes {
+				& > h6 {
+						display: inline-block;
+						padding: 0 2em;
+				}
+		}
+
+		h3 {
+				margin: .2em .5em;
+		}
+
+		h4 {
+				margin: .1em 0 .4em;
+		}
+}
+
+.voted {
+		color: #999;
+}
+
+footer {
+		margin-top: 1em;
+		h6 {
+				font-size: .8em;
 		}
 }
 

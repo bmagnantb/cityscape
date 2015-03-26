@@ -8,11 +8,6 @@ class DetailActions {
 				DetailClient.requestPhoto({photo_id: photoId}, votes)
 				.then((data) => this.dispatch(data.photo))
 		}
-
-		vote(photoId, user, tags) {
-				DetailClient.vote(photoId, user, tags)
-				.then((resp) => this.dispatch(resp))
-		}
 }
 
 

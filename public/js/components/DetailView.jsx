@@ -5,6 +5,7 @@ var { detailStore } = require('../stores/DetailStore')
 var { detailActions } = require('../actions/DetailActions')
 var { galleryStore } = require('../stores/GalleryStore')
 var { userStore } = require('../stores/userStore')
+var { galleryActions } = require('../actions/GalleryActions')
 
 class DetailView extends React.Component {
 		constructor() {
@@ -30,53 +31,88 @@ class DetailView extends React.Component {
 		}
 
 		componentDidMount() {
-				detailStore.listen(this.onChange.bind(this))
+				detailStore.listen(this.onDetailChange.bind(this))
+				galleryStore.listen(this.onGalleryChange.bind(this))
 		}
 
 		componentWillUnmount() {
-				detailStore.unlisten(this.onChange.bind(this))
+				detailStore.unlisten(this.onDetailChange.bind(this))
+				galleryStore.unlisten(this.onGalleryChange.bind(this))
 		}
 
-		onChange() {
+		onDetailChange() {
 				this.setState({detail: detailStore.getState()})
+		}
+
+		onGalleryChange() {
+				this.setState(galleryStore.getState())
 		}
 
 		render() {
 				var routerParams = this.context.router.getCurrentParams()
+
 				var photo = this.state.paginate.currentPhotos.filter((val) => {
 						return val.id === routerParams.id
 				})[0]
+				console.log(photo)
 				var photoDetail = this.state.detail[routerParams.id]
+
+				var voteAllowed
+				this.state.user && photo.user_votes.indexOf(this.state.user.get('username')) === -1
+						? voteAllowed = <h6 ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
+						: <h6 className="voted">(upvoted)</h6>
+
+				var votes
+				photo && photo.weighted_votes != null
+						? votes = <div className="votes">
+												{voteAllowed}
+												<h6>(weighted) {photo.weighted_votes}</h6>
+												<h6>(total) {photo.total_votes}</h6>
+										</div>
+						: photo && photo.total_votes != null
+								? votes = <div className="votes">
+															{voteAllowed}
+															<h6>{photo.total_votes}</h6>
+													</div>
+								: null
+
 				if (photoDetail) {
 						var ownerUrl = `https://www.flickr.com/people/${photoDetail.owner.path_alias}`
 						return (
 								<main className="photo-detail">
-										<a href={photoDetail.urls.url[0]._content} target="_blank"><h2>{photoDetail.title._content}</h2></a>
-										<a href={ownerUrl} target="_blank"><h4>{photoDetail.owner.username}</h4></a>
-										<a href={ownerUrl} target="_blank"><h6>{photoDetail.owner.realname}</h6></a>
 										<img src={photoDetail.photoUrl('b')} />
+										<div className="info">
+												{photo ? {votes} : null}
 
-										{photo ? <h6>{photo.total_votes}</h6> :
-												photoDetail.total_votes ? <h6>{photoDetail.total_votes}</h6> : null}
+												<a href={photoDetail.urls.url[0]._content} target="_blank"><h3>{photoDetail.title._content}</h3></a>
 
-										{photoDetail.description ? <h5>{photoDetail.description}</h5> : null}
+												<a href={ownerUrl} target="_blank"><h4>{photoDetail.owner.username}</h4></a>
 
-										{photoDetail.location && photoDetail.location.locality ?
-												<h6>{photoDetail.location.locality._content}</h6> :
-												null}
+												{photoDetail.description ? <h6>{photoDetail.description}</h6> : null}
 
-										{photoDetail.location && photoDetail.location.country ?
-												<h6>{photoDetail.location.country._content}</h6> :
-												null}
+												{photoDetail.location && photoDetail.location.locality
+														? <h6>{photoDetail.location.locality._content}</h6>
+														: null}
 
-										<h6>Taken {photoDetail.dates && photoDetail.dates.taken ?
-												<span>{photoDetail.dates.taken}</span> :
-												null}</h6>
+												{photoDetail.location && photoDetail.location.country
+														? <h6>{photoDetail.location.country._content}</h6>
+														: null}
+
+												<h6>Taken {photoDetail.dates && photoDetail.dates.taken
+														? <span>{photoDetail.dates.taken.slice(0, 10).replace(/-/g, '.')}</span>
+														: null}</h6>
+										</div>
 								</main>
 						)
 				} else {
 						return <span></span>
 				}
+		}
+
+		_vote() {
+				var routerParams = this.context.router.getCurrentParams()
+				console.log(routerParams.id, this.state.user, this.state.tags)
+				galleryActions.vote(routerParams.id, this.state.user, this.state.tags)
 		}
 }
 

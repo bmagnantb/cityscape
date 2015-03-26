@@ -61,15 +61,20 @@ class GalleryView extends React.Component {
 
 				if (!photos.length && !this.state.isLoading) photos = <h2>No results</h2>
 
-				var tags = this.state.tags.map((tag) => {
-						var id = `tag${tag}`
-						return (
-								<span key={tag} id={id}>
-										&nbsp;{tag}&nbsp;
-										<span onClick={this._removeTag.bind(this)}>X</span>&nbsp;
-								</span>
-						)
-				})
+				var tags
+				this.state.tags.length
+						? tags = <div className="tags">
+								{this.state.tags.map((tag) => {
+										var id = `tag${tag}`
+										return (
+												<span className="tag" key={tag} id={id}>
+														<span>{tag}</span>
+														<span className="x" onClick={this._removeTag.bind(this)}>x</span>
+												</span>
+										)
+								})}
+						</div>
+						: null
 
 				if (this.state.isLoading) return <main className="loading"><h2>Loading...</h2></main>
 
@@ -78,9 +83,7 @@ class GalleryView extends React.Component {
 								<form onSubmit={this._search.bind(this)}>
 										<input type="search" ref="search" />
 								</form>
-								<div className="tags">
-										{tags}
-								</div>
+								{tags}
 								<div className="photos">
 										{photos}
 								</div>
@@ -175,23 +178,33 @@ GalleryView.willTransitionTo = function(transition, params) {
 class Photo extends React.Component {
 
 		render() {
+				console.log(this.props.photo)
 				return (
 						<div className="photo">
 								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
 										<img src={this.props.photo.url_m} />
 								</Link>
 
-								{this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1 ?
-										<h6 ref="vote" onClick={this._vote.bind(this)}>Yes</h6> :
-										null}
+								<div className="info">
+										<div className="votes">
+												{this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1
+														? <h6 ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
+														: <h6 className="voted">(upvoted)</h6>}
 
-								<h6>{this.props.photo.weighted_votes}</h6>
-								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
-										<h4>{this.props.photo.title}</h4>
-								</Link>
-								<a href={this.props.photo.owner_url} target="_blank">
-										<h4>{this.props.photo.ownername}</h4>
-								</a>
+												<h6>{this.props.photo.weighted_votes}</h6>
+										</div>
+										<h5 className="photo-title">
+												<Link to="/photo/:id" params={{id: this.props.photo.id}}>
+														{this.props.photo.title}
+												</Link>
+										</h5>
+										<h6 className="photo-owner">
+												<a href={this.props.photo.owner_url} target="_blank">
+														{this.props.photo.ownername}
+												</a>
+										</h6>
+								</div>
+
 						</div>
 				)
 		}

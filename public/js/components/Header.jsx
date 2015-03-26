@@ -28,18 +28,18 @@ class Header extends React.Component {
 				if (this.state.user) {
 						userinfo = (
 								<div className="user">
-										<h6>{this.state.user.get('username')}</h6>
-										<h6 onClick={this.logout}>Logout</h6>
+										<h6 className="username">{this.state.user.get('username')}</h6>
+										<h6 className="logout" onClick={this.logout}>(logout)</h6>
 								</div>
 						)
 				} else {
 						userinfo = (
 								<div className="user">
-										<h6>
-												<Link to="login">Login</Link>
+										<h6 className="login">
+												<Link to="login">(login)</Link>
 										</h6>
-										<h6>
-												<Link to="register">Register</Link>
+										<h6 className="register">
+												<Link to="register">(register)</Link>
 										</h6>
 								</div>
 						)
@@ -47,7 +47,7 @@ class Header extends React.Component {
 
 				return (
 						<header>
-								<Link to="gallerynosearch" params={{page: 1}}><h1>CITYSCAPE</h1></Link>
+								<h1><Link to="gallerynosearch" params={{page: 1}}>CITYSCAPE</Link></h1>
 								{userinfo}
 						</header>
 				)

@@ -54,7 +54,8 @@ class GalleryStore {
 				this.paginate.currentPhotos.forEach((val) => {
 						if (val.id === resp.photo_id) {
 								val.total_votes = resp.total_votes
-								val.user_votes = val.user_votes
+								val.user_votes = resp.user_votes
+								val.weighted_votes =  resp.weighted_votes
 						}
 				})
 		}

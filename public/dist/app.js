@@ -47238,15 +47238,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												return _this.dispatch(data.photo);
 										});
 								}
-						},
-						vote: {
-								value: function vote(photoId, user, tags) {
-										var _this = this;
-
-										DetailClient.vote(photoId, user, tags).then(function (resp) {
-												return _this.dispatch(resp);
-										});
-								}
 						}
 				});
 
@@ -47562,6 +47553,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var userStore = _require4.userStore;
 
+		var _require5 = require("../actions/GalleryActions");
+
+		var galleryActions = _require5.galleryActions;
+
 		var DetailView = (function (_React$Component) {
 				function DetailView() {
 						_classCallCheck(this, DetailView);
@@ -47597,97 +47592,140 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						componentDidMount: {
 								value: function componentDidMount() {
-										detailStore.listen(this.onChange.bind(this));
+										detailStore.listen(this.onDetailChange.bind(this));
+										galleryStore.listen(this.onGalleryChange.bind(this));
 								}
 						},
 						componentWillUnmount: {
 								value: function componentWillUnmount() {
-										detailStore.unlisten(this.onChange.bind(this));
+										detailStore.unlisten(this.onDetailChange.bind(this));
+										galleryStore.unlisten(this.onGalleryChange.bind(this));
 								}
 						},
-						onChange: {
-								value: function onChange() {
+						onDetailChange: {
+								value: function onDetailChange() {
 										this.setState({ detail: detailStore.getState() });
+								}
+						},
+						onGalleryChange: {
+								value: function onGalleryChange() {
+										this.setState(galleryStore.getState());
 								}
 						},
 						render: {
 								value: function render() {
 										var routerParams = this.context.router.getCurrentParams();
+
 										var photo = this.state.paginate.currentPhotos.filter(function (val) {
 												return val.id === routerParams.id;
 										})[0];
+										console.log(photo);
 										var photoDetail = this.state.detail[routerParams.id];
+
+										var voteAllowed;
+										this.state.user && photo.user_votes.indexOf(this.state.user.get("username")) === -1 ? voteAllowed = React.createElement(
+												"h6",
+												{ ref: "vote", onClick: this._vote.bind(this) },
+												"(upvote)"
+										) : React.createElement(
+												"h6",
+												{ className: "voted" },
+												"(upvoted)"
+										);
+
+										var votes;
+										photo && photo.weighted_votes != null ? votes = React.createElement(
+												"div",
+												{ className: "votes" },
+												voteAllowed,
+												React.createElement(
+														"h6",
+														null,
+														"(weighted) ",
+														photo.weighted_votes
+												),
+												React.createElement(
+														"h6",
+														null,
+														"(total) ",
+														photo.total_votes
+												)
+										) : photo && photo.total_votes != null ? votes = React.createElement(
+												"div",
+												{ className: "votes" },
+												voteAllowed,
+												React.createElement(
+														"h6",
+														null,
+														photo.total_votes
+												)
+										) : null;
+
 										if (photoDetail) {
 												var ownerUrl = "https://www.flickr.com/people/" + photoDetail.owner.path_alias;
 												return React.createElement(
 														"main",
 														{ className: "photo-detail" },
+														React.createElement("img", { src: photoDetail.photoUrl("b") }),
 														React.createElement(
-																"a",
-																{ href: photoDetail.urls.url[0]._content, target: "_blank" },
+																"div",
+																{ className: "info" },
+																photo ? { votes: votes } : null,
 																React.createElement(
-																		"h2",
-																		null,
-																		photoDetail.title._content
-																)
-														),
-														React.createElement(
-																"a",
-																{ href: ownerUrl, target: "_blank" },
+																		"a",
+																		{ href: photoDetail.urls.url[0]._content, target: "_blank" },
+																		React.createElement(
+																				"h3",
+																				null,
+																				photoDetail.title._content
+																		)
+																),
 																React.createElement(
-																		"h4",
+																		"a",
+																		{ href: ownerUrl, target: "_blank" },
+																		React.createElement(
+																				"h4",
+																				null,
+																				photoDetail.owner.username
+																		)
+																),
+																photoDetail.description ? React.createElement(
+																		"h6",
 																		null,
-																		photoDetail.owner.username
-																)
-														),
-														React.createElement(
-																"a",
-																{ href: ownerUrl, target: "_blank" },
+																		photoDetail.description
+																) : null,
+																photoDetail.location && photoDetail.location.locality ? React.createElement(
+																		"h6",
+																		null,
+																		photoDetail.location.locality._content
+																) : null,
+																photoDetail.location && photoDetail.location.country ? React.createElement(
+																		"h6",
+																		null,
+																		photoDetail.location.country._content
+																) : null,
 																React.createElement(
 																		"h6",
 																		null,
-																		photoDetail.owner.realname
+																		"Taken ",
+																		photoDetail.dates && photoDetail.dates.taken ? React.createElement(
+																				"span",
+																				null,
+																				photoDetail.dates.taken.slice(0, 10).replace(/-/g, ".")
+																		) : null
 																)
-														),
-														React.createElement("img", { src: photoDetail.photoUrl("b") }),
-														photo ? React.createElement(
-																"h6",
-																null,
-																photo.total_votes
-														) : photoDetail.total_votes ? React.createElement(
-																"h6",
-																null,
-																photoDetail.total_votes
-														) : null,
-														photoDetail.description ? React.createElement(
-																"h5",
-																null,
-																photoDetail.description
-														) : null,
-														photoDetail.location && photoDetail.location.locality ? React.createElement(
-																"h6",
-																null,
-																photoDetail.location.locality._content
-														) : null,
-														photoDetail.location && photoDetail.location.country ? React.createElement(
-																"h6",
-																null,
-																photoDetail.location.country._content
-														) : null,
-														React.createElement(
-																"h6",
-																null,
-																"Taken ",
-																photoDetail.dates && photoDetail.dates.taken ? React.createElement(
-																		"span",
-																		null,
-																		photoDetail.dates.taken
-																) : null
 														)
 												);
 										} else {
 												return React.createElement("span", null);
 										}
+								}
+						},
+						_vote: {
+								value: function _vote() {
+										var routerParams = this.context.router.getCurrentParams();
+										console.log(routerParams.id, this.state.user, this.state.tags);
+										galleryActions.vote(routerParams.id, this.state.user, this.state.tags);
 								}
 						}
 				});
@@ -47702,7 +47740,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.DetailView = DetailView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js","../stores/DetailStore":"/Users/ben/Github Projects/skylines/public/js/stores/DetailStore.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js","../stores/userStore":"/Users/ben/Github Projects/skylines/public/js/stores/userStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Footer.jsx":[function(require,module,exports){
+},{"../actions/DetailActions":"/Users/ben/Github Projects/skylines/public/js/actions/DetailActions.js","../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../stores/DetailStore":"/Users/ben/Github Projects/skylines/public/js/stores/DetailStore.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js","../stores/userStore":"/Users/ben/Github Projects/skylines/public/js/stores/userStore.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Footer.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -47733,7 +47771,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										return React.createElement(
 												"footer",
 												null,
-												"foot"
+												React.createElement(
+														"h6",
+														null,
+														"This product uses the Flickr API but is not endorsed or certified by Flickr."
+												)
 										);
 								}
 						}
@@ -47840,22 +47882,28 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"No results"
 										);
 
-										var tags = this.state.tags.map(function (tag) {
-												var id = "tag" + tag;
-												return React.createElement(
-														"span",
-														{ key: tag, id: id },
-														" ",
-														tag,
-														" ",
-														React.createElement(
+										var tags;
+										this.state.tags.length ? tags = React.createElement(
+												"div",
+												{ className: "tags" },
+												this.state.tags.map(function (tag) {
+														var id = "tag" + tag;
+														return React.createElement(
 																"span",
-																{ onClick: _this._removeTag.bind(_this) },
-																"X"
-														),
-														" "
-												);
-										});
+																{ className: "tag", key: tag, id: id },
+																React.createElement(
+																		"span",
+																		null,
+																		tag
+																),
+																React.createElement(
+																		"span",
+																		{ className: "x", onClick: _this._removeTag.bind(_this) },
+																		"x"
+																)
+														);
+												})
+										) : null;
 
 										if (this.state.isLoading) {
 												return React.createElement(
@@ -47875,11 +47923,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ onSubmit: this._search.bind(this) },
 														React.createElement("input", { type: "search", ref: "search" })
 												),
-												React.createElement(
-														"div",
-														{ className: "tags" },
-														tags
-												),
+												tags,
 												React.createElement(
 														"div",
 														{ className: "photos" },
@@ -47981,6 +48025,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(Photo, {
 						render: {
 								value: function render() {
+										console.log(this.props.photo);
 										return React.createElement(
 												"div",
 												{ className: "photo" },
@@ -47989,32 +48034,44 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ to: "/photo/:id", params: { id: this.props.photo.id } },
 														React.createElement("img", { src: this.props.photo.url_m })
 												),
-												this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
-														"h6",
-														{ ref: "vote", onClick: this._vote.bind(this) },
-														"Yes"
-												) : null,
 												React.createElement(
-														"h6",
-														null,
-														this.props.photo.weighted_votes
-												),
-												React.createElement(
-														Link,
-														{ to: "/photo/:id", params: { id: this.props.photo.id } },
+														"div",
+														{ className: "info" },
 														React.createElement(
-																"h4",
-																null,
-																this.props.photo.title
-														)
-												),
-												React.createElement(
-														"a",
-														{ href: this.props.photo.owner_url, target: "_blank" },
+																"div",
+																{ className: "votes" },
+																this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
+																		"h6",
+																		{ ref: "vote", onClick: this._vote.bind(this) },
+																		"(upvote)"
+																) : React.createElement(
+																		"h6",
+																		{ className: "voted" },
+																		"(upvoted)"
+																),
+																React.createElement(
+																		"h6",
+																		null,
+																		this.props.photo.weighted_votes
+																)
+														),
 														React.createElement(
-																"h4",
-																null,
-																this.props.photo.ownername
+																"h5",
+																{ className: "photo-title" },
+																React.createElement(
+																		Link,
+																		{ to: "/photo/:id", params: { id: this.props.photo.id } },
+																		this.props.photo.title
+																)
+														),
+														React.createElement(
+																"h6",
+																{ className: "photo-owner" },
+																React.createElement(
+																		"a",
+																		{ href: this.props.photo.owner_url, target: "_blank" },
+																		this.props.photo.ownername
+																)
 														)
 												)
 										);
@@ -48095,13 +48152,13 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ className: "user" },
 														React.createElement(
 																"h6",
-																null,
+																{ className: "username" },
 																this.state.user.get("username")
 														),
 														React.createElement(
 																"h6",
-																{ onClick: this.logout },
-																"Logout"
+																{ className: "logout", onClick: this.logout },
+																"(logout)"
 														)
 												);
 										} else {
@@ -48110,20 +48167,20 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ className: "user" },
 														React.createElement(
 																"h6",
-																null,
+																{ className: "login" },
 																React.createElement(
 																		Link,
 																		{ to: "login" },
-																		"Login"
+																		"(login)"
 																)
 														),
 														React.createElement(
 																"h6",
-																null,
+																{ className: "register" },
 																React.createElement(
 																		Link,
 																		{ to: "register" },
-																		"Register"
+																		"(register)"
 																)
 														)
 												);
@@ -48133,11 +48190,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"header",
 												null,
 												React.createElement(
-														Link,
-														{ to: "gallerynosearch", params: { page: 1 } },
+														"h1",
+														null,
 														React.createElement(
-																"h1",
-																null,
+																Link,
+																{ to: "gallerynosearch", params: { page: 1 } },
 																"CITYSCAPE"
 														)
 												),
@@ -51315,7 +51372,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										this.paginate.currentPhotos.forEach(function (val) {
 												if (val.id === resp.photo_id) {
 														val.total_votes = resp.total_votes;
-														val.user_votes = val.user_votes;
+														val.user_votes = resp.user_votes;
+														val.weighted_votes = resp.weighted_votes;
 												}
 										});
 								}

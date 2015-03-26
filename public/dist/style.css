@@ -43,7 +43,8 @@ html {
   background: white; }
 
 *, *:before, *:after {
-  box-sizing: border-box; }
+  box-sizing: border-box;
+  border: 1px dotted black; }
 
 /* /ht Ethan Marcotte - http: //front.ie/l8rJaA */
 img, embed, object, video {
@@ -97,7 +98,7 @@ small {
 a, a:visited {
   outline: none;
   color: #333;
-  text-decoration: underline; }
+  text-decoration: none; }
 
 a:hover {
   outline: none;
@@ -116,22 +117,22 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 300; }
 
 h1 {
-  font-size: 4.045em; }
+  font-size: 3.236em; }
 
 h2 {
-  font-size: 2.9124em; }
+  font-size: 2.7506em; }
 
 h3 {
-  font-size: 2.427em; }
+  font-size: 2.2652em; }
 
 h4 {
-  font-size: 1.9416em; }
+  font-size: 1.7798em; }
 
 h5 {
-  font-size: 1.618em; }
+  font-size: 1.4562em; }
 
 h6 {
-  font-size: 1.2944em; }
+  font-size: 0.9708em; }
 
 header, main, footer {
   text-align: center; }
@@ -139,33 +140,81 @@ header, main, footer {
 /* 6. CUSTOM LAYOUT & TYPOGRAPHY (Baby bear)
  * ---------------------------------------------------------------------------------------- */
 #container {
-  padding: 0.809em;
+  padding: 0.4045em 0.809em;
   max-width: 30em;
-  margin: auto;
+  margin: 0 auto;
   position: relative; }
 
-aside {
-  width: 100%; }
-
-header h1 {
-  margin-bottom: 0; }
-header .user {
-  position: absolute;
-  right: 0;
-  top: 0.809em; }
-  header .user h6 {
-    display: inline-block;
-    padding: 1em; }
+header {
+  position: relative; }
+  header h1 {
+    margin: .2em 0;
+    padding-top: .5em; }
+  header .user {
+    position: absolute;
+    top: 0;
+    right: 0; }
+    header .user h6 {
+      display: inline-block;
+      padding: 0 .3em; }
+    header .user .logout {
+      cursor: pointer; }
 
 .gallery form {
-  margin: 2em 0 .2em; }
+  margin: .5em 0 0; }
   .gallery form input {
     font-size: 1rem;
     border: 1px solid #999;
     border-radius: 1em;
     outline: none; }
 .gallery .tags {
-  margin-bottom: 2em; }
+  margin-top: .5em; }
+.gallery .tag {
+  border: 1px solid #999;
+  border-radius: .3em;
+  padding: 0 .2em .1em;
+  margin: 0 .1em; }
+  .gallery .tag span:first-of-type {
+    padding: 0 .3em 0 .1em; }
+  .gallery .tag span:last-of-type {
+    padding-right: .1em; }
+.gallery .x {
+  color: #666;
+  font-weight: 300;
+  cursor: pointer; }
+.gallery .photos {
+  margin-top: 1em; }
+.gallery .photo {
+  margin-bottom: 3.5em; }
+  .gallery .photo .info {
+    position: relative; }
+  .gallery .photo .votes {
+    margin: 0 0 .3em; }
+    .gallery .photo .votes h6 {
+      margin: 0 .3em;
+      display: inline-block; }
+  .gallery .photo .photo-title {
+    margin-bottom: .4em; }
+
+.photo-detail {
+  margin-top: 1.5em; }
+  .photo-detail .info {
+    position: relative; }
+  .photo-detail .votes > h6 {
+    display: inline-block;
+    padding: 0 2em; }
+  .photo-detail h3 {
+    margin: .2em .5em; }
+  .photo-detail h4 {
+    margin: .1em 0 .4em; }
+
+.voted {
+  color: #999; }
+
+footer {
+  margin-top: 1em; }
+  footer h6 {
+    font-size: .8em; }
 
 /* 7. BROWSER AND NON-SEMANTIC STYLING
  * ---------------------------------------------------------------------------------------- */

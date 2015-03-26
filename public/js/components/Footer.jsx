@@ -10,7 +10,9 @@ class Footer extends React.Component {
 
 		render() {
 				return (
-						<footer>foot</footer>
+						<footer>
+								<h6>This product uses the Flickr API but is not endorsed&nbsp;or&nbsp;certified&nbsp;by&nbsp;Flickr.</h6>
+						</footer>
 				)
 		}
 }

@@ -97,7 +97,6 @@ function photos(req, res) {
 										queryVoted.find({
 												success: function(results) {
 														console.log('2nd query success')
-
 														if (results.length) {
 																results = results.map(function(val) {
 																		return val.attributes;
@@ -110,42 +109,40 @@ function photos(req, res) {
 																				data.photos.photo.push(val)
 																		}
 																})
-
-																// set weighted votes
-																data.photos.photo.forEach(function(val) {
-																		val.weighted_votes = 0
-																		// if request tags exist, weight the votes
-																		if (data.photos.tags.length) {
-																				// total vote holder for subtracting weighted votes
-																				var totalVote = val.total_votes
-																				// check tag votes for each request tag
-																				data.photos.tags.forEach(function(tag) {
-																						// if photo has matching tag vote, weight and subtract from total votes
-																						if (val.tag_votes[tag]) {
-																								val.weighted_votes = val.tag_votes[tag] * 2
-																								totalVote -= val.tag_votes[tag]
-																						}
-																				})
-																			// after weighting, add tenth of remaining total votes
-																			val.weighted_votes += Math.round(totalVote / 5)
-																			console.log(val.weighted_votes)
-																			console.log(val.total_votes)
-																		}
-																		// if request tags don't exist, use total votes
-																		else val.weighted_votes = val.total_votes
-																})
-
-																// sort photos by votes
-																data.photos.photo.sort(function(a, b) {
-																		if (a.weighted_votes > b.weighted_votes) return -1
-																		if (b.weighted_votes > a.weighted_votes) return 1
-																		if (a.total_votes > b.total_votes) return -1
-																		if (b.total_votes > a.total_votes) return 1
-																		if (a.dateupload > b.dateupload) return -1
-																		if (b.dateupload > a.dateupload) return 1
-																		return 0
-																})
 														}
+
+														// set weighted votes
+														data.photos.photo.forEach(function(val) {
+																val.weighted_votes = 0
+																// if request tags exist, weight the votes
+																if (data.photos.tags.length) {
+																		// total vote holder for subtracting weighted votes
+																		var totalVote = val.total_votes
+																		// check tag votes for each request tag
+																		data.photos.tags.forEach(function(tag) {
+																				// if photo has matching tag vote, weight and subtract from total votes
+																				if (val.tag_votes[tag]) {
+																						val.weighted_votes = val.tag_votes[tag] * 2
+																						totalVote -= val.tag_votes[tag]
+																				}
+																		})
+																	// after weighting, add tenth of remaining total votes
+																	val.weighted_votes += Math.round(totalVote / 5)
+																}
+																// if request tags don't exist, use total votes
+																else val.weighted_votes = val.total_votes
+														})
+
+														// sort photos by votes
+														data.photos.photo.sort(function(a, b) {
+																if (a.weighted_votes > b.weighted_votes) return -1
+																if (b.weighted_votes > a.weighted_votes) return 1
+																if (a.total_votes > b.total_votes) return -1
+																if (b.total_votes > a.total_votes) return 1
+																if (a.dateupload > b.dateupload) return -1
+																if (b.dateupload > a.dateupload) return 1
+																return 0
+														})
 														data.photos.photo = data.photos.photo.slice(0, 500)
 														console.log('sending')
 														res.send(data)

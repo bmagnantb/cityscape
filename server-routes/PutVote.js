@@ -16,14 +16,16 @@ function vote(req, res) {
 				res.send('user email not verified')
 				return
 		}
+		console.log(req.params)
 
 		var query = new Parse.Query('Photo')
 		query.equalTo('photo_id', photoId).first({
 				success: function(result) {
 						if (result.get('user_votes').indexOf(user) === -1) {
 								var tag_votes = result.get('tag_votes')
+
 								tags.forEach(function(val) {
-										tag_votes.indexOf() ? tag_votes[val]++ : tag_votes[val] = 1
+										Object.keys(tag_votes).indexOf(val) !== -1 ? tag_votes[val]++ : tag_votes[val] = 1
 								})
 								result.save({
 										total_votes: result.get('total_votes') + 1,
@@ -31,6 +33,19 @@ function vote(req, res) {
 										tag_votes: tag_votes
 								}, {
 										success: function(results) {
+												results = results.toJSON()
+												results.weighted_votes = 0
+												if (tags.length) {
+														var totalVote = results.total_votes
+														tags.forEach(function(tag) {
+																if (results.tag_votes[tag]) {
+																		results.weighted_votes = results.tag_votes[tag] * 2
+																		totalVote -= results.tag_votes[tag]
+																}
+														})
+														results.weighted_vote += Math.round(totalVote / 5)
+												}
+												else results.weighted_votes = results.total_votes
 												res.send(results)
 										},
 										error: function(results, err) {
