@@ -16,7 +16,8 @@
   "dependencies": {
     "express": "latest",
     "parse": "latest",
-    "request": "^2.53.0"
+    "request": "^2.53.0",
+    "rsvp": "latest"
   },
   "devDependencies": {
     "alt": "latest",

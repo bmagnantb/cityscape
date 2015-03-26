@@ -59839,6 +59839,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(Photo, {
 						render: {
 								value: function render() {
+										console.log(this.props);
 										return React.createElement(
 												"div",
 												{ className: "photo" },
@@ -59862,10 +59863,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 																		{ className: "voted" },
 																		"(upvoted)"
 																) : null,
-																this.props.photo.weighted_votes ? React.createElement(
+																this.props.photo.weighted_votes != null ? React.createElement(
 																		"h6",
 																		null,
-																		"this.props.weighted_votes"
+																		this.props.photo.weighted_votes
 																) : null
 														),
 														React.createElement(

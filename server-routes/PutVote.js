@@ -22,16 +22,20 @@ try {
 		var query = new Parse.Query('Photo')
 		query.equalTo('photo_id', photoId).first({
 				success: function(result) {
+						if (!result.get('tag_votes')) console.log(result)
 						if (result.get('user_votes').indexOf(user) === -1) {
-								var tag_votes = result.get('tag_votes')
+								if (tags.length) {
+										var tag_votes = result.get('tag_votes')
 
-								tags.forEach(function(val) {
-										Object.keys(tag_votes).indexOf(val) !== -1 ? tag_votes[val]++ : tag_votes[val] = 1
-								})
+										tags.forEach(function(val) {
+												Object.keys(tag_votes).indexOf(val) !== -1 ? tag_votes[val]++ : tag_votes[val] = 1
+										})
+								}
+
 								result.save({
 										total_votes: result.get('total_votes') + 1,
 										user_votes: result.get('user_votes').concat(user),
-										tag_votes: tag_votes
+										tag_votes: tag_votes || result.get('tag_votes')
 								}, {
 										success: function(results) {
 												results = results.toJSON()

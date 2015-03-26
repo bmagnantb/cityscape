@@ -188,6 +188,7 @@ GalleryView.willTransitionTo = function(transition, params) {
 class Photo extends React.Component {
 
 		render() {
+				console.log(this.props)
 				return (
 						<div className="photo">
 								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
@@ -202,7 +203,7 @@ class Photo extends React.Component {
 																: <h6 className="voted">(upvoted)</h6>
 														: null}
 
-												{this.props.photo.weighted_votes ? <h6>this.props.weighted_votes</h6> : null}
+												{this.props.photo.weighted_votes != null ? <h6>{this.props.photo.weighted_votes}</h6> : null}
 										</div>
 										<h5 className="photo-title">
 												<Link to="/photo/:id" params={{id: this.props.photo.id}}>

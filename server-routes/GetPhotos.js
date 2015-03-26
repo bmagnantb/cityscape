@@ -7,7 +7,7 @@ Parse.Photo = Parse.Object.extend('Photo', {
 		initialize: function() {
 				this.set('user_votes', [])
 				this.set('total_votes', 0)
-				this.set('tag_votes', {tag: 0})
+				this.set('tag_votes', {})
 		}
 })
 
@@ -58,7 +58,6 @@ try {
 				query.containedIn('photo_id', photo_ids)
 				query.limit(500).find({
 						success: function(result) {
-								var counter = 0
 								photoCollection = new Parse.PhotoCollection(result)
 								data.photos.photo.forEach(function(val) {
 										var photoMatch = photoCollection.pluck('photo_id').indexOf(val.id)
@@ -70,15 +69,14 @@ try {
 												}
 												photo.photo_id = photo.id
 												delete photo.id
+												val.user_votes = []
+												val.total_votes = 0
+												val.tag_votes = {}
 												photoCollection.create(photo, {
 														success: function(model) {
-																counter++
-																val.user_votes = model.get('user_votes')
-																val.total_votes = model.get('total_votes')
-																val.tag_votes = model.get('tag_votes')
 														},
 														error: function() {
-																console.log('parse photo create failed')
+																console.log(arguments)
 														}
 												})
 										}
