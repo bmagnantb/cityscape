@@ -3,6 +3,7 @@ var request = require('request'),
 		flickrApiKey = 'eeacdafae711c1ae98c0342fa323569a'
 
 function getDetail(req, res) {
+try {
 		var url = 'https://api.flickr.com/services/rest?',
 				counter = 0
 
@@ -35,6 +36,11 @@ function getDetail(req, res) {
 
 				res.send(data)
 		})
+}
+catch (err) {
+		console.log(err)
+		res.send(err)
+}
 }
 
 module.exports = getDetail

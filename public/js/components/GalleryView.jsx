@@ -6,6 +6,7 @@ var { galleryStore } = require('../stores/GalleryStore')
 var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
 var { Link } = require('../react-router')
+var _ = require('lodash')
 
 
 
@@ -15,12 +16,13 @@ class GalleryView extends React.Component {
 				super()
 				this.state = galleryStore.getState()
 				this.state.user = userStore.getState().user
-				this.state.isLoading = <h2>Loading</h2>
 		}
 
 
 
 		componentWillMount() {
+				console.log('mounting')
+				console.log(this.state)
 				userActions.current()
 		}
 
@@ -34,8 +36,8 @@ class GalleryView extends React.Component {
 
 
 		componentWillUnmount() {
-				userStore.unlisten(this.onUserChange.bind(this))
-				galleryStore.unlisten(this.onGalleryChange.bind(this))
+				userStore.unlisten(this.onUserChange)
+				galleryStore.unlisten(this.onGalleryChange)
 		}
 
 
@@ -55,6 +57,7 @@ class GalleryView extends React.Component {
 
 
 		render() {
+				console.log(this.state.isLoading)
 				var photos = this.state.paginate.currentPhotos.map((photo) => {
 						return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.id} />
 				})
@@ -144,15 +147,22 @@ GalleryView.contextTypes = {
 
 var prevParams = {}
 GalleryView.willTransitionTo = function(transition, params) {
+		var wasPrevParams = Object.keys(prevParams).length
+		if (params.nextPageExists === undefined && prevParams.nextPageExists != null) params.nextPageExists = prevParams.nextPageExists
+		if (params.prevPageExists === undefined && prevParams.prevPageExists != null) params.prevPageExists = prevParams.prevPageExists
+		var paramsEqual = _.isEqual(prevParams, params)
+		console.log(wasPrevParams)
+		console.log(_.isEqual(prevParams, params))
 		if (!prevParams.page) prevParams.page = params.page
 		if (!prevParams.tags) prevParams.tags = params.tags
 
 		if ((prevParams.tags === params.tags) && (prevParams.page !== params.page)) {
-				console.log('page change')
 				if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists)
 				if (prevParams.page < params.page) galleryActions.changePage(params.page, prevParams.nextPageExists)
 		}
-
+		else if (wasPrevParams && paramsEqual) {
+				galleryActions.isntLoading()
+		}
 		else {
 				if (params.tags) params.tags = params.tags.split(',')
 				if (prevParams.deletedTag) {
@@ -178,7 +188,6 @@ GalleryView.willTransitionTo = function(transition, params) {
 class Photo extends React.Component {
 
 		render() {
-				console.log(this.props.photo)
 				return (
 						<div className="photo">
 								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
@@ -187,11 +196,13 @@ class Photo extends React.Component {
 
 								<div className="info">
 										<div className="votes">
-												{this.props.user && this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1
-														? <h6 ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
-														: <h6 className="voted">(upvoted)</h6>}
+												{this.props.user && this.props.photo.user_votes
+														? this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1
+																? <h6 ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
+																: <h6 className="voted">(upvoted)</h6>
+														: null}
 
-												<h6>{this.props.photo.weighted_votes}</h6>
+												{this.props.photo.weighted_votes ? <h6>this.props.weighted_votes</h6> : null}
 										</div>
 										<h5 className="photo-title">
 												<Link to="/photo/:id" params={{id: this.props.photo.id}}>

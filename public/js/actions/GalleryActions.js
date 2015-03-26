@@ -5,7 +5,7 @@ var { GalleryClient } = require('../ServerFlickrClient')
 
 class GalleryActions {
 		constructor() {
-				this.generateActions('prevPage', 'nextPage')
+				this.generateActions('isntLoading')
 		}
 
 		getPhotos(options, params) {

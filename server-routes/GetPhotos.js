@@ -18,6 +18,7 @@ Parse.PhotoCollection = Parse.Collection.extend({
 
 
 function photos(req, res) {
+try {
 		req.query.api_key = flickrApiKey
 
 		if (!req.query.tags) req.query.tags = []
@@ -57,6 +58,7 @@ function photos(req, res) {
 				query.containedIn('photo_id', photo_ids)
 				query.limit(500).find({
 						success: function(result) {
+								var counter = 0
 								photoCollection = new Parse.PhotoCollection(result)
 								data.photos.photo.forEach(function(val) {
 										var photoMatch = photoCollection.pluck('photo_id').indexOf(val.id)
@@ -70,12 +72,13 @@ function photos(req, res) {
 												delete photo.id
 												photoCollection.create(photo, {
 														success: function(model) {
+																counter++
 																val.user_votes = model.get('user_votes')
 																val.total_votes = model.get('total_votes')
 																val.tag_votes = model.get('tag_votes')
 														},
 														error: function() {
-																console.log(arguments)
+																console.log('parse photo create failed')
 														}
 												})
 										}
@@ -162,6 +165,11 @@ function photos(req, res) {
 						}
 				})
 		})
+}
+catch (err) {
+		console.log(err)
+		res.send(err)
+}
 }
 
 module.exports = photos

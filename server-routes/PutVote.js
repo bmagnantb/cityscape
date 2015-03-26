@@ -2,6 +2,7 @@ var request = require('request'),
 		Parse = require('parse').Parse
 
 function vote(req, res) {
+try {
 		var user = req.params.user
 		var photoId = req.params.id
 		var tags
@@ -65,6 +66,11 @@ function vote(req, res) {
 						res.send(err)
 				}
 		})
+}
+catch (err) {
+		console.log(err)
+		res.send(err)
+}
 }
 
 module.exports = vote

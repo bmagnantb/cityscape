@@ -3,6 +3,7 @@
 var $ = require('jquery')
 var { alt } = require('../alt-app')
 var { galleryActions } = require('../actions/GalleryActions')
+var React = require('react')
 
 class GalleryStore {
 
@@ -12,6 +13,7 @@ class GalleryStore {
 				this.requestPages = null
 				this.tags = []
 				this.isSearch = ''
+				this.isLoading = <h2>Loading...</h2>
 
 				// browser-side pagination
 				this.paginate = {
@@ -34,7 +36,8 @@ class GalleryStore {
 				this.bindListeners({
 						getPhotos: galleryActions.getPhotos,
 						changePage: galleryActions.changePage,
-						vote: galleryActions.vote
+						vote: galleryActions.vote,
+						isntLoading: galleryActions.isntLoading
 				})
 		}
 
@@ -58,6 +61,11 @@ class GalleryStore {
 								val.weighted_votes =  resp.weighted_votes
 						}
 				})
+		}
+
+		isntLoading() {
+				console.log('isnt loading')
+				this.isLoading = false
 		}
 
 

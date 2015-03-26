@@ -12,7 +12,6 @@ function startServer() {
 
 		app.use(express.static(__dirname + '/public'))
 
-
 		app.get('/photos', getPhotos)
 
 		app.get('/photo/:votes?', getDetail)

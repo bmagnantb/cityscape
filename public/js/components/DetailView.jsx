@@ -36,8 +36,8 @@ class DetailView extends React.Component {
 		}
 
 		componentWillUnmount() {
-				detailStore.unlisten(this.onDetailChange.bind(this))
-				galleryStore.unlisten(this.onGalleryChange.bind(this))
+				detailStore.unlisten(this.onDetailChange)
+				galleryStore.unlisten(this.onGalleryChange)
 		}
 
 		onDetailChange() {
