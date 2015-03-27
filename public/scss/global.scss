@@ -172,11 +172,68 @@ header, main, footer {
 /* 6. CUSTOM LAYOUT & TYPOGRAPHY (Baby bear)
  * ---------------------------------------------------------------------------------------- */
 
+
+@keyframes loadingone {
+		0% {
+				opacity: 0;
+		}
+		33% {
+				opacity: 1;
+		}
+		// 25% {
+		// 		opacity: 1;
+		// }
+		100% {
+				opacity: 1;
+		}
+}
+
+@keyframes loadingtwo {
+		0% {
+				opacity: 0;
+		}
+		33% {
+				opacity: 0;
+		}
+		66% {
+				opacity: 1;
+		}
+		100% {
+				opacity: 1;
+		}
+}
+
+@keyframes loadingthree {
+		0% {
+				opacity: 0;
+		}
+		66% {
+				opacity: 0;
+		}
+		// 88% {
+		// 		opacity: 1;
+		// }
+		100% {
+				opacity: 1;
+		}
+}
+
+
+html {
+		height: 100%;
+}
+
+body {
+		height: 100%;
+}
+
 #container {
-	padding: $leading / 4 $leading / 2;
-	max-width: $baby_bear_max_width;
-	margin: 0 auto;
-	position: relative;
+		padding: $leading / 4 $leading / 2;
+		max-width: $baby_bear_max_width;
+		margin: 0 auto;
+		position: relative;
+		min-height: 100%;
+		padding-bottom: 3em;
 }
 
 header {
@@ -265,6 +322,13 @@ header {
 						margin-bottom: .4em;
 				}
 		}
+
+		.pages {
+				h6 {
+						display: inline-block;
+						margin: 0 1em;
+				}
+		}
 }
 
 
@@ -291,8 +355,43 @@ header {
 		}
 }
 
+.loading {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+
+		span {
+				&:nth-of-type(2) {
+						animation: loadingone 2s infinite;
+				}
+				&:nth-of-type(3) {
+						animation: loadingtwo 2s infinite;
+				}
+				&:nth-of-type(4) {
+						animation: loadingthree 2s infinite;
+				}
+		}
+}
+
+.login, .register {
+		margin-top: 2em;
+		input, button {
+				display: block;
+				font-size: 1rem;
+				margin: .5em auto;
+		}
+		a {
+			margin-top: 1em;
+		}
+}
+
 .voted {
 		color: #999;
+}
+
+.upvote {
+		cursor: pointer;
 }
 
 footer {
@@ -300,6 +399,10 @@ footer {
 		h6 {
 				font-size: .8em;
 		}
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		transform: translateX(-50%)
 }
 
 

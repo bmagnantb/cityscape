@@ -138,11 +138,84 @@ header, main, footer {
 
 /* 6. CUSTOM LAYOUT & TYPOGRAPHY (Baby bear)
  * ---------------------------------------------------------------------------------------- */
+@-webkit-keyframes loadingone {
+  0% {
+    opacity: 0; }
+
+  33% {
+    opacity: 1; }
+
+  100% {
+    opacity: 1; } }
+@keyframes loadingone {
+  0% {
+    opacity: 0; }
+
+  33% {
+    opacity: 1; }
+
+  100% {
+    opacity: 1; } }
+
+@-webkit-keyframes loadingtwo {
+  0% {
+    opacity: 0; }
+
+  33% {
+    opacity: 0; }
+
+  66% {
+    opacity: 1; }
+
+  100% {
+    opacity: 1; } }
+
+@keyframes loadingtwo {
+  0% {
+    opacity: 0; }
+
+  33% {
+    opacity: 0; }
+
+  66% {
+    opacity: 1; }
+
+  100% {
+    opacity: 1; } }
+
+@-webkit-keyframes loadingthree {
+  0% {
+    opacity: 0; }
+
+  66% {
+    opacity: 0; }
+
+  100% {
+    opacity: 1; } }
+
+@keyframes loadingthree {
+  0% {
+    opacity: 0; }
+
+  66% {
+    opacity: 0; }
+
+  100% {
+    opacity: 1; } }
+
+html {
+  height: 100%; }
+
+body {
+  height: 100%; }
+
 #container {
   padding: 0.4045em 0.809em;
   max-width: 30em;
   margin: 0 auto;
-  position: relative; }
+  position: relative;
+  min-height: 100%;
+  padding-bottom: 3em; }
 
 header {
   position: relative; }
@@ -194,6 +267,9 @@ header {
       display: inline-block; }
   .gallery .photo .photo-title {
     margin-bottom: .4em; }
+.gallery .pages h6 {
+  display: inline-block;
+  margin: 0 1em; }
 
 .photo-detail {
   margin-top: 1.5em; }
@@ -207,11 +283,46 @@ header {
   .photo-detail h4 {
     margin: .1em 0 .4em; }
 
+.loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%); }
+  .loading span:nth-of-type(2) {
+    -webkit-animation: loadingone 2s infinite;
+            animation: loadingone 2s infinite; }
+  .loading span:nth-of-type(3) {
+    -webkit-animation: loadingtwo 2s infinite;
+            animation: loadingtwo 2s infinite; }
+  .loading span:nth-of-type(4) {
+    -webkit-animation: loadingthree 2s infinite;
+            animation: loadingthree 2s infinite; }
+
+.login, .register {
+  margin-top: 2em; }
+  .login input, .login button, .register input, .register button {
+    display: block;
+    font-size: 1rem;
+    margin: .5em auto; }
+  .login a, .register a {
+    margin-top: 1em; }
+
 .voted {
   color: #999; }
 
+.upvote {
+  cursor: pointer; }
+
 footer {
-  margin-top: 1em; }
+  margin-top: 1em;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+      -ms-transform: translateX(-50%);
+          transform: translateX(-50%); }
   footer h6 {
     font-size: .8em; }
 

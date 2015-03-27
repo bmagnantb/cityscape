@@ -58842,7 +58842,6 @@ module.exports = require('./lib/React');
 																settings[key] = settings2[key].split(" ");
 														}
 												} else if (settings2[key] instanceof Array || settings2[key] instanceof String) {
-														console.log(settings2[key]);
 														if (settings2[key] instanceof String) {
 																settings2[key] = settings2[key].split(" ");
 														}
@@ -58982,9 +58981,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function vote(photoId, user, tags) {
 										var username;
 										user ? username = user.get("username") : username = undefined;
-										if (user && !user.get("emailVerified")) {
-												username = "noemail";
-										}
 										return $.post("/" + username + "/photo/" + photoId + "/" + tags);
 								}
 						}
@@ -59250,18 +59246,16 @@ function app() {
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm");
 
-		var user = Parse.User.current() || "";
-
 		var router = require("./Router").router;
 
 		router.run(function (Handler, state) {
 				var path = state.path;
 				var params = state.params;
 
-				if (user && (path === "/login" || path === "/register")) {
-						router.transitionTo("gallerynosearch", { page: 1 });
-						return;
-				}
+				// if (user && (path === '/login' || path === '/register')) {
+				// 		router.transitionTo('gallerynosearch', {page: 1})
+				// 		return
+				// }
 
 				React.render(React.createElement(Handler, null), document.querySelector("#container"));
 		});
@@ -59426,13 +59420,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var photo = this.state.paginate.currentPhotos.filter(function (val) {
 												return val.id === routerParams.id;
 										})[0];
-										console.log(photo);
 										var photoDetail = this.state.detail[routerParams.id];
 
 										var voteAllowed;
-										this.state.user && photo.user_votes.indexOf(this.state.user.get("username")) === -1 ? voteAllowed = React.createElement(
+										this.state.user && photo && photo.user_votes.indexOf(this.state.user.get("username")) === -1 ? voteAllowed = React.createElement(
 												"h6",
-												{ ref: "vote", onClick: this._vote.bind(this) },
+												{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
 												"(upvote)"
 										) : React.createElement(
 												"h6",
@@ -59441,14 +59434,14 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										);
 
 										var votes;
-										photo && photo.weighted_votes != null ? votes = React.createElement(
+										photo && photo.weighted_votes != null && this.state.tags.length ? votes = React.createElement(
 												"div",
 												{ className: "votes" },
 												voteAllowed,
 												React.createElement(
 														"h6",
 														null,
-														"(weighted) ",
+														"(search-weighted) ",
 														photo.weighted_votes
 												),
 												React.createElement(
@@ -59531,7 +59524,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						_vote: {
 								value: function _vote() {
 										var routerParams = this.context.router.getCurrentParams();
-										console.log(routerParams.id, this.state.user, this.state.tags);
 										galleryActions.vote(routerParams.id, this.state.user, this.state.tags);
 								}
 						}
@@ -59645,8 +59637,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										console.log("mounting");
-										console.log(this.state);
 										userActions.current();
 								}
 						},
@@ -59678,7 +59668,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function render() {
 										var _this = this;
 
-										console.log(this.state.isLoading);
 										var photos = this.state.paginate.currentPhotos.map(function (photo) {
 												return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.id });
 										});
@@ -59719,10 +59708,27 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														React.createElement(
 																"h2",
 																null,
-																"Loading..."
+																"Loading",
+																React.createElement(
+																		"span",
+																		null,
+																		"."
+																),
+																React.createElement(
+																		"span",
+																		null,
+																		"."
+																),
+																React.createElement(
+																		"span",
+																		null,
+																		"."
+																)
 														)
 												);
-										}return React.createElement(
+										}
+
+										return React.createElement(
 												"main",
 												{ className: "gallery" },
 												React.createElement(
@@ -59738,22 +59744,30 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												),
 												React.createElement(
 														"div",
-														null,
+														{ className: "pages" },
 														this.state.paginate.prevPageExists ? React.createElement(
 																Link,
 																{ to: this.state.paginate.prevPageRoute, onClick: this._changePage.bind(this) },
-																"Prev"
-														) : null,
+																React.createElement(
+																		"h6",
+																		{ className: "prev" },
+																		"Prev"
+																)
+														) : React.createElement("h6", null),
 														React.createElement(
 																"h6",
-																null,
+																{ className: "current" },
 																this.state.paginate.currentPage
 														),
 														this.state.paginate.nextPageExists ? React.createElement(
 																Link,
 																{ to: this.state.paginate.nextPageRoute, onClick: this._changePage.bind(this) },
-																"Next"
-														) : null
+																React.createElement(
+																		"h6",
+																		{ className: "next" },
+																		"Next"
+																)
+														) : React.createElement("h6", null)
 												)
 										);
 								}
@@ -59770,20 +59784,17 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						_removeTag: {
 								value: function _removeTag(e) {
-										console.log("click");
 										var tag = e.target.parentNode.id.slice(3);
 										var tags = this.state.tags.slice();
 										tags.splice(this.state.tags.indexOf(tag), 1);
 										prevParams.deletedTag = "-" + tag;
 										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
-										// this.context.router.transitionTo('gallery', {tags: tags})
 										this.setState({ isLoading: true });
 								}
 						},
 						_changePage: {
 								value: function _changePage() {
-										if (this.nextPageExists === "request") this.setState({ isLoading: true });
-										if (this.prevPageExists === "request") this.setState({ isLoading: true });
+										this.setState({ isLoading: true });
 								}
 						}
 				});
@@ -59801,8 +59812,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				if (params.nextPageExists === undefined && prevParams.nextPageExists != null) params.nextPageExists = prevParams.nextPageExists;
 				if (params.prevPageExists === undefined && prevParams.prevPageExists != null) params.prevPageExists = prevParams.prevPageExists;
 				var paramsEqual = _.isEqual(prevParams, params);
-				console.log(wasPrevParams);
-				console.log(_.isEqual(prevParams, params));
 				if (!prevParams.page) prevParams.page = params.page;
 				if (!prevParams.tags) prevParams.tags = params.tags;
 
@@ -59839,7 +59848,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(Photo, {
 						render: {
 								value: function render() {
-										console.log(this.props);
 										return React.createElement(
 												"div",
 												{ className: "photo" },
@@ -59856,7 +59864,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 																{ className: "votes" },
 																this.props.user && this.props.photo.user_votes ? this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
 																		"h6",
-																		{ ref: "vote", onClick: this._vote.bind(this) },
+																		{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
 																		"(upvote)"
 																) : React.createElement(
 																		"h6",
@@ -59981,7 +59989,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														{ className: "user" },
 														React.createElement(
 																"h6",
-																{ className: "login" },
+																null,
 																React.createElement(
 																		Link,
 																		{ to: "login" },
@@ -59990,7 +59998,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														),
 														React.createElement(
 																"h6",
-																{ className: "register" },
+																null,
 																React.createElement(
 																		Link,
 																		{ to: "register" },
@@ -60201,7 +60209,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"main",
 												{ className: "register" },
 												React.createElement(
-														"h3",
+														"h4",
 														null,
 														"Register"
 												),
@@ -63187,6 +63195,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						changePage: {
 								value: function changePage(routerPage) {
 										this._paginate(routerPage);
+										this.isLoading = false;
 								}
 						},
 						vote: {

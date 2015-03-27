@@ -54,19 +54,18 @@ class DetailView extends React.Component {
 				var photo = this.state.paginate.currentPhotos.filter((val) => {
 						return val.id === routerParams.id
 				})[0]
-				console.log(photo)
 				var photoDetail = this.state.detail[routerParams.id]
 
 				var voteAllowed
-				this.state.user && photo.user_votes.indexOf(this.state.user.get('username')) === -1
-						? voteAllowed = <h6 ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
+				this.state.user && photo && photo.user_votes.indexOf(this.state.user.get('username')) === -1
+						? voteAllowed = <h6 className="upvote" ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
 						: <h6 className="voted">(upvoted)</h6>
 
 				var votes
-				photo && photo.weighted_votes != null
+				photo && photo.weighted_votes != null && this.state.tags.length
 						? votes = <div className="votes">
 												{voteAllowed}
-												<h6>(weighted) {photo.weighted_votes}</h6>
+												<h6>(search-weighted) {photo.weighted_votes}</h6>
 												<h6>(total) {photo.total_votes}</h6>
 										</div>
 						: photo && photo.total_votes != null
@@ -111,7 +110,6 @@ class DetailView extends React.Component {
 
 		_vote() {
 				var routerParams = this.context.router.getCurrentParams()
-				console.log(routerParams.id, this.state.user, this.state.tags)
 				galleryActions.vote(routerParams.id, this.state.user, this.state.tags)
 		}
 }

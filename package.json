@@ -8,7 +8,7 @@
     "watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",
     "watch:css": "watch 'npm run build:css' ./public/scss/",
     "watchify:js": "watchify ./public/js/app.js --extension=.jsx -t babelify -o ./public/dist/app.js -v",
-    "build:css": "node ./node_modules/.bin/node-sass ./public/scss/style.scss ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
+    "build:css": "node ./node_modules/.bin/node-sass ./public/scss/style.scss ./public/dist/style.css; autoprefixer ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
     "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'bower_components' >> .gitignore",
     "test": "mocha --compilers js:babel/register ./public/js/test/test.js; echo '------tested------'",
     "env": "env"
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "alt": "latest",
+    "autoprefixer": "^5.1.0",
     "babel": "latest",
     "babelify": "latest",
     "bourbon": "latest",

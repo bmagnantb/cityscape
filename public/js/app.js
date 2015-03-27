@@ -11,16 +11,14 @@ function app() {
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
 
-		var user = Parse.User.current() || ''
-
 		var router = require('./Router').router
 
 		router.run(function(Handler, state) {
 				var { path, params } = state
-				if (user && (path === '/login' || path === '/register')) {
-						router.transitionTo('gallerynosearch', {page: 1})
-						return
-				}
+				// if (user && (path === '/login' || path === '/register')) {
+				// 		router.transitionTo('gallerynosearch', {page: 1})
+				// 		return
+				// }
 
 				React.render(<Handler />, document.querySelector('#container'))
 		})

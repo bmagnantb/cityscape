@@ -50,6 +50,7 @@ class GalleryStore {
 
 		changePage(routerPage) {
 				this._paginate(routerPage)
+				this.isLoading = false
 		}
 
 

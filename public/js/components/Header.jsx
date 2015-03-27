@@ -35,10 +35,10 @@ class Header extends React.Component {
 				} else {
 						userinfo = (
 								<div className="user">
-										<h6 className="login">
+										<h6>
 												<Link to="login">(login)</Link>
 										</h6>
-										<h6 className="register">
+										<h6>
 												<Link to="register">(register)</Link>
 										</h6>
 								</div>

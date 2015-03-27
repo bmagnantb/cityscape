@@ -21,8 +21,6 @@ class GalleryView extends React.Component {
 
 
 		componentWillMount() {
-				console.log('mounting')
-				console.log(this.state)
 				userActions.current()
 		}
 
@@ -57,7 +55,6 @@ class GalleryView extends React.Component {
 
 
 		render() {
-				console.log(this.state.isLoading)
 				var photos = this.state.paginate.currentPhotos.map((photo) => {
 						return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.id} />
 				})
@@ -79,7 +76,13 @@ class GalleryView extends React.Component {
 						</div>
 						: null
 
-				if (this.state.isLoading) return <main className="loading"><h2>Loading...</h2></main>
+				if (this.state.isLoading) {
+						return (
+								<main className="loading">
+										<h2>Loading<span>.</span><span>.</span><span>.</span></h2>
+								</main>
+						)
+				}
 
 				return (
 						<main className="gallery">
@@ -90,16 +93,16 @@ class GalleryView extends React.Component {
 								<div className="photos">
 										{photos}
 								</div>
-								<div>
-										{this.state.paginate.prevPageExists ?
-												<Link to={this.state.paginate.prevPageRoute} onClick={this._changePage.bind(this)}>Prev</Link> :
-												null}
+								<div className="pages">
+										{this.state.paginate.prevPageExists
+												? <Link to={this.state.paginate.prevPageRoute} onClick={this._changePage.bind(this)}><h6 className="prev">Prev</h6></Link>
+												: <h6></h6>}
 
-										<h6>{this.state.paginate.currentPage}</h6>
+										<h6 className="current">{this.state.paginate.currentPage}</h6>
 
-										{this.state.paginate.nextPageExists ?
-												<Link to={this.state.paginate.nextPageRoute} onClick={this._changePage.bind(this)}>Next</Link> :
-												null}
+										{this.state.paginate.nextPageExists
+												? <Link to={this.state.paginate.nextPageRoute} onClick={this._changePage.bind(this)}><h6 className="next">Next</h6></Link>
+												: <h6></h6>}
 								</div>
 						</main>
 				)
@@ -120,22 +123,19 @@ class GalleryView extends React.Component {
 
 
 		_removeTag(e) {
-				console.log('click')
 				var tag = e.target.parentNode.id.slice(3)
 				var tags = this.state.tags.slice()
 				tags.splice(this.state.tags.indexOf(tag), 1)
 				prevParams.deletedTag = `-${tag}`
 				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
 				else this.context.router.transitionTo('gallerynosearch', {page: 1})
-				// this.context.router.transitionTo('gallery', {tags: tags})
 				this.setState({isLoading: true})
 		}
 
 
 
 		_changePage() {
-				if (this.nextPageExists === 'request') this.setState({isLoading: true})
-				if (this.prevPageExists === 'request') this.setState({isLoading: true})
+				this.setState({isLoading: true})
 		}
 }
 
@@ -151,8 +151,6 @@ GalleryView.willTransitionTo = function(transition, params) {
 		if (params.nextPageExists === undefined && prevParams.nextPageExists != null) params.nextPageExists = prevParams.nextPageExists
 		if (params.prevPageExists === undefined && prevParams.prevPageExists != null) params.prevPageExists = prevParams.prevPageExists
 		var paramsEqual = _.isEqual(prevParams, params)
-		console.log(wasPrevParams)
-		console.log(_.isEqual(prevParams, params))
 		if (!prevParams.page) prevParams.page = params.page
 		if (!prevParams.tags) prevParams.tags = params.tags
 
@@ -160,9 +158,11 @@ GalleryView.willTransitionTo = function(transition, params) {
 				if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists)
 				if (prevParams.page < params.page) galleryActions.changePage(params.page, prevParams.nextPageExists)
 		}
+
 		else if (wasPrevParams && paramsEqual) {
 				galleryActions.isntLoading()
 		}
+
 		else {
 				if (params.tags) params.tags = params.tags.split(',')
 				if (prevParams.deletedTag) {
@@ -188,7 +188,6 @@ GalleryView.willTransitionTo = function(transition, params) {
 class Photo extends React.Component {
 
 		render() {
-				console.log(this.props)
 				return (
 						<div className="photo">
 								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
@@ -199,7 +198,7 @@ class Photo extends React.Component {
 										<div className="votes">
 												{this.props.user && this.props.photo.user_votes
 														? this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1
-																? <h6 ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
+																? <h6 className="upvote" ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
 																: <h6 className="voted">(upvoted)</h6>
 														: null}
 

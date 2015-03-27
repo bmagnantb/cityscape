@@ -13,10 +13,6 @@ try {
 				return
 		}
 
-		if (user === 'noemail') {
-				res.send('user email not verified')
-				return
-		}
 		console.log(req.params)
 
 		var query = new Parse.Query('Photo')
