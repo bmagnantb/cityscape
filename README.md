@@ -12,9 +12,11 @@ Upvoting is great at offering user curation to interest-based communities. With 
 
 
 1.  Niche interest erasure
+
     The NYC skyline would be a common search and users will vote for photos that best match that query. A much less common search would be for the Chrysler Building, but could return some of the same photos as the NYC skyline search. Why should highly trafficked and voted NYC skyline photos that aren't focused on the Chrysler Building outrank less popular photos that are more relevant?
 
 2.  Opposite results caused by different interests
+
     A photo of 17th-century Parisian architecture would be returned by searches for Paris and 17-century architecture. Users' decisions to upvote or not could easily hinge on which search query they used, as votes are cast in the context of that interest. The photo could live up to the expectations of one interest but not the other.
 
 ###Solution
