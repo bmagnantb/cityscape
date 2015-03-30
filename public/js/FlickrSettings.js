@@ -8,6 +8,7 @@
 // first call always returns function for continuing settings change
 // on subsequent calls, any object as argument will add contents to settings and function will return function for continuing settings change
 //additional settings will be added, any repeated settings are overwritten, prepend key with '-' to remove that setting, remove tags and extras by adding '-' to array members, remove all tags and extra by prepending with '--'
+// a call with no arguments gives the built settings object
 
 function options(settings) {
 

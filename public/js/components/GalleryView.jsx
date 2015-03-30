@@ -5,7 +5,7 @@ var { galleryActions } = require('../actions/GalleryActions')
 var { galleryStore } = require('../stores/GalleryStore')
 var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
-var { Link } = require('../react-router')
+var { Link } = require('../../../modules_other/react-router')
 var { Photo } = require('./Photo')
 var _ = require('lodash')
 

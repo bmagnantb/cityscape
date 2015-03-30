@@ -3,7 +3,7 @@
 var React = require('react')
 // modified react-router for React v0.13 compatibility
 // clone from git@github.com:nhunzaker/react-router.git
-var Router = require('./react-router')
+var Router = require('../../modules_other/react-router')
 var { AppView } = require('./components/AppView')
 var { GalleryView } = require('./components/GalleryView')
 var { LoginView } = require('./components/LoginView')
