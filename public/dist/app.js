@@ -58972,9 +58972,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								}
 						},
 						requestPhoto: {
-								value: function requestPhoto(settings, votes) {
-										!votes ? votes = "" : votes = "/" + votes;
-										return $.get("/photo" + votes, this.options(settings)());
+								value: function requestPhoto(settings) {
+										return $.get("/photo", this.options(settings)());
 								}
 						},
 						vote: {
@@ -59034,10 +59033,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				_createClass(DetailActions, {
 						getDetail: {
-								value: function getDetail(photoId, votes) {
+								value: function getDetail(photoId) {
 										var _this = this;
 
-										DetailClient.requestPhoto({ photo_id: photoId }, votes).then(function (data) {
+										DetailClient.requestPhoto({ photo_id: photoId }).then(function (data) {
 												return _this.dispatch(data.photo);
 										});
 								}
@@ -59379,20 +59378,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						componentWillMount: {
 								value: function componentWillMount() {
 										var routerParams = this.context.router.getCurrentParams();
-										var galleryMatch = this.state.paginate.currentPhotos.filter(function (val) {
-												return val.id === routerParams.id;
-										})[0];
-
-										var galleryMatchVotes;
-										galleryMatch && galleryMatch.total_votes && galleryMatch.user_votes ? galleryMatchVotes = true : null;
-
 										if (!this.state.detail[routerParams.id]) {
-												detailActions.getDetail(routerParams.id, galleryMatchVotes);
+												detailActions.getDetail(routerParams.id);
 										}
-								}
-						},
-						componentDidMount: {
-								value: function componentDidMount() {
+
 										detailStore.listen(this.onDetailChange.bind(this));
 										galleryStore.listen(this.onGalleryChange.bind(this));
 								}
@@ -59415,51 +59404,14 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						render: {
 								value: function render() {
-										var routerParams = this.context.router.getCurrentParams();
+										var _getPhotoInfo = this._getPhotoInfo();
 
-										var photo = this.state.paginate.currentPhotos.filter(function (val) {
-												return val.id === routerParams.id;
-										})[0];
-										var photoDetail = this.state.detail[routerParams.id];
+										var photo = _getPhotoInfo.photo;
+										var photoDetail = _getPhotoInfo.photoDetail;
 
-										var voteAllowed;
-										this.state.user && photo && photo.user_votes.indexOf(this.state.user.get("username")) === -1 ? voteAllowed = React.createElement(
-												"h6",
-												{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
-												"(upvote)"
-										) : React.createElement(
-												"h6",
-												{ className: "voted" },
-												"(upvoted)"
-										);
+										var voteAllowed = this._getVoteAllowed(photo);
 
-										var votes;
-										photo && photo.weighted_votes != null && this.state.tags.length ? votes = React.createElement(
-												"div",
-												{ className: "votes" },
-												voteAllowed,
-												React.createElement(
-														"h6",
-														null,
-														"(search-weighted) ",
-														photo.weighted_votes
-												),
-												React.createElement(
-														"h6",
-														null,
-														"(total) ",
-														photo.total_votes
-												)
-										) : photo && photo.total_votes != null ? votes = React.createElement(
-												"div",
-												{ className: "votes" },
-												voteAllowed,
-												React.createElement(
-														"h6",
-														null,
-														photo.total_votes
-												)
-										) : null;
+										var votes = this._getVotes(photo, voteAllowed);
 
 										if (photoDetail) {
 												var ownerUrl = "https://www.flickr.com/people/" + photoDetail.owner.path_alias;
@@ -59525,6 +59477,67 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function _vote() {
 										var routerParams = this.context.router.getCurrentParams();
 										galleryActions.vote(routerParams.id, this.state.user, this.state.tags);
+								}
+						},
+						_getPhotoInfo: {
+								value: function _getPhotoInfo() {
+										var routerParams = this.context.router.getCurrentParams();
+
+										var photo = this.state.paginate.currentPhotos.filter(function (val) {
+												return val.id === routerParams.id;
+										})[0];
+
+										var photoDetail = this.state.detail[routerParams.id];
+
+										return { photo: photo, photoDetail: photoDetail };
+								}
+						},
+						_getVoteAllowed: {
+								value: function _getVoteAllowed(photo) {
+										var voteAllowed = this.state.user && photo && photo.user_votes.indexOf(this.state.user.get("username")) === -1 ? voteAllowed = React.createElement(
+												"h6",
+												{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
+												"(upvote)"
+										) : React.createElement(
+												"h6",
+												{ className: "voted" },
+												"(upvoted)"
+										);
+
+										return voteAllowed;
+								}
+						},
+						_getVotes: {
+								value: function _getVotes(photo, voteAllowed) {
+										var votes;
+										photo && photo.weighted_votes != null && this.state.tags.length ? votes = React.createElement(
+												"div",
+												{ className: "votes" },
+												voteAllowed,
+												React.createElement(
+														"h6",
+														null,
+														"(search-weighted) ",
+														photo.weighted_votes
+												),
+												React.createElement(
+														"h6",
+														null,
+														"(total) ",
+														photo.total_votes
+												)
+										) : photo && photo.total_votes != null ? votes = React.createElement(
+												"div",
+												{ className: "votes" },
+												voteAllowed,
+												React.createElement(
+														"h6",
+														null,
+														photo.total_votes
+												)
+										) : null;
+
+										return votes;
 								}
 						}
 				});
@@ -59621,6 +59634,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var Link = _require5.Link;
 
+		var _require6 = require("./Photo");
+
+		var Photo = _require6.Photo;
+
 		var _ = require("lodash");
 
 		var GalleryView = (function (_React$Component) {
@@ -59638,10 +59655,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						componentWillMount: {
 								value: function componentWillMount() {
 										userActions.current();
-								}
-						},
-						componentDidMount: {
-								value: function componentDidMount() {
 										userStore.listen(this.onUserChange.bind(this));
 										galleryStore.listen(this.onGalleryChange.bind(this));
 								}
@@ -59666,41 +59679,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						render: {
 								value: function render() {
-										var _this = this;
-
-										var photos = this.state.paginate.currentPhotos.map(function (photo) {
-												return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.id });
-										});
-
-										if (!photos.length && !this.state.isLoading) photos = React.createElement(
-												"h2",
-												null,
-												"No results"
-										);
-
-										var tags;
-										this.state.tags.length ? tags = React.createElement(
-												"div",
-												{ className: "tags" },
-												this.state.tags.map(function (tag) {
-														var id = "tag" + tag;
-														return React.createElement(
-																"span",
-																{ className: "tag", key: tag, id: id },
-																React.createElement(
-																		"span",
-																		null,
-																		tag
-																),
-																React.createElement(
-																		"span",
-																		{ className: "x", onClick: _this._removeTag.bind(_this) },
-																		"x"
-																)
-														);
-												})
-										) : null;
-
 										if (this.state.isLoading) {
 												return React.createElement(
 														"main",
@@ -59727,6 +59705,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														)
 												);
 										}
+
+										var photos = this._getCurrentPhotos();
+
+										var tags = this._getTags();
 
 										return React.createElement(
 												"main",
@@ -59777,7 +59759,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										e.preventDefault();
 										var addedTags = React.findDOMNode(this.refs.search).value.split(" ");
 										var tags = this.state.tags.concat(addedTags);
+
 										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
+
 										React.findDOMNode(this.refs.search).value = "";
 										this.setState({ isLoading: true });
 								}
@@ -59788,13 +59772,62 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var tags = this.state.tags.slice();
 										tags.splice(this.state.tags.indexOf(tag), 1);
 										prevParams.deletedTag = "-" + tag;
+
 										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
+
 										this.setState({ isLoading: true });
 								}
 						},
 						_changePage: {
 								value: function _changePage() {
 										this.setState({ isLoading: true });
+								}
+						},
+						_getCurrentPhotos: {
+								value: function _getCurrentPhotos() {
+										var _this = this;
+
+										var currentPhotos = this.state.paginate.currentPhotos.map(function (photo) {
+												return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.id });
+										});
+
+										if (!currentPhotos.length && !this.state.isLoading) {
+												return React.createElement(
+														"h2",
+														null,
+														"No results"
+												);
+										}return currentPhotos;
+								}
+						},
+						_getTags: {
+								value: function _getTags() {
+										var _this = this;
+
+										var tags;
+										this.state.tags.length ? tags = React.createElement(
+												"div",
+												{ className: "tags" },
+												this.state.tags.map(function (tag) {
+														var id = "tag" + tag;
+														return React.createElement(
+																"span",
+																{ className: "tag", key: tag, id: id },
+																React.createElement(
+																		"span",
+																		null,
+																		tag
+																),
+																React.createElement(
+																		"span",
+																		{ className: "x", onClick: _this._removeTag.bind(_this) },
+																		"x"
+																)
+														);
+												})
+										) : null;
+
+										return tags;
 								}
 						}
 				});
@@ -59809,8 +59842,11 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		var prevParams = {};
 		GalleryView.willTransitionTo = function (transition, params) {
 				var wasPrevParams = Object.keys(prevParams).length;
+
 				if (params.nextPageExists === undefined && prevParams.nextPageExists != null) params.nextPageExists = prevParams.nextPageExists;
+
 				if (params.prevPageExists === undefined && prevParams.prevPageExists != null) params.prevPageExists = prevParams.prevPageExists;
+
 				var paramsEqual = _.isEqual(prevParams, params);
 				if (!prevParams.page) prevParams.page = params.page;
 				if (!prevParams.tags) prevParams.tags = params.tags;
@@ -59822,11 +59858,13 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						galleryActions.isntLoading();
 				} else {
 						if (params.tags) params.tags = params.tags.split(",");
+
 						if (prevParams.deletedTag) {
 								if (!params.tags) params.tags = [];
 								params.tags.push(prevParams.deletedTag);
 								delete prevParams.deletedTag;
 						}
+
 						if (!params.tags) delete params.tags;
 						galleryActions.getPhotos({}, params);
 				}
@@ -59834,85 +59872,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				prevParams = params;
 		};
 
-		var Photo = (function (_React$Component2) {
-				function Photo() {
-						_classCallCheck(this, Photo);
-
-						if (_React$Component2 != null) {
-								_React$Component2.apply(this, arguments);
-						}
-				}
-
-				_inherits(Photo, _React$Component2);
-
-				_createClass(Photo, {
-						render: {
-								value: function render() {
-										return React.createElement(
-												"div",
-												{ className: "photo" },
-												React.createElement(
-														Link,
-														{ to: "/photo/:id", params: { id: this.props.photo.id } },
-														React.createElement("img", { src: this.props.photo.url_m })
-												),
-												React.createElement(
-														"div",
-														{ className: "info" },
-														React.createElement(
-																"div",
-																{ className: "votes" },
-																this.props.user && this.props.photo.user_votes ? this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
-																		"h6",
-																		{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
-																		"(upvote)"
-																) : React.createElement(
-																		"h6",
-																		{ className: "voted" },
-																		"(upvoted)"
-																) : null,
-																this.props.photo.weighted_votes != null ? React.createElement(
-																		"h6",
-																		null,
-																		this.props.photo.weighted_votes
-																) : null
-														),
-														React.createElement(
-																"h5",
-																{ className: "photo-title" },
-																React.createElement(
-																		Link,
-																		{ to: "/photo/:id", params: { id: this.props.photo.id } },
-																		this.props.photo.title
-																)
-														),
-														React.createElement(
-																"h6",
-																{ className: "photo-owner" },
-																React.createElement(
-																		"a",
-																		{ href: this.props.photo.owner_url, target: "_blank" },
-																		this.props.photo.ownername
-																)
-														)
-												)
-										);
-								}
-						},
-						_vote: {
-								value: function _vote() {
-										galleryActions.vote(this.props.photo.id, this.props.user, this.props.tags);
-								}
-						}
-				});
-
-				return Photo;
-		})(React.Component);
-
 		exports.GalleryView = GalleryView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js","lodash":"/Users/ben/Github Projects/skylines/node_modules/lodash/index.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Header.jsx":[function(require,module,exports){
+},{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../actions/UserActions":"/Users/ben/Github Projects/skylines/public/js/actions/UserActions.js","../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","../stores/GalleryStore":"/Users/ben/Github Projects/skylines/public/js/stores/GalleryStore.js","../stores/UserStore":"/Users/ben/Github Projects/skylines/public/js/stores/UserStore.js","./Photo":"/Users/ben/Github Projects/skylines/public/js/components/Photo.jsx","lodash":"/Users/ben/Github Projects/skylines/node_modules/lodash/index.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Header.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -59957,7 +59920,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						componentWillUnmount: {
 								value: function componentWillUnmount() {
-										userStore.listen(this.onUserChange.bind(this));
+										userStore.unlisten(this.onUserChange);
 								}
 						},
 						onUserChange: {
@@ -60165,7 +60128,106 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.PassEmailView = PassEmailView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/RegisterView.jsx":[function(require,module,exports){
+},{"react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/Photo.jsx":[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+;(function (exports) {
+
+		var React = require("react");
+
+		var _require = require("../react-router");
+
+		var Link = _require.Link;
+
+		var _require2 = require("../actions/GalleryActions");
+
+		var galleryActions = _require2.galleryActions;
+
+		var Photo = (function (_React$Component) {
+				function Photo() {
+						_classCallCheck(this, Photo);
+
+						if (_React$Component != null) {
+								_React$Component.apply(this, arguments);
+						}
+				}
+
+				_inherits(Photo, _React$Component);
+
+				_createClass(Photo, {
+						render: {
+								value: function render() {
+										return React.createElement(
+												"div",
+												{ className: "photo" },
+												React.createElement(
+														Link,
+														{ to: "/photo/:id", params: { id: this.props.photo.id } },
+														React.createElement("img", { src: this.props.photo.url_m })
+												),
+												React.createElement(
+														"div",
+														{ className: "info" },
+														React.createElement(
+																"div",
+																{ className: "votes" },
+																this.props.user && this.props.photo.user_votes ? this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
+																		"h6",
+																		{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
+																		"(upvote)"
+																) : React.createElement(
+																		"h6",
+																		{ className: "voted" },
+																		"(upvoted)"
+																) : null,
+																this.props.photo.weighted_votes != null ? React.createElement(
+																		"h6",
+																		null,
+																		this.props.photo.weighted_votes
+																) : null
+														),
+														React.createElement(
+																"h5",
+																{ className: "photo-title" },
+																React.createElement(
+																		Link,
+																		{ to: "/photo/:id", params: { id: this.props.photo.id } },
+																		this.props.photo.title
+																)
+														),
+														React.createElement(
+																"h6",
+																{ className: "photo-owner" },
+																React.createElement(
+																		"a",
+																		{ href: this.props.photo.owner_url, target: "_blank" },
+																		this.props.photo.ownername
+																)
+														)
+												)
+										);
+								}
+						},
+						_vote: {
+								value: function _vote() {
+										galleryActions.vote(this.props.photo.id, this.props.user, this.props.tags);
+								}
+						}
+				});
+
+				return Photo;
+		})(React.Component);
+
+		exports.Photo = Photo;
+})(typeof module === "object" ? module.exports : window);
+
+},{"../actions/GalleryActions":"/Users/ben/Github Projects/skylines/public/js/actions/GalleryActions.js","../react-router":"/Users/ben/Github Projects/skylines/public/js/react-router/modules/index.js","react":"/Users/ben/Github Projects/skylines/node_modules/react/react.js"}],"/Users/ben/Github Projects/skylines/public/js/components/RegisterView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();

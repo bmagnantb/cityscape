@@ -6,6 +6,7 @@ var { galleryStore } = require('../stores/GalleryStore')
 var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
 var { Link } = require('../react-router')
+var { Photo } = require('./Photo')
 var _ = require('lodash')
 
 
@@ -22,11 +23,6 @@ class GalleryView extends React.Component {
 
 		componentWillMount() {
 				userActions.current()
-		}
-
-
-
-		componentDidMount() {
 				userStore.listen(this.onUserChange.bind(this))
 				galleryStore.listen(this.onGalleryChange.bind(this))
 		}
@@ -55,27 +51,6 @@ class GalleryView extends React.Component {
 
 
 		render() {
-				var photos = this.state.paginate.currentPhotos.map((photo) => {
-						return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.id} />
-				})
-
-				if (!photos.length && !this.state.isLoading) photos = <h2>No results</h2>
-
-				var tags
-				this.state.tags.length
-						? tags = <div className="tags">
-								{this.state.tags.map((tag) => {
-										var id = `tag${tag}`
-										return (
-												<span className="tag" key={tag} id={id}>
-														<span>{tag}</span>
-														<span className="x" onClick={this._removeTag.bind(this)}>x</span>
-												</span>
-										)
-								})}
-						</div>
-						: null
-
 				if (this.state.isLoading) {
 						return (
 								<main className="loading">
@@ -83,6 +58,10 @@ class GalleryView extends React.Component {
 								</main>
 						)
 				}
+
+				var photos = this._getCurrentPhotos()
+
+				var tags = this._getTags()
 
 				return (
 						<main className="gallery">
@@ -114,8 +93,10 @@ class GalleryView extends React.Component {
 				e.preventDefault()
 				var addedTags = React.findDOMNode(this.refs.search).value.split(' ')
 				var tags = this.state.tags.concat(addedTags)
+
 				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
 				else this.context.router.transitionTo('gallerynosearch', {page: 1})
+
 				React.findDOMNode(this.refs.search).value = ''
 				this.setState({isLoading: true})
 		}
@@ -127,8 +108,10 @@ class GalleryView extends React.Component {
 				var tags = this.state.tags.slice()
 				tags.splice(this.state.tags.indexOf(tag), 1)
 				prevParams.deletedTag = `-${tag}`
+
 				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
 				else this.context.router.transitionTo('gallerynosearch', {page: 1})
+
 				this.setState({isLoading: true})
 		}
 
@@ -136,6 +119,38 @@ class GalleryView extends React.Component {
 
 		_changePage() {
 				this.setState({isLoading: true})
+		}
+
+
+
+		_getCurrentPhotos() {
+				var currentPhotos = this.state.paginate.currentPhotos.map((photo) => {
+						return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.id} />
+				})
+
+				if (!currentPhotos.length && !this.state.isLoading) return <h2>No results</h2>
+
+				return currentPhotos
+		}
+
+
+		_getTags() {
+				var tags
+				this.state.tags.length
+						? tags = <div className="tags">
+								{this.state.tags.map((tag) => {
+										var id = `tag${tag}`
+										return (
+												<span className="tag" key={tag} id={id}>
+														<span>{tag}</span>
+														<span className="x" onClick={this._removeTag.bind(this)}>x</span>
+												</span>
+										)
+								})}
+						</div>
+						: null
+
+				return tags
 		}
 }
 
@@ -148,8 +163,11 @@ GalleryView.contextTypes = {
 var prevParams = {}
 GalleryView.willTransitionTo = function(transition, params) {
 		var wasPrevParams = Object.keys(prevParams).length
+
 		if (params.nextPageExists === undefined && prevParams.nextPageExists != null) params.nextPageExists = prevParams.nextPageExists
+
 		if (params.prevPageExists === undefined && prevParams.prevPageExists != null) params.prevPageExists = prevParams.prevPageExists
+
 		var paramsEqual = _.isEqual(prevParams, params)
 		if (!prevParams.page) prevParams.page = params.page
 		if (!prevParams.tags) prevParams.tags = params.tags
@@ -165,11 +183,13 @@ GalleryView.willTransitionTo = function(transition, params) {
 
 		else {
 				if (params.tags) params.tags = params.tags.split(',')
+
 				if (prevParams.deletedTag) {
 						if (!params.tags) params.tags = []
 						params.tags.push(prevParams.deletedTag)
 						delete prevParams.deletedTag
 				}
+
 				if (!params.tags) delete params.tags
 				galleryActions.getPhotos({}, params)
 		}
@@ -177,53 +197,6 @@ GalleryView.willTransitionTo = function(transition, params) {
 		prevParams = params
 }
 
-
-
-
-
-
-
-
-
-class Photo extends React.Component {
-
-		render() {
-				return (
-						<div className="photo">
-								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
-										<img src={this.props.photo.url_m} />
-								</Link>
-
-								<div className="info">
-										<div className="votes">
-												{this.props.user && this.props.photo.user_votes
-														? this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1
-																? <h6 className="upvote" ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
-																: <h6 className="voted">(upvoted)</h6>
-														: null}
-
-												{this.props.photo.weighted_votes != null ? <h6>{this.props.photo.weighted_votes}</h6> : null}
-										</div>
-										<h5 className="photo-title">
-												<Link to="/photo/:id" params={{id: this.props.photo.id}}>
-														{this.props.photo.title}
-												</Link>
-										</h5>
-										<h6 className="photo-owner">
-												<a href={this.props.photo.owner_url} target="_blank">
-														{this.props.photo.ownername}
-												</a>
-										</h6>
-								</div>
-
-						</div>
-				)
-		}
-
-		_vote() {
-				galleryActions.vote(this.props.photo.id, this.props.user, this.props.tags)
-		}
-}
 
 
 exports.GalleryView = GalleryView

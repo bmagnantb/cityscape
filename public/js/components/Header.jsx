@@ -16,7 +16,7 @@ class Header extends React.Component {
 		}
 
 		componentWillUnmount() {
-				userStore.listen(this.onUserChange.bind(this))
+				userStore.unlisten(this.onUserChange)
 		}
 
 		onUserChange() {

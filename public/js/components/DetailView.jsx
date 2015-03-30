@@ -8,6 +8,7 @@ var { userStore } = require('../stores/userStore')
 var { galleryActions } = require('../actions/GalleryActions')
 
 class DetailView extends React.Component {
+
 		constructor() {
 				super()
 				this.state = galleryStore.getState()
@@ -16,64 +17,45 @@ class DetailView extends React.Component {
 				this.state.user = user
 		}
 
+
+
 		componentWillMount() {
 				var routerParams = this.context.router.getCurrentParams()
-				var galleryMatch = this.state.paginate.currentPhotos.filter((val) => {
-						return val.id === routerParams.id
-				})[0]
-
-				var galleryMatchVotes
-				galleryMatch && galleryMatch.total_votes && galleryMatch.user_votes ? galleryMatchVotes = true : null
-
 				if (!this.state.detail[routerParams.id]) {
-						detailActions.getDetail(routerParams.id, galleryMatchVotes)
+						detailActions.getDetail(routerParams.id)
 				}
-		}
 
-		componentDidMount() {
 				detailStore.listen(this.onDetailChange.bind(this))
 				galleryStore.listen(this.onGalleryChange.bind(this))
 		}
+
+
 
 		componentWillUnmount() {
 				detailStore.unlisten(this.onDetailChange)
 				galleryStore.unlisten(this.onGalleryChange)
 		}
 
+
+
 		onDetailChange() {
 				this.setState({detail: detailStore.getState()})
 		}
+
+
 
 		onGalleryChange() {
 				this.setState(galleryStore.getState())
 		}
 
+
+
 		render() {
-				var routerParams = this.context.router.getCurrentParams()
+				var { photo, photoDetail } = this._getPhotoInfo()
 
-				var photo = this.state.paginate.currentPhotos.filter((val) => {
-						return val.id === routerParams.id
-				})[0]
-				var photoDetail = this.state.detail[routerParams.id]
+				var voteAllowed = this._getVoteAllowed(photo)
 
-				var voteAllowed
-				this.state.user && photo && photo.user_votes.indexOf(this.state.user.get('username')) === -1
-						? voteAllowed = <h6 className="upvote" ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
-						: <h6 className="voted">(upvoted)</h6>
-
-				var votes
-				photo && photo.weighted_votes != null && this.state.tags.length
-						? votes = <div className="votes">
-												{voteAllowed}
-												<h6>(search-weighted) {photo.weighted_votes}</h6>
-												<h6>(total) {photo.total_votes}</h6>
-										</div>
-						: photo && photo.total_votes != null
-								? votes = <div className="votes">
-															{voteAllowed}
-															<h6>{photo.total_votes}</h6>
-													</div>
-								: null
+				var votes = this._getVotes(photo, voteAllowed)
 
 				if (photoDetail) {
 						var ownerUrl = `https://www.flickr.com/people/${photoDetail.owner.path_alias}`
@@ -108,15 +90,61 @@ class DetailView extends React.Component {
 				}
 		}
 
+
+
 		_vote() {
 				var routerParams = this.context.router.getCurrentParams()
 				galleryActions.vote(routerParams.id, this.state.user, this.state.tags)
+		}
+
+
+
+		_getPhotoInfo() {
+				var routerParams = this.context.router.getCurrentParams()
+
+				var photo = this.state.paginate.currentPhotos.filter((val) => {
+						return val.id === routerParams.id
+				})[0]
+
+				var photoDetail = this.state.detail[routerParams.id]
+
+				return { photo, photoDetail }
+		}
+
+
+
+		_getVoteAllowed(photo) {
+				var voteAllowed = this.state.user && photo && photo.user_votes.indexOf(this.state.user.get('username')) === -1
+						? voteAllowed = <h6 className="upvote" ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
+						: <h6 className="voted">(upvoted)</h6>
+
+				return voteAllowed
+		}
+
+
+		_getVotes(photo, voteAllowed) {
+				var votes
+				photo && photo.weighted_votes != null && this.state.tags.length
+							? votes = <div className="votes">
+														{voteAllowed}
+														<h6>(search-weighted) {photo.weighted_votes}</h6>
+														<h6>(total) {photo.total_votes}</h6>
+												</div>
+							: photo && photo.total_votes != null
+									? votes = <div className="votes">
+																{voteAllowed}
+																<h6>{photo.total_votes}</h6>
+														</div>
+									: null
+
+				return votes
 		}
 }
 
 DetailView.contextTypes = {
 		router: React.PropTypes.func.isRequired
 }
+
 
 
 exports.DetailView = DetailView

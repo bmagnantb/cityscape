@@ -30,10 +30,6 @@ try {
 
 				var data = JSON.parse(body)
 
-				if (req.params.votes === 'undefined') {
-
-				}
-
 				res.send(data)
 		})
 }

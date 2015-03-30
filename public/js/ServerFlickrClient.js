@@ -12,9 +12,8 @@ class ServerClient {
 				return $.get(`/photos`, this.options(settings)())
 		}
 
-		requestPhoto(settings, votes) {
-				!votes ? votes = '' : votes = `/${votes}`
-				return $.get(`/photo${votes}`, this.options(settings)())
+		requestPhoto(settings) {
+				return $.get(`/photo`, this.options(settings)())
 		}
 
 		vote(photoId, user, tags) {

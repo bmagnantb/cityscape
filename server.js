@@ -14,7 +14,7 @@ function startServer() {
 
 		app.get('/photos', getPhotos)
 
-		app.get('/photo/:votes?', getDetail)
+		app.get('/photo', getDetail)
 
 		app.post('/:user/photo/:id/:tags?', putVote)
 
