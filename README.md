@@ -1,5 +1,4 @@
-Cityscape
-=========
+#Cityscape
 
 Handling disparate user interests in an upvoting system
 -------------------------------------------------------
