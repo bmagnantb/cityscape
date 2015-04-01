@@ -11,13 +11,13 @@
     "build:css": "node ./node_modules/.bin/node-sass ./public/scss/style.scss ./public/dist/style.css; autoprefixer ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
     "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'bower_components' >> .gitignore",
     "test": "mocha --compilers js:babel/register ./public/js/test/test.js; echo '------tested------'",
-    "env": "env"
+    "env": "env",
+    "postinstall": "npm run ignores"
   },
   "dependencies": {
     "express": "latest",
     "parse": "latest",
     "request": "^2.53.0",
-    "rsvp": "latest"
   },
   "devDependencies": {
     "alt": "latest",
