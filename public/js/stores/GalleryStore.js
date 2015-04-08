@@ -80,9 +80,7 @@ class GalleryStore {
 						if (val.owner) val.owner_url = `https://www.flickr.com/people/${val.owner}`
 				})
 
-				for (var key in data) {
-						this.requests[data.page][key] = data[key]
-				}
+				this.requests[data.page] = data
 
 				this.requestPage = data.page
 				this.requestPages = data.pages

@@ -23,9 +23,9 @@ try {
 								if (tags.length) {
 										var tag_votes = result.get('tag_votes')
 
-										tags.forEach(function(val) {
-												Object.keys(tag_votes).indexOf(val) !== -1 ? tag_votes[val]++ : tag_votes[val] = 1
-										})
+										for (var i = 0, arr = tags, imax = arr.length; i < imax; i++) {
+												Object.keys(tag_votes).indexOf(arr[i]) !== -1 ? tag_votes[arr[i]]++ : tag_votes[arr[i]] = 1
+										}
 								}
 
 								result.save({
@@ -38,12 +38,12 @@ try {
 												results.weighted_votes = 0
 												if (tags.length) {
 														var totalVote = results.total_votes
-														tags.forEach(function(tag) {
-																if (results.tag_votes[tag]) {
-																		results.weighted_votes = results.tag_votes[tag] * 2
-																		totalVote -= results.tag_votes[tag]
+														for (var i = 0, arr = tags, imax = arr.length; i < imax; i++) {
+																if (results.tag_votes[arr[i]]) {
+																		results.weighted_votes = results.tag_votes[arr[i]] * 2
+																		totalVote -= results.tag_votes[arr[i]]
 																}
-														})
+														}
 														results.weighted_vote += Math.round(totalVote / 5)
 												}
 												else results.weighted_votes = results.total_votes

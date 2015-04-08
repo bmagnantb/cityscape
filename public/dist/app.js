@@ -62098,13 +62098,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var Header = _require2.Header;
 
-		var _require3 = require("./Footer");
+		var _require3 = require("../actions/UserActions");
 
-		var Footer = _require3.Footer;
-
-		var _require4 = require("../actions/UserActions");
-
-		var userActions = _require4.userActions;
+		var userActions = _require3.userActions;
 
 		var AppView = (function (_React$Component) {
 				function AppView() {
@@ -62124,8 +62120,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"div",
 												{ className: "app" },
 												React.createElement(Header, null),
-												React.createElement(RouteHandler, null),
-												React.createElement(Footer, null)
+												React.createElement(RouteHandler, null)
 										);
 								}
 						}
@@ -62137,7 +62132,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.AppView = AppView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../../../modules_other/react-router":"/Users/ben/Github Projects/cityscape/modules_other/react-router/modules/index.js","../actions/UserActions":"/Users/ben/Github Projects/cityscape/public/js/actions/UserActions.js","./Footer":"/Users/ben/Github Projects/cityscape/public/js/components/Footer.jsx","./Header":"/Users/ben/Github Projects/cityscape/public/js/components/Header.jsx","react":"/Users/ben/Github Projects/cityscape/node_modules/react/react.js"}],"/Users/ben/Github Projects/cityscape/public/js/components/DetailView.jsx":[function(require,module,exports){
+},{"../../../modules_other/react-router":"/Users/ben/Github Projects/cityscape/modules_other/react-router/modules/index.js","../actions/UserActions":"/Users/ben/Github Projects/cityscape/public/js/actions/UserActions.js","./Header":"/Users/ben/Github Projects/cityscape/public/js/components/Header.jsx","react":"/Users/ben/Github Projects/cityscape/node_modules/react/react.js"}],"/Users/ben/Github Projects/cityscape/public/js/components/DetailView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62367,54 +62362,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.DetailView = DetailView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/DetailActions":"/Users/ben/Github Projects/cityscape/public/js/actions/DetailActions.js","../actions/GalleryActions":"/Users/ben/Github Projects/cityscape/public/js/actions/GalleryActions.js","../stores/DetailStore":"/Users/ben/Github Projects/cityscape/public/js/stores/DetailStore.js","../stores/GalleryStore":"/Users/ben/Github Projects/cityscape/public/js/stores/GalleryStore.js","../stores/userStore":"/Users/ben/Github Projects/cityscape/public/js/stores/userStore.js","react":"/Users/ben/Github Projects/cityscape/node_modules/react/react.js"}],"/Users/ben/Github Projects/cityscape/public/js/components/Footer.jsx":[function(require,module,exports){
-"use strict";
-
-var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
-
-;(function (exports) {
-
-		var React = require("react");
-
-		var Footer = (function (_React$Component) {
-				function Footer() {
-						_classCallCheck(this, Footer);
-
-						_get(Object.getPrototypeOf(Footer.prototype), "constructor", this).call(this);
-						this.state = {};
-				}
-
-				_inherits(Footer, _React$Component);
-
-				_createClass(Footer, {
-						render: {
-								value: function render() {
-										return React.createElement(
-												"footer",
-												null,
-												React.createElement(
-														"h6",
-														null,
-														"This product uses the Flickr API but is not endorsed or certified by Flickr."
-												)
-										);
-								}
-						}
-				});
-
-				return Footer;
-		})(React.Component);
-
-		exports.Footer = Footer;
-})(typeof module === "object" ? module.exports : window);
-
-},{"react":"/Users/ben/Github Projects/cityscape/node_modules/react/react.js"}],"/Users/ben/Github Projects/cityscape/public/js/components/GalleryView.jsx":[function(require,module,exports){
+},{"../actions/DetailActions":"/Users/ben/Github Projects/cityscape/public/js/actions/DetailActions.js","../actions/GalleryActions":"/Users/ben/Github Projects/cityscape/public/js/actions/GalleryActions.js","../stores/DetailStore":"/Users/ben/Github Projects/cityscape/public/js/stores/DetailStore.js","../stores/GalleryStore":"/Users/ben/Github Projects/cityscape/public/js/stores/GalleryStore.js","../stores/userStore":"/Users/ben/Github Projects/cityscape/public/js/stores/userStore.js","react":"/Users/ben/Github Projects/cityscape/node_modules/react/react.js"}],"/Users/ben/Github Projects/cityscape/public/js/components/GalleryView.jsx":[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62983,7 +62931,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												{ className: "photo" },
 												React.createElement(
 														Link,
-														{ to: "/photo/:id", params: { id: this.props.photo.id } },
+														{ to: "/photo/:id", params: { id: this.props.photo.photo_id } },
 														React.createElement("img", { src: this.props.photo.url_m })
 												),
 												React.createElement(
@@ -63012,7 +62960,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 																{ className: "photo-title" },
 																React.createElement(
 																		Link,
-																		{ to: "/photo/:id", params: { id: this.props.photo.id } },
+																		{ to: "/photo/:id", params: { id: this.props.photo.photo_id } },
 																		this.props.photo.title
 																)
 														),
@@ -63031,7 +62979,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						_vote: {
 								value: function _vote() {
-										galleryActions.vote(this.props.photo.id, this.props.user, this.props.tags);
+										galleryActions.vote(this.props.photo.photo_id, this.props.user, this.props.tags);
 								}
 						}
 				});
@@ -63288,9 +63236,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												if (val.owner) val.owner_url = "https://www.flickr.com/people/" + val.owner;
 										});
 
-										for (var key in data) {
-												this.requests[data.page][key] = data[key];
-										}
+										this.requests[data.page] = data;
 
 										this.requestPage = data.page;
 										this.requestPages = data.pages;

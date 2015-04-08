@@ -9,7 +9,7 @@ class Photo extends React.Component {
 		render() {
 				return (
 						<div className="photo">
-								<Link to="/photo/:id" params={{id: this.props.photo.id}}>
+								<Link to="/photo/:id" params={{id: this.props.photo.photo_id}}>
 										<img src={this.props.photo.url_m} />
 								</Link>
 
@@ -24,7 +24,7 @@ class Photo extends React.Component {
 												{this.props.photo.weighted_votes != null ? <h6>{this.props.photo.weighted_votes}</h6> : null}
 										</div>
 										<h5 className="photo-title">
-												<Link to="/photo/:id" params={{id: this.props.photo.id}}>
+												<Link to="/photo/:id" params={{id: this.props.photo.photo_id}}>
 														{this.props.photo.title}
 												</Link>
 										</h5>
@@ -40,7 +40,7 @@ class Photo extends React.Component {
 		}
 
 		_vote() {
-				galleryActions.vote(this.props.photo.id, this.props.user, this.props.tags)
+				galleryActions.vote(this.props.photo.photo_id, this.props.user, this.props.tags)
 		}
 }
 

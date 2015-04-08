@@ -8,8 +8,8 @@
     "watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",
     "watch:css": "watch 'npm run build:css' ./public/scss/",
     "watchify:js": "watchify ./public/js/app.js --extension=.jsx -t babelify -o ./public/dist/app.js -v",
-    "build:css": "node ./node_modules/.bin/node-sass ./public/scss/style.scss ./public/dist/style.css; autoprefixer ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
-    "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'bower_components' >> .gitignore",
+    "build:css": "node-sass ./public/scss/style.scss ./public/dist/style.css; autoprefixer ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
+    "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'bower_components' >> .gitignore; echo 'modules_other' >> .gitignore; echo 'flickrKey.js' >> .gitignore",
     "test": "mocha --compilers js:babel/register ./public/js/test/test.js; echo '------tested------'",
     "env": "env",
     "postinstall": "npm run ignores"
@@ -17,7 +17,7 @@
   "dependencies": {
     "express": "latest",
     "parse": "latest",
-    "request": "^2.53.0",
+    "request": "^2.53.0"
   },
   "devDependencies": {
     "alt": "latest",
@@ -29,13 +29,14 @@
     "chai": "latest",
     "csso": "latest",
     "es5-shim": "latest",
+    "jest": "^0.1.39",
     "jquery": "latest",
     "jshint": "latest",
     "lodash": "^3.6.0",
     "mocha": "latest",
     "modernizr": "latest",
     "neat": "latest",
-    "node-sass": "latest",
+    "node-sass": "^2.1.1",
     "parallelshell": "latest",
     "react": "latest",
     "uglifyify": "latest",

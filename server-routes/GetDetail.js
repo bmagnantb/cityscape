@@ -1,6 +1,6 @@
-var request = require('request'),
-		Parse = require('parse').Parse,
-		flickrApiKey = 'eeacdafae711c1ae98c0342fa323569a'
+var request = require('request')
+var Parse = require('parse').Parse
+var flickrApiKey = require('../flickrKey')
 
 function getDetail(req, res) {
 try {

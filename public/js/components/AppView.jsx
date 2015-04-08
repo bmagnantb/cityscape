@@ -3,7 +3,6 @@
 var React = require('react')
 var { RouteHandler } = require('../../../modules_other/react-router')
 var { Header } = require('./Header')
-var { Footer } = require('./Footer')
 var { userActions } = require('../actions/UserActions')
 
 class AppView extends React.Component {
@@ -18,7 +17,6 @@ class AppView extends React.Component {
 						<div className="app">
 								<Header />
 								<RouteHandler />
-								<Footer />
 						</div>
 				)
 		}

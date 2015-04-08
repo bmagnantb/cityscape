@@ -1,3 +1,5 @@
+"use strict"
+
 function startServer() {
 		var express = require('express'),
 				Parse = require('parse').Parse,
@@ -8,7 +10,6 @@ function startServer() {
 
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
-
 
 		app.use(express.static(__dirname + '/public'))
 
