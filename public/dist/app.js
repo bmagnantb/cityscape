@@ -62068,11 +62068,6 @@ function app() {
 				var path = state.path;
 				var params = state.params;
 
-				// if (user && (path === '/login' || path === '/register')) {
-				// 		router.transitionTo('gallerynosearch', {page: 1})
-				// 		return
-				// }
-
 				React.render(React.createElement(Handler, null), document.querySelector("#container"));
 		});
 }

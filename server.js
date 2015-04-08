@@ -19,7 +19,6 @@ function startServer() {
 
 		app.post('/:user/photo/:id/:tags?', putVote)
 
-
 		app.listen(process.env.PORT || 3000, function() {
 				console.log('skylines w/ server')
 		})
