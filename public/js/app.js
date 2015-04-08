@@ -15,10 +15,6 @@ function app() {
 
 		router.run(function(Handler, state) {
 				var { path, params } = state
-				// if (user && (path === '/login' || path === '/register')) {
-				// 		router.transitionTo('gallerynosearch', {page: 1})
-				// 		return
-				// }
 
 				React.render(<Handler />, document.querySelector('#container'))
 		})

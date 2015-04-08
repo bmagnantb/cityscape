@@ -21,6 +21,9 @@ function photos(req, res) {
 try {
 		req.query.api_key = flickrApiKey
 
+		var sevenDaysAgo = (new Date() - (1000 * 60 * 60 * 24 * 7)) / 1000
+
+		if (!req.query.min_upload_date) req.query.min_upload_date = sevenDaysAgo
 		if (!req.query.tags) req.query.tags = []
 		if (req.query.tags.indexOf('buildings') === -1) req.query.tags.unshift('buildings')
 		if (req.query.tags.indexOf('city') === -1) req.query.tags.unshift('city')
@@ -52,7 +55,9 @@ try {
 				var photo_ids = []
 				for (var i = 0, arr = data.photos.photo, imax = arr.length; i < imax; i++) {
 						arr[i].photo_id = arr[i].id
+						arr[i].date_uploaded = +arr[i].dateupload
 						delete arr[i].id
+						delete arr[i].dateupload
 						photo_ids.push(arr[i].photo_id)
 				}
 
@@ -99,7 +104,6 @@ try {
 
 								// new query for Parse -- get rankings that fit flickr request query
 								var queryVoted = new Parse.Query(Parse.Photo)
-								var sevenDaysAgo = new Date() - (1000 * 60 * 60 * 24 * 7)
 
 								// only entries that match all request tags, paginated by 500
 								if (data.photos.tags.length) queryVoted.containsAll('tags', data.photos.tags)
@@ -108,7 +112,7 @@ try {
 
 								// only if has votes and uploaded in past week
 									.greaterThan('total_votes', 0)
-									.greaterThan('dateupload', sevenDaysAgo.toString())
+									.greaterThan('dateupload', sevenDaysAgo)
 
 								// sort by most votes, then most recent
 									.descending('total_votes')
@@ -130,30 +134,32 @@ try {
 
 												// set weighted votes
 												for (var i = 0, arr = data.photos.photo, imax = arr.length; i < imax; i++) {
-														arr[i].weighted_votes = 0
+														if (!arr[i].weighted_votes) {
+																arr[i].weighted_votes = 0
 
 														// if request tags exist, weight the votes
-														if (data.photos.tags.length) {
+																if (data.photos.tags.length) {
 
-																// total vote holder for subtracting weighted votes
-																var totalVote = arr[i].total_votes
+																		// total vote holder for subtracting weighted votes
+																		var totalVote = arr[i].total_votes
 
-																// check tag votes for each request tag
-																for (var a = 0, arr2 = data.photos.tags, amax = arr2.length; a < amax; a++) {
+																		// check tag votes for each request tag
+																		for (var a = 0, arr2 = data.photos.tags, amax = arr2.length; a < amax; a++) {
 
-																		// if photo has matching tag vote, double and subtract from total votes
-																		if (arr[i].tag_votes[arr2[a]]) {
-																				arr[i].weighted_votes = arr[i].tag_votes[arr2[a]] * 2
-																				totalVote -= arr[i].tag_votes[arr2[a]]
+																				// if photo has matching tag vote, double and subtract from total votes
+																				if (arr[i].tag_votes[arr2[a]]) {
+																						arr[i].weighted_votes = arr[i].tag_votes[arr2[a]] * 2
+																						totalVote -= arr[i].tag_votes[arr2[a]]
+																				}
 																		}
+
+																	// after weighting, add fifth of remaining total votes
+																	arr[i].weighted_votes += Math.round(totalVote / 5)
 																}
 
-															// after weighting, add fifth of remaining total votes
-															arr[i].weighted_votes += Math.round(totalVote / 5)
+																// if request tags don't exist, use total votes
+																else arr[i].weighted_votes = arr[i].total_votes
 														}
-
-														// if request tags don't exist, use total votes
-														else arr[i].weighted_votes = arr[i].total_votes
 												}
 
 												// sort photos by votes
@@ -172,14 +178,14 @@ try {
 
 												// save photos after response -- lots of processing time
 												for (var i = 0, arr = savePhotos, imax = arr.length; i < imax; i++) {
-														arr[i] = Parse.Photo(arr[i])
+														arr[i] = new Parse.Photo(arr[i])
 												}
 												Parse.Object.saveAll(savePhotos, {
 														error: function(err) {
 																console.log('error saving new photos to Parse')
 																console.log(err)
 														}
-												}
+												})
 										},
 
 										error: function(err) {
@@ -189,14 +195,14 @@ try {
 
 												// save photos after response -- lots of processing time
 												for (var i = 0, arr = savePhotos, imax = arr.length; i < imax; i++) {
-														arr[i] = Parse.Photo(arr[i])
+														arr[i] = new Parse.Photo(arr[i])
 												}
 												Parse.Object.saveAll(savePhotos, {
 														error: function(err) {
 																console.log('error saving new photos to Parse')
 																console.log(err)
 														}
-												}
+												})
 										}
 								})
 						},
