@@ -8,7 +8,7 @@ class Photo extends React.Component {
 
 		render() {
 				return (
-						<div className="photo">
+						<div key={this.props.key} className="photo">
 								<Link to="/photo/:id" params={{id: this.props.photo.photo_id}}>
 										<img src={this.props.photo.url_m} />
 								</Link>

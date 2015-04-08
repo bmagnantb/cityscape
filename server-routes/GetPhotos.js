@@ -171,13 +171,14 @@ try {
 												res.send(data)
 
 												// save photos after response -- lots of processing time
-												var photoCollection = new Parse.PhotoCollection()
 												for (var i = 0, arr = savePhotos, imax = arr.length; i < imax; i++) {
-														photoCollection.create(arr[i], {
-																error: function() {
-																		console.log('error saving new photos to Parse')
-																}
-														})
+														arr[i] = Parse.Photo(arr[i])
+												}
+												Parse.Object.saveAll(savePhotos, {
+														error: function(err) {
+																console.log('error saving new photos to Parse')
+																console.log(err)
+														}
 												}
 										},
 
@@ -187,13 +188,14 @@ try {
 												res.send(data)
 
 												// save photos after response -- lots of processing time
-												var photoCollection = new Parse.PhotoCollection()
 												for (var i = 0, arr = savePhotos, imax = arr.length; i < imax; i++) {
-														photoCollection.create(arr[i], {
-																error: function() {
-																		console.log('error saving new photos to Parse')
-																}
-														})
+														arr[i] = Parse.Photo(arr[i])
+												}
+												Parse.Object.saveAll(savePhotos, {
+														error: function(err) {
+																console.log('error saving new photos to Parse')
+																console.log(err)
+														}
 												}
 										}
 								})

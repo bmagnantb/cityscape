@@ -41,7 +41,7 @@
     "react": "latest",
     "uglifyify": "latest",
     "watch": "latest",
-    "watchify": "latest"
+    "watchify": "^3.1.0"
   },
   "browserify": {
     "extension": [

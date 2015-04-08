@@ -11,7 +11,7 @@ function app() {
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
 
-		var router = require('./Router').router
+		var { router } = require('./Router')
 
 		router.run(function(Handler, state) {
 				var { path, params } = state
