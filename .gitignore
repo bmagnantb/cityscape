@@ -3,4 +3,3 @@ modules_other
 bower_components
 .DS_Store
 npm-debug/
-flickrKey.js
