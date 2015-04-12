@@ -28,12 +28,12 @@ class Photo extends React.Component {
 					</div>
 					<h5 className="photo-title">
 						<Link to="/photo/:id" params={{id: this.props.photo.photo_id}}>
-								{this.props.photo.title}
+							{this.props.photo.title}
 						</Link>
 					</h5>
 					<h6 className="photo-owner">
 						<a href={this.props.photo._owner_url} target="_blank">
-								{this.props.photo.ownername}
+							{this.props.photo.ownername}
 						</a>
 					</h6>
 				</div>

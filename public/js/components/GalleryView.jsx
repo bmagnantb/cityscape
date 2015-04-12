@@ -161,7 +161,7 @@ class GalleryView extends React.Component {
 
 
 GalleryView.contextTypes = {
-		router: React.PropTypes.func.isRequired
+	router: React.PropTypes.func.isRequired
 }
 
 

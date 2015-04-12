@@ -143,7 +143,7 @@ class DetailView extends React.Component {
 
 
 DetailView.contextTypes = {
-		router: React.PropTypes.func.isRequired
+	router: React.PropTypes.func.isRequired
 }
 
 

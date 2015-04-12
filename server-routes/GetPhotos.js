@@ -26,16 +26,16 @@ try {
 	var counter = 0
 
 	for (var key in req.query) {
-			if (counter > 0) url += '&'
-			url+= key + '=' + req.query[key]
-			counter++
+		if (counter > 0) url += '&'
+		url+= key + '=' + req.query[key]
+		counter++
 	}
 
 	// request to flickr with params
 	request(url, function (err, resp, body) {
 		if (err) {
-				res.send(err)
-				return
+			res.send(err)
+			return
 		}
 
 		// parse data
@@ -44,8 +44,8 @@ try {
 		// get ids of fetched photos and trim photo info for Parse
 		var photo_ids = []
 		for (var i = 0, arr = data.photos.photo, imax = arr.length; i < imax; i++) {
-				arr[i] = trimPhoto(arr[i])
-				photo_ids.push(arr[i].photo_id)
+			arr[i] = trimPhoto(arr[i])
+			photo_ids.push(arr[i].photo_id)
 		}
 
 		// create object for Parse photo query to hold constraints
@@ -67,32 +67,32 @@ try {
 				var savePhotos = []
 				var resultIds = []
 				for (var i = 0, arr = result, imax = arr.length; i < imax; i++) {
-						resultIds.push(arr[i].attributes.photo_id)
+					resultIds.push(arr[i].attributes.photo_id)
 				}
 
 				// new array for saving photos not on Parse
 				for (var i = 0, arr = data.photos.photo, imax = arr.length; i < imax; i++) {
-						var resultMatchIndex = resultIds.indexOf(arr[i].photo_id)
-						var copy = {}
-						// initialize votes info for photo not on Parse and add to newPhotos
-						if (resultMatchIndex === -1) {
-								arr[i].user_votes = []
-								arr[i].total_votes = 0
-								arr[i].tag_votes = {}
-								for (var key in arr[i]) {
-										copy[key] = arr[i][key]
-								}
-								newPhotos.push(copy)
+					var resultMatchIndex = resultIds.indexOf(arr[i].photo_id)
+					var copy = {}
+					// initialize votes info for photo not on Parse and add to newPhotos
+					if (resultMatchIndex === -1) {
+						arr[i].user_votes = []
+						arr[i].total_votes = 0
+						arr[i].tag_votes = {}
+						for (var key in arr[i]) {
+							copy[key] = arr[i][key]
 						}
+						newPhotos.push(copy)
+					}
 
-						// update parse info, put votes
-						else {
-								for (var key in arr[i]) {
-										result[resultMatchIndex].set(key, arr[i][key])
-								}
-								arr[i] = result[resultMatchIndex].toJSON()
-								savePhotos.push(result[resultMatchIndex])
+					// update parse info, put votes
+					else {
+						for (var key in arr[i]) {
+							result[resultMatchIndex].set(key, arr[i][key])
 						}
+						arr[i] = result[resultMatchIndex].toJSON()
+						savePhotos.push(result[resultMatchIndex])
+					}
 				}
 
 				// new query for Parse -- get rankings that fit flickr request query

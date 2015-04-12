@@ -44,9 +44,9 @@ try {
 
 					result.save(null, {
 						error: function(results, err) {
-								console.log('parse save vote error')
-								console.log(err)
-								res.send(err)
+							console.log('parse save vote error')
+							console.log(err)
+							res.send(err)
 						}
 					})
 				} else {
@@ -58,15 +58,15 @@ try {
 			}
 		},
 		error: function(err) {
-				console.log('parse find photo_id for vote error')
-				console.log(err)
-				res.send(err)
+			console.log('parse find photo_id for vote error')
+			console.log(err)
+			res.send(err)
 		}
 	})
 }
 catch (err) {
-		console.log(err)
-		res.send(err)
+	console.log(err)
+	res.send(err)
 }
 }
 
