@@ -61618,152 +61618,6 @@ module.exports = require('./lib/React');
 },{"./lib/React":114}],242:[function(require,module,exports){
 "use strict";
 
-;(function (exports) {
-
-		// Make settings for Flickr API
-		// METHOD IS REQUIRED FOR ANY REQUEST (and api key, keep it server-side)
-		// other options may or may not be required based on chosen method, refer to Flickr API docs
-
-		// allows gradual build of request settings if pulled from different areas of app
-		// first call always returns function for continuing settings change
-		// on subsequent calls, any object as argument will add contents to settings and function will return function for continuing settings change
-		//additional settings will be added, any repeated settings are overwritten, prepend key with '-' to remove that setting, remove tags and extras by adding '-' to array members, remove all tags and extra by prepending with '--'
-		// a call with no arguments gives the built settings object
-
-		function options(settings) {
-
-				function add(settings2) {
-
-						// if argument is object, add/overwrite to original object, return function to take more settings
-						if (typeof settings2 === "object") {
-
-								if (typeof settings !== "object") {
-										settings = {};
-								}
-
-								// copy keys/values from newest settings onto original settings object
-								for (var key in settings2) {
-
-										// add extras/tags rather than overwriting
-										// if extras/tags is Array, join then concat with existing key, otherwise assume string
-										if (key === "extras" || key === "tags") {
-
-												if (key === "-extras" || key === "-tags") {
-														delete settings[key.slice(2)];
-												} else if (!settings[key]) {
-														if (settings2[key] instanceof Array) {
-																settings[key] = settings2[key];
-														} else {
-																settings[key] = settings2[key].split(" ");
-														}
-												} else if (settings2[key] instanceof Array || settings2[key] instanceof String) {
-														if (settings2[key] instanceof String) {
-																settings2[key] = settings2[key].split(" ");
-														}
-														settings2[key].forEach(function (val, ind, arr) {
-																if (settings[key].indexOf(val) !== -1) {} else if (val.indexOf("-") === 0) {
-																		settings[key].splice(settings[key].indexOf(val.slice(1)), 1);
-																} else {
-																		settings[key].push(val);
-																}
-														});
-												} else {
-														settings[key].push(settings2[key]);
-												}
-										} else {
-												if (key.indexOf("-") === 0) {
-														delete settings[key.slice(1)];
-												} else {
-														settings[key] = settings2[key];
-												}
-										}
-								}
-
-								return add;
-						}
-
-						// final settings assumed
-						else {
-								// throw if either method or api_key are not defined, required settings for request
-								if (!settings.method) {
-										throw new Error("method is required for Flickr requests");
-								}
-
-								// if format undefined, default to json
-								!settings.format ? settings.format = "json" : null;
-								// if nojsoncallback undefined, default to no callback
-								settings.format === "json" && !settings.nojsoncallback ? settings.nojsoncallback = "1" : null;
-
-								return settings;
-						}
-				}
-
-				return add;
-		}
-
-		exports.options = options;
-})(typeof module === "object" ? module.exports : window);
-
-},{}],243:[function(require,module,exports){
-"use strict";
-
-;(function (exports) {
-
-		var React = require("react");
-		// modified react-router for React v0.13 compatibility
-		// clone from git@github.com:nhunzaker/react-router.git
-		var Router = require("../../modules_other/react-router");
-
-		var _require = require("./components/AppView");
-
-		var AppView = _require.AppView;
-
-		var _require2 = require("./components/GalleryView");
-
-		var GalleryView = _require2.GalleryView;
-
-		var _require3 = require("./components/LoginView");
-
-		var LoginView = _require3.LoginView;
-
-		var _require4 = require("./components/RegisterView");
-
-		var RegisterView = _require4.RegisterView;
-
-		var _require5 = require("./components/DetailView");
-
-		var DetailView = _require5.DetailView;
-
-		var _require6 = require("./components/PassEmailView");
-
-		var PassEmailView = _require6.PassEmailView;
-
-		var DefaultRoute = Router.DefaultRoute;
-		var Route = Router.Route;
-		var Redirect = Router.Redirect;
-
-		var routes = React.createElement(
-				Route,
-				{ name: "app", path: "/", handler: AppView },
-				React.createElement(Route, { name: "gallerynosearch", path: "/gallery/page:page", handler: GalleryView }),
-				React.createElement(Route, { name: "gallerysearch", path: "/gallery/:tags/page:page", handler: GalleryView }),
-				React.createElement(Route, { name: "photo", path: "/photo/:id", handler: DetailView }),
-				React.createElement(Redirect, { from: "details", to: "photo" }),
-				React.createElement(Route, { name: "login", path: "/login", handler: LoginView }),
-				React.createElement(Redirect, { from: "signin", to: "login" }),
-				React.createElement(Route, { name: "register", path: "/register", handler: RegisterView }),
-				React.createElement(Route, { name: "passemailsent", path: "/passemailsent", handler: PassEmailView }),
-				React.createElement(Redirect, { from: "*", to: "gallerynosearch", params: { page: 1 } })
-		);
-
-		var router = Router.create(routes);
-
-		exports.router = router;
-})(typeof module === "object" ? module.exports : window);
-
-},{"../../modules_other/react-router":24,"./components/AppView":250,"./components/DetailView":251,"./components/GalleryView":252,"./components/LoginView":254,"./components/PassEmailView":255,"./components/RegisterView":257,"react":241}],244:[function(require,module,exports){
-"use strict";
-
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
@@ -61771,24 +61625,25 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 ;(function (exports) {
 
 		var $ = require("jquery");
-		var flickrOptions = require("./FlickrSettings").options;
+		var _ = require("lodash");
 
 		var ServerClient = (function () {
 				function ServerClient(options) {
 						_classCallCheck(this, ServerClient);
 
-						this.options = options;
+						this.options = _.merge(options, { format: "json", nojsoncallback: 1 });
 				}
 
 				_createClass(ServerClient, {
 						requestPhotos: {
 								value: function requestPhotos(settings) {
-										return $.get("/photos", this.options(settings)());
+										return $.get("/photos", _.assign({}, this.options, settings));
 								}
 						},
 						requestPhoto: {
-								value: function requestPhoto(settings) {
-										return $.get("/photo", this.options(settings)());
+								value: function requestPhoto(settings, tags) {
+										tags = "/" + tags;
+										return $.get("/photo" + tags, _.assign({}, this.options, settings));
 								}
 						},
 						vote: {
@@ -61820,12 +61675,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		exports.ServerClient = ServerClient;
 
-		exports.GalleryClient = new ServerClient(flickrOptions(gallerySettings));
+		exports.GalleryClient = new ServerClient(gallerySettings);
 
-		exports.DetailClient = new ServerClient(flickrOptions(detailSettings));
+		exports.DetailClient = new ServerClient(detailSettings);
 })(typeof module === "object" ? module.exports : window);
 
-},{"./FlickrSettings":242,"jquery":82}],245:[function(require,module,exports){
+},{"jquery":82,"lodash":83}],243:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -61848,11 +61703,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 				_createClass(DetailActions, {
 						getDetail: {
-								value: function getDetail(photoId) {
+								value: function getDetail(photoId, tags) {
 										var _this = this;
 
-										DetailClient.requestPhoto({ photo_id: photoId }).then(function (data) {
-												return _this.dispatch(data.photo);
+										DetailClient.requestPhoto({ photo_id: photoId }, tags).then(function (data) {
+												console.log(data);
+												_this.dispatch(data);
 										});
 								}
 						}
@@ -61864,7 +61720,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.detailActions = alt.createActions(DetailActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../ServerFlickrClient":244,"../alt-app":248}],246:[function(require,module,exports){
+},{"../ServerFlickrClient":242,"../alt-app":246}],244:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -61884,21 +61740,18 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				function GalleryActions() {
 						_classCallCheck(this, GalleryActions);
 
-						this.generateActions("isntLoading");
+						this.generateActions("isntLoading", "cachedLoad", "changePage");
 				}
 
 				_createClass(GalleryActions, {
 						getPhotos: {
-								value: function getPhotos(options, params) {
+								value: function getPhotos(params) {
 										var _this = this;
 
-										for (var key in params) {
-												options[key] = params[key];
+										if (params.page) {
+												params.page = Math.floor((params.page - 1) / 25) + 1;
 										}
-										if (options.page) {
-												options.page = Math.ceil(options.page / 25);
-										}
-										GalleryClient.requestPhotos(options).then(function (data) {
+										GalleryClient.requestPhotos(params).then(function (data) {
 												data = data.photos;
 												var obj = { params: params, data: data };
 												_this.dispatch(obj);
@@ -61913,15 +61766,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												return _this.dispatch(resp);
 										});
 								}
-						},
-						changePage: {
-								value: function changePage(newPage, needRequest) {
-										if (needRequest === "request") {
-												this.getPhotos({}, { page: newPage });
-												return;
-										}
-										this.dispatch(newPage);
-								}
 						}
 				});
 
@@ -61932,7 +61776,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.galleryActions = alt.createActions(GalleryActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../ServerFlickrClient":244,"../alt-app":248}],247:[function(require,module,exports){
+},{"../ServerFlickrClient":242,"../alt-app":246}],245:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62030,7 +61874,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.userActions = alt.createActions(UserActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../alt-app":248,"parse":84}],248:[function(require,module,exports){
+},{"../alt-app":246,"parse":84}],246:[function(require,module,exports){
 "use strict";
 
 ;(function (exports) {
@@ -62042,7 +61886,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
   exports.alt = alt;
 })(typeof module === "object" ? module.exports : window);
 
-},{"alt":40}],249:[function(require,module,exports){
+},{"alt":40}],247:[function(require,module,exports){
 "use strict";
 
 // require files?
@@ -62053,6 +61897,10 @@ var Parse = _require.Parse;
 
 var React = require("react");
 
+var _require2 = require("./router/Router");
+
+var router = _require2.router;
+
 window.onload = app;
 
 function app() {
@@ -62060,19 +61908,15 @@ function app() {
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm");
 
-		var _require2 = require("./Router");
-
-		var router = _require2.router;
-
 		router.run(function (Handler, state) {
 				var path = state.path;
 				var params = state.params;
 
-				React.render(React.createElement(Handler, null), document.querySelector("#container"));
+				React.render(React.createElement(Handler, { params: params }), document.querySelector("#container"));
 		});
 }
 
-},{"./Router":243,"parse":84,"react":241}],250:[function(require,module,exports){
+},{"./router/Router":256,"parse":84,"react":241}],248:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62117,7 +61961,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 												"div",
 												{ className: "app" },
 												React.createElement(Header, null),
-												React.createElement(RouteHandler, null)
+												React.createElement(RouteHandler, { params: this.props.params })
 										);
 								}
 						}
@@ -62129,7 +61973,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.AppView = AppView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../../../modules_other/react-router":24,"../actions/UserActions":247,"./Header":253,"react":241}],251:[function(require,module,exports){
+},{"../../../modules_other/react-router":24,"../actions/UserActions":245,"./Header":251,"react":241}],249:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62152,31 +61996,22 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 		var detailActions = _require2.detailActions;
 
-		var _require3 = require("../stores/GalleryStore");
+		var _require3 = require("../stores/userStore");
 
-		var galleryStore = _require3.galleryStore;
+		var userStore = _require3.userStore;
 
-		var _require4 = require("../stores/userStore");
+		var _require4 = require("../actions/GalleryActions");
 
-		var userStore = _require4.userStore;
-
-		var _require5 = require("../actions/GalleryActions");
-
-		var galleryActions = _require5.galleryActions;
+		var galleryActions = _require4.galleryActions;
 
 		var DetailView = (function (_React$Component) {
 				function DetailView() {
 						_classCallCheck(this, DetailView);
 
 						_get(Object.getPrototypeOf(DetailView.prototype), "constructor", this).call(this);
-						this.state = galleryStore.getState();
-						this.state.detail = detailStore.getState();
-
-						var _userStore$getState = userStore.getState();
-
-						var user = _userStore$getState.user;
-
-						this.state.user = user;
+						this.state = {};
+						this.state.user = undefined;
+						this.state.detail = undefined;
 				}
 
 				_inherits(DetailView, _React$Component);
@@ -62184,93 +62019,96 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(DetailView, {
 						componentWillMount: {
 								value: function componentWillMount() {
-										var routerParams = this.context.router.getCurrentParams();
-										if (!this.state.detail[routerParams.id]) {
-												detailActions.getDetail(routerParams.id);
-										}
+										detailStore.listen(this._onDetailChange.bind(this));
+										userStore.listen(this._onUserChange.bind(this));
 
-										detailStore.listen(this.onDetailChange.bind(this));
-										galleryStore.listen(this.onGalleryChange.bind(this));
+										var detail = this._detailInfo();
+										var user = this._userInfo();
+										var voteAllowed = this._voteAllowed(detail, user);
+										var votesMarkup = this._votesMarkup(detail, voteAllowed);
+										this.setState({ detail: detail, user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
 								}
 						},
 						componentWillUnmount: {
 								value: function componentWillUnmount() {
-										detailStore.unlisten(this.onDetailChange);
-										galleryStore.unlisten(this.onGalleryChange);
+										detailStore.unlisten(this._onDetailChange);
+										userStore.unlisten(this._onUserChange);
 								}
 						},
-						onDetailChange: {
-								value: function onDetailChange() {
-										this.setState({ detail: detailStore.getState() });
+						_onDetailChange: {
+								value: function _onDetailChange() {
+										var detail = this._detailInfo();
+										var voteAllowed = this._voteAllowed(detail, this.state.user);
+										var votesMarkup = this._votesMarkup(detail, voteAllowed);
+										this.setState({ detail: detail, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
 								}
 						},
-						onGalleryChange: {
-								value: function onGalleryChange() {
-										this.setState(galleryStore.getState());
+						_onUserChange: {
+								value: function _onUserChange() {
+										var user = this._userInfo();
+										var voteAllowed = this._voteAllowed(this.state.detail, user);
+										var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed);
+										this.setState({ user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
 								}
 						},
 						render: {
 								value: function render() {
-										var _getPhotoInfo = this._getPhotoInfo();
-
-										var photo = _getPhotoInfo.photo;
-										var photoDetail = _getPhotoInfo.photoDetail;
-
-										var voteAllowed = this._getVoteAllowed(photo);
-
-										var votes = this._getVotes(photo, voteAllowed);
-
-										if (photoDetail) {
-												var ownerUrl = "https://www.flickr.com/people/" + photoDetail.owner.path_alias;
+										if (this.state.detail) {
 												return React.createElement(
 														"main",
 														{ className: "photo-detail" },
-														React.createElement("img", { src: photoDetail.photoUrl("b") }),
+														React.createElement("img", { src: this.state.detail._photoUrl("b") }),
 														React.createElement(
 																"div",
 																{ className: "info" },
-																photo ? { votes: votes } : null,
+																this.state.votesMarkup,
 																React.createElement(
 																		"a",
-																		{ href: photoDetail.urls.url[0]._content, target: "_blank" },
+																		{ href: this.state.detail.urls.url[0]._content, target: "_blank" },
 																		React.createElement(
 																				"h3",
 																				null,
-																				photoDetail.title._content
+																				this.state.detail.title
 																		)
 																),
-																React.createElement(
+																this.state.detail.owner ? React.createElement(
 																		"a",
-																		{ href: ownerUrl, target: "_blank" },
+																		{ href: this.state.detail._owner_url, target: "_blank" },
+																		"this.state.detail.ownername ? ",
 																		React.createElement(
 																				"h4",
 																				null,
-																				photoDetail.owner.username
-																		)
-																),
-																photoDetail.description ? React.createElement(
-																		"h6",
+																				this.state.detail.ownername
+																		),
+																		": null "
+																) : this.state.detail.ownername ? React.createElement(
+																		"h4",
 																		null,
-																		photoDetail.description
+																		this.state.detail.ownername
 																) : null,
-																photoDetail.location && photoDetail.location.locality ? React.createElement(
+																this.state.detail.description ? React.createElement(
 																		"h6",
 																		null,
-																		photoDetail.location.locality._content
+																		this.state.detail.description
 																) : null,
-																photoDetail.location && photoDetail.location.country ? React.createElement(
+																this.state.detail.location && this.state.detail.location.locality ? React.createElement(
 																		"h6",
 																		null,
-																		photoDetail.location.country._content
+																		this.state.detail.location.locality._content
+																) : null,
+																this.state.detail.location && this.state.detail.location.country ? React.createElement(
+																		"h6",
+																		null,
+																		this.state.detail.location.country._content
 																) : null,
 																React.createElement(
 																		"h6",
 																		null,
 																		"Taken ",
-																		photoDetail.dates && photoDetail.dates.taken ? React.createElement(
+																		this.state.detail.dates && this.state.detail.dates.taken ? React.createElement(
 																				"span",
 																				null,
-																				photoDetail.dates.taken.slice(0, 10).replace(/-/g, ".")
+																				this.state.detail.dates.taken.slice(0, 10).replace(/-/g, ".")
 																		) : null
 																)
 														)
@@ -62282,69 +62120,77 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						_vote: {
 								value: function _vote() {
-										var routerParams = this.context.router.getCurrentParams();
-										galleryActions.vote(routerParams.id, this.state.user, this.state.tags);
+										var tags = this.props.params.tags;
+										galleryActions.vote(this.state.detail.photo_id, this.state.user, this.props.params.tags);
 								}
 						},
-						_getPhotoInfo: {
-								value: function _getPhotoInfo() {
-										var routerParams = this.context.router.getCurrentParams();
-
-										var photo = this.state.paginate.currentPhotos.filter(function (val) {
-												return val.id === routerParams.id;
-										})[0];
-
-										var photoDetail = this.state.detail[routerParams.id];
-
-										return { photo: photo, photoDetail: photoDetail };
+						_detailInfo: {
+								value: function _detailInfo(user) {
+										var detail = detailStore.getState()[this.props.params.id];
+										return detail;
 								}
 						},
-						_getVoteAllowed: {
-								value: function _getVoteAllowed(photo) {
-										var voteAllowed = this.state.user && photo && photo.user_votes.indexOf(this.state.user.get("username")) === -1 ? voteAllowed = React.createElement(
-												"h6",
-												{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
-												"(upvote)"
-										) : React.createElement(
-												"h6",
-												{ className: "voted" },
-												"(upvoted)"
-										);
-
-										return voteAllowed;
+						_userInfo: {
+								value: function _userInfo(detail) {
+										var user = userStore.getState().user;
+										return user;
 								}
 						},
-						_getVotes: {
-								value: function _getVotes(photo, voteAllowed) {
-										var votes;
-										photo && photo.weighted_votes != null && this.state.tags.length ? votes = React.createElement(
-												"div",
-												{ className: "votes" },
-												voteAllowed,
-												React.createElement(
+						_voteAllowed: {
+								value: function _voteAllowed(detail, user) {
+										if (user && detail) {
+												if (detail.user_votes && detail.user_votes.indexOf(user.get("username") === -1)) {
+														return React.createElement(
+																"h6",
+																{ className: "upvote", onClick: this._vote.bind(this) },
+																"(upvote)"
+														);
+												}
+												return React.createElement(
 														"h6",
-														null,
-														"(search-weighted) ",
-														photo.weighted_votes
-												),
-												React.createElement(
-														"h6",
-														null,
-														"(total) ",
-														photo.total_votes
-												)
-										) : photo && photo.total_votes != null ? votes = React.createElement(
-												"div",
-												{ className: "votes" },
-												voteAllowed,
-												React.createElement(
-														"h6",
-														null,
-														photo.total_votes
-												)
-										) : null;
+														{ className: "voted" },
+														"(upvoted)"
+												);
+										}
+										return null;
+								}
+						},
+						_votesMarkup: {
+								value: function _votesMarkup(detail, voteAllowed) {
+										if (detail) {
 
-										return votes;
+												if (detail.weighted_votes != null && this.props.params.tags.length) {
+														return React.createElement(
+																"div",
+																{ className: "votes" },
+																voteAllowed ? voteAllowed : null,
+																React.createElement(
+																		"h6",
+																		null,
+																		"(search-weighted) ",
+																		detail.weighted_votes
+																),
+																React.createElement(
+																		"h6",
+																		null,
+																		"(total) ",
+																		detail.total_votes
+																)
+														);
+												} else if (detail.total_votes != null) {
+														return React.createElement(
+																"div",
+																{ className: "votes" },
+																voteAllowed ? voteAllowed : null,
+																React.createElement(
+																		"h6",
+																		null,
+																		detail.total_votes
+																)
+														);
+												}
+										}
+										return null;
 								}
 						}
 				});
@@ -62356,10 +62202,25 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				router: React.PropTypes.func.isRequired
 		};
 
+		var prevDetails = {};
+		DetailView.willTransitionTo = function (transition, params) {
+
+				params.tags = typeof params.tags === "string" && params.tags.length ? params.tags : "";
+
+				if (prevDetails[params.id] === undefined) {
+						detailActions.getDetail(params.id, params.tags);
+						prevDetails[params.id] = {};
+						if (params.tags.length) prevDetails[params.id].tags = params.tags.split(",");else prevDetails[params.id].tags = [];
+				} else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(",").sort()) === -1) {
+						detailActions.getDetail(params.id, params.tags);
+						prevDetails[params.id].tags.push(params.tags.split(",").sort());
+				}
+		};
+
 		exports.DetailView = DetailView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/DetailActions":245,"../actions/GalleryActions":246,"../stores/DetailStore":258,"../stores/GalleryStore":259,"../stores/userStore":261,"react":241}],252:[function(require,module,exports){
+},{"../actions/DetailActions":243,"../actions/GalleryActions":244,"../stores/DetailStore":258,"../stores/userStore":261,"react":241}],250:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62414,7 +62275,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(GalleryView, {
 						componentWillMount: {
 								value: function componentWillMount() {
+										this.state = galleryStore.getState();
 										userActions.current();
+
 										userStore.listen(this.onUserChange.bind(this));
 										galleryStore.listen(this.onGalleryChange.bind(this));
 								}
@@ -62428,8 +62291,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						onGalleryChange: {
 								value: function onGalleryChange() {
 										this.setState(galleryStore.getState());
-										prevParams.nextPageExists = this.state.paginate.nextPageExists;
-										prevParams.prevPageExists = this.state.paginate.prevPageExists;
 								}
 						},
 						onUserChange: {
@@ -62439,10 +62300,18 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						},
 						render: {
 								value: function render() {
+										var tags = this._getTags();
+
 										if (this.state.isLoading) {
 												return React.createElement(
 														"main",
-														{ className: "loading" },
+														{ className: "gallery loading" },
+														React.createElement(
+																"form",
+																{ onSubmit: this._search.bind(this) },
+																React.createElement("input", { type: "search", ref: "search" })
+														),
+														tags,
 														React.createElement(
 																"h2",
 																null,
@@ -62467,8 +62336,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										}
 
 										var photos = this._getCurrentPhotos();
-
-										var tags = this._getTags();
 
 										return React.createElement(
 												"main",
@@ -62518,22 +62385,22 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								value: function _search(e) {
 										e.preventDefault();
 										var addedTags = React.findDOMNode(this.refs.search).value.split(" ");
-										var tags = this.state.tags.concat(addedTags);
+										if (addedTags.length) {
+												Array.prototype.push.apply(this.state.tags, addedTags);
 
-										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
-
-										React.findDOMNode(this.refs.search).value = "";
-										this.setState({ isLoading: true });
+												this.context.router.transitionTo("gallerysearch", { tags: this.state.tags, page: 1 });
+												React.findDOMNode(this.refs.search).value = "";
+												this.setState({ isLoading: true });
+										}
 								}
 						},
 						_removeTag: {
 								value: function _removeTag(e) {
 										var tag = e.target.parentNode.id.slice(3);
-										var tags = this.state.tags.slice();
-										tags.splice(this.state.tags.indexOf(tag), 1);
-										prevParams.deletedTag = "-" + tag;
+										var tags = this.state.tags;
+										tags.splice(tags.indexOf(tag), 1);
 
-										if (tags) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
+										if (tags.length) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
 
 										this.setState({ isLoading: true });
 								}
@@ -62548,7 +62415,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										var _this = this;
 
 										var currentPhotos = this.state.paginate.currentPhotos.map(function (photo) {
-												return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.id });
+												return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.photo_id });
 										});
 
 										if (!currentPhotos.length && !this.state.isLoading) {
@@ -62599,43 +62466,50 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				router: React.PropTypes.func.isRequired
 		};
 
-		var prevParams = {};
+		var prevParams = [{}];
 		GalleryView.willTransitionTo = function (transition, params) {
-				var wasPrevParams = Object.keys(prevParams).length;
 
-				if (params.nextPageExists === undefined && prevParams.nextPageExists != null) params.nextPageExists = prevParams.nextPageExists;
+				// make tags array, sort so same tags entered in different order appear same
+				if (params.tags) params.tags = params.tags.split(",").sort();
 
-				if (params.prevPageExists === undefined && prevParams.prevPageExists != null) params.prevPageExists = prevParams.prevPageExists;
+				// copy params -- request and prevParams shouldn't reference same obj
+				var paramsCopy = _.assign({}, params);
 
-				var paramsEqual = _.isEqual(prevParams, params);
-				if (!prevParams.page) prevParams.page = params.page;
-				if (!prevParams.tags) prevParams.tags = params.tags;
+				// check if exact request has happened
+				var prevParamsMatch = prevParams.filter(function (val) {
+						return _.isEqual(val, params);
+				});
 
-				if (prevParams.tags === params.tags && prevParams.page !== params.page) {
-						if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists);
-						if (prevParams.page < params.page) galleryActions.changePage(params.page, prevParams.nextPageExists);
-				} else if (wasPrevParams && paramsEqual) {
-						galleryActions.isntLoading();
-				} else {
-						if (params.tags) params.tags = params.tags.split(",");
-
-						if (prevParams.deletedTag) {
-								if (!params.tags) params.tags = [];
-								params.tags.push(prevParams.deletedTag);
-								delete prevParams.deletedTag;
-						}
-
-						if (!params.tags) delete params.tags;
-						galleryActions.getPhotos({}, params);
+				// cached load
+				if (prevParamsMatch.length) {
+						galleryActions.cachedLoad(paramsCopy);
 				}
 
-				prevParams = params;
+				// pagination -- store figures out if request needed or from current request
+				else if (params.tags !== undefined && params.tags === prevParams[0].tags) {
+
+						// change the page
+						if (params.page !== prevParams[0].page) {
+								galleryActions.changePage(paramsCopy);
+						}
+
+						// no change, do nothing -- component state should remain identical
+						else return;
+				}
+
+				// request -- new params combo
+				else {
+						galleryActions.getPhotos(paramsCopy);
+				}
+
+				// save params for checking if request has been made before
+				prevParams.unshift(params);
 		};
 
 		exports.GalleryView = GalleryView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../../../modules_other/react-router":24,"../actions/GalleryActions":246,"../actions/UserActions":247,"../stores/GalleryStore":259,"../stores/UserStore":260,"./Photo":256,"lodash":83,"react":241}],253:[function(require,module,exports){
+},{"../../../modules_other/react-router":24,"../actions/GalleryActions":244,"../actions/UserActions":245,"../stores/GalleryStore":259,"../stores/UserStore":260,"./Photo":254,"lodash":83,"react":241}],251:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62702,7 +62576,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 														),
 														React.createElement(
 																"h6",
-																{ className: "logout", onClick: this.logout },
+																{ className: "logout", onClick: this._logout.bind(this) },
 																"(logout)"
 														)
 												);
@@ -62747,8 +62621,8 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 										);
 								}
 						},
-						logout: {
-								value: function logout() {
+						_logout: {
+								value: function _logout() {
 										userActions.logout();
 								}
 						}
@@ -62760,7 +62634,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.Header = Header;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../../../modules_other/react-router":24,"../actions/UserActions":247,"../stores/UserStore":260,"react":241}],254:[function(require,module,exports){
+},{"../../../modules_other/react-router":24,"../actions/UserActions":245,"../stores/UserStore":260,"react":241}],252:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62846,12 +62720,10 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.LoginView = LoginView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../../../modules_other/react-router":24,"../actions/UserActions":247,"../stores/UserStore":260,"Parse":37,"react":241}],255:[function(require,module,exports){
+},{"../../../modules_other/react-router":24,"../actions/UserActions":245,"../stores/UserStore":260,"Parse":37,"react":241}],253:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
 
 var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
 
@@ -62865,7 +62737,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				function PassEmailView() {
 						_classCallCheck(this, PassEmailView);
 
-						_get(Object.getPrototypeOf(PassEmailView.prototype), "constructor", this).call(this);
+						if (_React$Component != null) {
+								_React$Component.apply(this, arguments);
+						}
 				}
 
 				_inherits(PassEmailView, _React$Component);
@@ -62888,7 +62762,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.PassEmailView = PassEmailView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"react":241}],256:[function(require,module,exports){
+},{"react":241}],254:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -62923,13 +62797,15 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 				_createClass(Photo, {
 						render: {
 								value: function render() {
+										var photoHeight = "" + this.props.photo.height_m + "px";
+										var photoWidth = "" + this.props.photo.width_m + "px";
 										return React.createElement(
 												"div",
 												{ key: this.props.key, className: "photo" },
 												React.createElement(
 														Link,
-														{ to: "/photo/:id", params: { id: this.props.photo.photo_id } },
-														React.createElement("img", { src: this.props.photo.url_m })
+														{ to: "photo", params: { id: this.props.photo.photo_id, tags: this.props.tags } },
+														React.createElement("img", { src: this.props.photo.url_m, style: { height: photoHeight, width: photoWidth } })
 												),
 												React.createElement(
 														"div",
@@ -62966,7 +62842,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 																{ className: "photo-owner" },
 																React.createElement(
 																		"a",
-																		{ href: this.props.photo.owner_url, target: "_blank" },
+																		{ href: this.props.photo._owner_url, target: "_blank" },
 																		this.props.photo.ownername
 																)
 														)
@@ -62987,7 +62863,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.Photo = Photo;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../../../modules_other/react-router":24,"../actions/GalleryActions":246,"react":241}],257:[function(require,module,exports){
+},{"../../../modules_other/react-router":24,"../actions/GalleryActions":244,"react":241}],255:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -63082,7 +62958,106 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.RegisterView = RegisterView;
 })(typeof module === "object" ? module.exports : window);
 
-},{"../../../modules_other/react-router":24,"../actions/UserActions":247,"../stores/UserStore":260,"react":241}],258:[function(require,module,exports){
+},{"../../../modules_other/react-router":24,"../actions/UserActions":245,"../stores/UserStore":260,"react":241}],256:[function(require,module,exports){
+"use strict";
+
+;(function (exports) {
+
+		var React = require("react");
+		// modified react-router for React v0.13 compatibility
+		// clone from git@github.com:nhunzaker/react-router.git
+		var Router = require("../../../modules_other/react-router");
+
+		var _require = require("../components/AppView");
+
+		var AppView = _require.AppView;
+
+		var _require2 = require("../components/GalleryView");
+
+		var GalleryView = _require2.GalleryView;
+
+		var _require3 = require("../components/LoginView");
+
+		var LoginView = _require3.LoginView;
+
+		var _require4 = require("../components/RegisterView");
+
+		var RegisterView = _require4.RegisterView;
+
+		var _require5 = require("../components/DetailView");
+
+		var DetailView = _require5.DetailView;
+
+		var _require6 = require("../components/PassEmailView");
+
+		var PassEmailView = _require6.PassEmailView;
+
+		var _require7 = require("./defaultParams");
+
+		var GalleryAddPage = _require7.GalleryAddPage;
+
+		var DefaultRoute = Router.DefaultRoute;
+		var Route = Router.Route;
+		var Redirect = Router.Redirect;
+
+		var routes = React.createElement(
+				Route,
+				{ name: "app", path: "/", handler: AppView },
+				React.createElement(
+						Route,
+						{ path: "/gallery" },
+						React.createElement(Route, { name: "gallerysearch", path: "/gallery/:tags/page:page", handler: GalleryView }),
+						React.createElement(Route, { name: "gallerynosearch", path: "/gallery/page:page", handler: GalleryView }),
+						React.createElement(DefaultRoute, { handler: GalleryAddPage })
+				),
+				React.createElement(Route, { name: "photo", path: "/photo/:id/:tags?", handler: DetailView }),
+				React.createElement(Redirect, { from: "details", to: "photo" }),
+				React.createElement(Route, { name: "login", path: "/login", handler: LoginView }),
+				React.createElement(Redirect, { from: "signin", to: "login" }),
+				React.createElement(Route, { name: "register", path: "/register", handler: RegisterView }),
+				React.createElement(Route, { name: "passemailsent", path: "/passemailsent", handler: PassEmailView }),
+				React.createElement(Redirect, { from: "*", to: "gallerynosearch", params: { page: 1 } })
+		);
+
+		var router = Router.create(routes);
+
+		exports.router = router;
+})(typeof module === "object" ? module.exports : window);
+
+},{"../../../modules_other/react-router":24,"../components/AppView":248,"../components/DetailView":249,"../components/GalleryView":250,"../components/LoginView":252,"../components/PassEmailView":253,"../components/RegisterView":255,"./defaultParams":257,"react":241}],257:[function(require,module,exports){
+"use strict";
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+;(function (exports) {
+
+		var React = require("react");
+		var Router = require("../../../modules_other/react-router");
+
+		var GalleryAddPage = (function (_React$Component) {
+				function GalleryAddPage() {
+						_classCallCheck(this, GalleryAddPage);
+
+						if (_React$Component != null) {
+								_React$Component.apply(this, arguments);
+						}
+				}
+
+				_inherits(GalleryAddPage, _React$Component);
+
+				return GalleryAddPage;
+		})(React.Component);
+
+		GalleryAddPage.willTransitionTo = function (transition, params) {
+				if (params.tags) transition.redirect("/gallery/" + params.tags + "/page1");else transition.redirect("/gallery/page1");
+		};
+
+		exports.GalleryAddPage = GalleryAddPage;
+})(typeof module === "object" ? module.exports : window);
+
+},{"../../../modules_other/react-router":24,"react":241}],258:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -63107,16 +63082,29 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 						_classCallCheck(this, DetailStore);
 
 						this.bindListeners({
-								getInfo: detailActions.getDetail });
+								getInfo: detailActions.getDetail,
+								vote: galleryActions.vote
+						});
 				}
 
 				_createClass(DetailStore, {
 						getInfo: {
 								value: function getInfo(data) {
-										this[data.id] = data;
-										this[data.id].photoUrl = function (size) {
-												return "https://farm" + data.farm + ".staticflickr.com/" + data.server + "/" + data.id + "_" + data.secret + "_" + size + "." + (data.originalformat ? data.originalformat : "jpg");
+										this[data.photo_id] = data;
+										this[data.photo_id]._photoUrl = function (size) {
+												return "https://farm" + data.farm + ".staticflickr.com/" + data.server + "/" + data.photo_id + "_" + data.secret + "_" + size + "." + (data.originalformat ? data.originalformat : "jpg");
 										};
+										this[data.photo_id]._ownerUrl = "https://www.flickr.com/people/" + data.owner;
+								}
+						},
+						vote: {
+								value: function vote(data) {
+										console.log(data);
+										var photo = this[data.photo_id];
+										photo.total_votes = data.total_votes;
+										photo.user_votes = data.user_votes;
+										photo.tag_votes = data.tag_votes;
+										photo.weighted_votes = data.weighted_votes;
 								}
 						}
 				});
@@ -63127,7 +63115,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.detailStore = alt.createStore(DetailStore);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/DetailActions":245,"../actions/GalleryActions":246,"../alt-app":248}],259:[function(require,module,exports){
+},{"../actions/DetailActions":243,"../actions/GalleryActions":244,"../alt-app":246}],259:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -63154,16 +63142,13 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 						_classCallCheck(this, GalleryStore);
 
-						this.requests = [];
-						this.requestPage = null;
-						this.requestPages = null;
-						this.tags = [];
-						this.isSearch = "";
+						this.requests = {};
 						this.isLoading = React.createElement(
 								"h2",
 								null,
 								"Loading..."
 						);
+						this.tags = [];
 
 						// browser-side pagination
 						this.paginate = {
@@ -63187,116 +63172,162 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								getPhotos: galleryActions.getPhotos,
 								changePage: galleryActions.changePage,
 								vote: galleryActions.vote,
-								isntLoading: galleryActions.isntLoading
+								cachedLoad: galleryActions.cachedLoad
 						});
 				}
 
 				_createClass(GalleryStore, {
 						getPhotos: {
-								value: function getPhotos(obj) {
-										var params = obj.params;
-										var data = obj.data;
+								value: function getPhotos(resp) {
+										var params = resp.params;
+										var data = resp.data;
 
 										this._dataToState(data, params);
 								}
 						},
 						changePage: {
-								value: function changePage(routerPage) {
-										this._paginate(routerPage);
-										this.isLoading = false;
+								value: function changePage(routerParams) {
+										this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1;
+
+										// if requestPage is cached
+										if (this.requests[this.searchId][this.requestPage]) {
+												this._paginate(routerPage);
+												this.isLoading = false;
+										} else {
+												galleryActions.getPhotos(params);
+										}
 								}
 						},
 						vote: {
 								value: function vote(resp) {
 										this.paginate.currentPhotos.forEach(function (val) {
-												if (val.id === resp.photo_id) {
+												if (val.photo_id === resp.photo_id) {
 														val.total_votes = resp.total_votes;
 														val.user_votes = resp.user_votes;
+														val.tag_votes = resp.tag_votes;
 														val.weighted_votes = resp.weighted_votes;
 												}
 										});
 								}
 						},
-						isntLoading: {
-								value: function isntLoading() {
-										console.log("isnt loading");
-										this.isLoading = false;
-								}
-						},
-						_dataToState: {
-								value: function _dataToState(data, routerParams) {
-										console.log(data);
-										if (data.tags !== this.tags) this.requests = [];
-										this.requests[data.page] = {};
+						cachedLoad: {
+								value: function cachedLoad(routerParams) {
+										// for creating route string
+										this.isSearch = routerParams.tags ? true : false;
 
-										data.photo.forEach(function (val) {
-												if (val.owner) val.owner_url = "https://www.flickr.com/people/" + val.owner;
-										});
+										// cache ids
+										if (!routerParams.tags) routerParams.tags = ["default-Request"];
+										this.searchId = routerParams.tags.join("");
 
-										this.requests[data.page] = data;
-
-										this.requestPage = data.page;
-										this.requestPages = data.pages;
-										this.tags = data.tags;
-										this.tags.length === 0 ? this.isSearch = false : this.isSearch = true;
+										// current params
+										this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1;
+										this.requestPages = this.requests[this.searchId][this.requestPage].requestPages;
+										this.tags = this.requests[this.searchId][this.requestPage].tags.slice();
 
 										this._paginate(routerParams.page);
 										this.isLoading = false;
 								}
 						},
+						_dataToState: {
+								value: function _dataToState(data, routerParams) {
+										// create owner url
+										console.log(data);
+										data.photo.forEach(function (val) {
+												if (val.owner) val._owner_url = "https://www.flickr.com/people/" + val.owner;
+										});
+
+										// for creating route string
+										this.isSearch = routerParams.tags ? true : false;
+
+										// cache ids
+										if (!routerParams.tags) routerParams.tags = ["default-Request"];
+										this.searchId = routerParams.tags.join("");
+										this.requests[this.searchId] = [];
+
+										// save data in search-based cache and Flickr page-based
+										this.requests[this.searchId][data.page] = {};
+										this.requests[this.searchId][data.page] = data;
+
+										// set current info for easy access
+										this.requestPage = data.page;
+										this.requestPages = data.pages;
+										this.tags = data.tags.slice();
+
+										// paginate results for current page
+										this._paginate(routerParams.page);
+
+										this.isLoading = false;
+								}
+						},
 						_paginate: {
 								value: function _paginate(routerPage) {
-										this.paginate.totalPages = this._paginateTotalPages();
+										this.paginate.maxPossiblePages = this._paginateTotalPages(true);
+										this.paginate.availablePages = this._paginateTotalPages(false);
 										this.paginate.currentPage = routerPage;
-										this.paginate.currentPhotos = this._paginateCurrentPhotos(routerPage), this.paginate.nextPageExists = this._paginatePageExists("+", routerPage);
-										this.paginate.prevPageExists = this._paginatePageExists("-", routerPage);
-										this.paginate.nextPageRoute = this._paginatePageRoute("+", routerPage);
-										this.paginate.prevPageRoute = this._paginatePageRoute("-", routerPage);
+										this.paginate.currentPhotos = this._paginateCurrentPhotos(routerPage), this.paginate.nextPageRoute = this._paginatePageRoute(routerPage + 1);
+										this.paginate.prevPageRoute = this._paginatePageRoute(routerPage - 1);
 								}
 						},
 						_paginateTotalPages: {
-								value: function _paginateTotalPages() {
-										// pages in current request
-										var pages = Math.ceil(this.requests[this.requestPage].photo.length / this.paginate.constants.photosPerPage);
-										// pages in request and requests before
-										return pages;
+
+								// calc both maximum possible pages based on Flickr's page result and actually available pages in cache
+
+								value: function _paginateTotalPages(bool) {
+										var pageConst = this.paginate.constants;
+
+										//get number of requests with full 500 results
+										var numFullRequests;
+
+										// if true, get number of full requests that may exist -- up to largest index in requests
+										if (bool) {
+												numFullRequests = this.requests[this.searchId].length - 1;
+										}
+
+										// if false, get actual number of full requests -- filter out any empty indices
+										else {
+												numFullRequests = this.requests[this.searchId].filter(function (val) {
+														return val !== undefined;
+												}).length - 1;
+										}
+
+										var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest();
+
+										// last request possibly not 500 results
+										var lastRequestIndex = this.requests[this.searchId].length - 1;
+										var picsInLastRequest = this.requests[this.searchId][lastRequestIndex].photo.length;
+
+										var pagesInLastRequest = Math.ceil(picsInLastRequest / pageConst.photosPerPage);
+
+										// add 'em
+										var pagesInAllRequests = pagesInFullRequests + pagesInLastRequest;
+
+										return pagesInAllRequests;
 								}
 						},
 						_paginateCurrentPhotos: {
 								value: function _paginateCurrentPhotos(routerPage) {
-										// photo position == currentBrowserPage - totalBrowserPages in previous requests - 1 (index alignment) * photos per page
 										var pageConst = this.paginate.constants;
-										var startPhotoIndex = (routerPage - (this.requestPage - 1) * pageConst.pagesPerRequest() - 1) * pageConst.photosPerPage;
 
-										return this.requests[this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage);
-								}
-						},
-						_paginatePageExists: {
-								value: function _paginatePageExists(change, routerPage) {
-										if (change === "+") {
-												if (routerPage < this.paginate.totalPages) {
-														return "no-request";
-												}if (this.page < this.pages) {
-														return "request";
-												}return false;
-										}
-										if (change === "-") {
-												if (routerPage - 1 > (this.requestPage - 1) * 20) {
-														return "no-request";
-												}if (this.requests[this.requestPage - 1]) {
-														return "no-request";
-												}if (routerPage - 1 === 0) {
-														return false;
-												}return "request";
-										}
+										// more maths
+										var numPrevRequests = this.requestPage - 1;
+										var browserPagesInPrevRequests = numPrevRequests * pageConst.pagesPerRequest();
+										var pagesIntoCurrentRequest = routerPage - browserPagesInPrevRequests;
+
+										// adjust to 0 index
+										var startPhotoIndex = (pagesIntoCurrentRequest - 1) * pageConst.photosPerPage;
+
+										// get those pics
+										console.log(this.requests[this.searchId][this.requestPage].photo);
+										console.log(this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage));
+										return this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage);
 								}
 						},
 						_paginatePageRoute: {
-								value: function _paginatePageRoute(change, routerPage) {
+								value: function _paginatePageRoute(newPage) {
 										if (this.isSearch) {
-												return "/gallery/" + this.tags.join(",") + "/page" + eval(routerPage + change + 1);
+												return "/gallery/" + this.tags.join(",") + "/page" + newPage;
 										} else {
-												return "/gallery/page" + eval(routerPage + change + 1);
+												return "/gallery/page" + newPage;
 										}
 								}
 						}
@@ -63308,7 +63339,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.galleryStore = alt.createStore(GalleryStore);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/GalleryActions":246,"../alt-app":248,"jquery":82,"react":241}],260:[function(require,module,exports){
+},{"../actions/GalleryActions":244,"../alt-app":246,"jquery":82,"react":241}],260:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -63353,7 +63384,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.userStore = alt.createStore(UserStore);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/UserActions":247,"../alt-app":248,"parse":84}],261:[function(require,module,exports){
+},{"../actions/UserActions":245,"../alt-app":246,"parse":84}],261:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -63398,4 +63429,4 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 		exports.userStore = alt.createStore(UserStore);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../actions/UserActions":247,"../alt-app":248,"parse":84}]},{},[249]);
+},{"../actions/UserActions":245,"../alt-app":246,"parse":84}]},{},[247]);

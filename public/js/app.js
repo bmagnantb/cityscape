@@ -3,6 +3,7 @@
 // require files?
 var { Parse } = require('parse')
 var React = require('react')
+var { router } = require('./router/Router')
 
 window.onload = app
 
@@ -11,11 +12,9 @@ function app() {
 
 		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
 
-		var { router } = require('./Router')
-
 		router.run(function(Handler, state) {
 				var { path, params } = state
 
-				React.render(<Handler />, document.querySelector('#container'))
+				React.render(<Handler params={params} />, document.querySelector('#container'))
 		})
 }

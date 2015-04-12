@@ -5,17 +5,15 @@ var { GalleryClient } = require('../ServerFlickrClient')
 
 class GalleryActions {
 		constructor() {
-				this.generateActions('isntLoading')
+				this.generateActions('isntLoading', 'cachedLoad', 'changePage')
 		}
 
-		getPhotos(options, params) {
-				for (var key in params) {
-						options[key] = params[key]
+		getPhotos(params) {
+
+				if (params.page) {
+						params.page = Math.floor((params.page - 1) / 25) + 1
 				}
-				if (options.page) {
-						options.page = Math.ceil(options.page / 25)
-				}
-				GalleryClient.requestPhotos(options)
+				GalleryClient.requestPhotos(params)
 				.then((data) => {
 						data = data.photos
 						var obj = { params, data }
@@ -26,14 +24,6 @@ class GalleryActions {
 		vote(photoId, user, tags) {
 				GalleryClient.vote(photoId, user, tags)
 				.then((resp) => this.dispatch(resp))
-		}
-
-		changePage(newPage, needRequest) {
-				if (needRequest === 'request') {
-						this.getPhotos({}, {page: newPage})
-						return
-				}
-				this.dispatch(newPage)
 		}
 }
 

@@ -1,19 +1,9 @@
 var request = require('request')
 var Parse = require('parse').Parse
 var flickrApiKey = require('../flickrKey')
-
-// when photo entry is created, add user votes, total votes, and tag votes
-Parse.Photo = Parse.Object.extend('Photo', {
-		initialize: function() {
-				this.set('user_votes', [])
-				this.set('total_votes', 0)
-				this.set('tag_votes', {})
-		}
-})
-
-Parse.PhotoCollection = Parse.Collection.extend({
-		model: Parse.Photo
-})
+var weightVotes = require('./weightVotes')
+var ParseClass = require('./ParseClass')
+var trimPhoto = require('./trimPhoto')
 
 
 // handle request
@@ -21,7 +11,7 @@ function photos(req, res) {
 try {
 		req.query.api_key = flickrApiKey
 
-		var sevenDaysAgo = (new Date() - (1000 * 60 * 60 * 24 * 7)) / 1000
+		var sevenDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 7)) / 1000)
 
 		if (!req.query.min_upload_date) req.query.min_upload_date = sevenDaysAgo
 		if (!req.query.tags) req.query.tags = []
@@ -51,18 +41,15 @@ try {
 				// parse data
 				var data = JSON.parse(body)
 
-				// get ids of fetched photos and change id to photo_id for consistency with Parse
+				// get ids of fetched photos and trim photo info for Parse
 				var photo_ids = []
 				for (var i = 0, arr = data.photos.photo, imax = arr.length; i < imax; i++) {
-						arr[i].photo_id = arr[i].id
-						arr[i].date_uploaded = +arr[i].dateupload
-						delete arr[i].id
-						delete arr[i].dateupload
+						arr[i] = trimPhoto(arr[i])
 						photo_ids.push(arr[i].photo_id)
 				}
 
 				// create object for Parse photo query to hold constraints
-				var query = new Parse.Query(Parse.Photo)
+				var query = new Parse.Query('Photo')
 
 				// add tags used in search to response body
 				data.photos.tags = req.query.tags.slice(2)
@@ -76,34 +63,40 @@ try {
 					.find({
 						success: function(result) {
 								// get photo_ids of result
+								var newPhotos = []
+								var savePhotos = []
 								var resultIds = []
 								for (var i = 0, arr = result, imax = arr.length; i < imax; i++) {
 										resultIds.push(arr[i].attributes.photo_id)
 								}
 
 								// new array for saving photos not on Parse
-								var savePhotos = []
 								for (var i = 0, arr = data.photos.photo, imax = arr.length; i < imax; i++) {
-
-										// initialize votes info for photo not on Parse and add to savePhotos
-										if (resultIds.indexOf(arr[i].photo_id) === -1) {
-												if (arr[i].tags) arr[i].tags = arr[i].tags.split(' ')
+										var resultMatchIndex = resultIds.indexOf(arr[i].photo_id)
+										var copy = {}
+										// initialize votes info for photo not on Parse and add to newPhotos
+										if (resultMatchIndex === -1) {
 												arr[i].user_votes = []
 												arr[i].total_votes = 0
 												arr[i].tag_votes = {}
-												savePhotos.push(arr[i])
+												for (var key in arr[i]) {
+														copy[key] = arr[i][key]
+												}
+												newPhotos.push(copy)
 										}
 
-										// if photo on parse, put vote info into respective photos in data
+										// update parse info, put votes
 										else {
-												arr[i].total_votes = result[resultIds.indexOf(arr[i].photo_id)].attributes.total_votes
-												arr[i].user_votes = result[resultIds.indexOf(arr[i].photo_id)].attributes.user_votes
-												arr[i].tag_votes = result[resultIds.indexOf(arr[i].photo_id)].attributes.tag_votes
+												for (var key in arr[i]) {
+														result[resultMatchIndex].set(key, arr[i][key])
+												}
+												arr[i] = result[resultMatchIndex].toJSON()
+												savePhotos.push(result[resultMatchIndex])
 										}
 								}
 
 								// new query for Parse -- get rankings that fit flickr request query
-								var queryVoted = new Parse.Query(Parse.Photo)
+								var queryVoted = new Parse.Query('Photo')
 
 								// only entries that match all request tags, paginated by 500
 								if (data.photos.tags.length) queryVoted.containsAll('tags', data.photos.tags)
@@ -112,11 +105,11 @@ try {
 
 								// only if has votes and uploaded in past week
 									.greaterThan('total_votes', 0)
-									.greaterThan('dateupload', sevenDaysAgo)
+									.greaterThan('date_uploaded', sevenDaysAgo)
 
 								// sort by most votes, then most recent
 									.descending('total_votes')
-									.addAscending('dateupload')
+									.addAscending('date_uploaded')
 									.find({
 										success: function(results) {
 												console.log('2nd query success')
@@ -125,41 +118,16 @@ try {
 
 														// remove photos already in data
 														for (var i = 0, arr = results, imax = results.length, match; i < imax; i++) {
-																arr[i] = arr[i].attributes
 																if (photo_ids.indexOf(arr[i].photo_id) !== -1) arr.splice(i, 1)
+																else arr[i] = arr[i].attributes
 														}
 
 														Array.prototype.push.apply(data.photos.photo, results)
 												}
 
-												// set weighted votes
+												// get votes
 												for (var i = 0, arr = data.photos.photo, imax = arr.length; i < imax; i++) {
-														if (!arr[i].weighted_votes) {
-																arr[i].weighted_votes = 0
-
-														// if request tags exist, weight the votes
-																if (data.photos.tags.length) {
-
-																		// total vote holder for subtracting weighted votes
-																		var totalVote = arr[i].total_votes
-
-																		// check tag votes for each request tag
-																		for (var a = 0, arr2 = data.photos.tags, amax = arr2.length; a < amax; a++) {
-
-																				// if photo has matching tag vote, double and subtract from total votes
-																				if (arr[i].tag_votes[arr2[a]]) {
-																						arr[i].weighted_votes = arr[i].tag_votes[arr2[a]] * 2
-																						totalVote -= arr[i].tag_votes[arr2[a]]
-																				}
-																		}
-
-																	// after weighting, add fifth of remaining total votes
-																	arr[i].weighted_votes += Math.round(totalVote / 5)
-																}
-
-																// if request tags don't exist, use total votes
-																else arr[i].weighted_votes = arr[i].total_votes
-														}
+														arr[i].weighted_votes = weightVotes(arr[i], data.photos.tags)
 												}
 
 												// sort photos by votes
@@ -177,12 +145,18 @@ try {
 												res.send(data)
 
 												// save photos after response -- lots of processing time
-												for (var i = 0, arr = savePhotos, imax = arr.length; i < imax; i++) {
-														arr[i] = new Parse.Photo(arr[i])
+												for (var i = 0, arr = newPhotos, imax = arr.length; i < imax; i++) {
+														arr[i] = new ParseClass.Photo(arr[i])
 												}
+
+												Parse.Object.saveAll(newPhotos, {
+														error: function(err) {
+																console.log(err)
+														}
+												})
+
 												Parse.Object.saveAll(savePhotos, {
 														error: function(err) {
-																console.log('error saving new photos to Parse')
 																console.log(err)
 														}
 												})
@@ -195,11 +169,16 @@ try {
 
 												// save photos after response -- lots of processing time
 												for (var i = 0, arr = savePhotos, imax = arr.length; i < imax; i++) {
-														arr[i] = new Parse.Photo(arr[i])
+														arr[i] = new ParseClass.Photo(arr[i])
 												}
+												Parse.Object.saveAll(newPhotos, {
+														error: function(err) {
+																console.log(err)
+														}
+												})
+
 												Parse.Object.saveAll(savePhotos, {
 														error: function(err) {
-																console.log('error saving new photos to Parse')
 																console.log(err)
 														}
 												})

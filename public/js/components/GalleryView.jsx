@@ -22,7 +22,9 @@ class GalleryView extends React.Component {
 
 
 		componentWillMount() {
+				this.state = galleryStore.getState()
 				userActions.current()
+
 				userStore.listen(this.onUserChange.bind(this))
 				galleryStore.listen(this.onGalleryChange.bind(this))
 		}
@@ -38,8 +40,6 @@ class GalleryView extends React.Component {
 
 		onGalleryChange() {
 				this.setState(galleryStore.getState())
-				prevParams.nextPageExists = this.state.paginate.nextPageExists
-				prevParams.prevPageExists = this.state.paginate.prevPageExists
 		}
 
 
@@ -51,17 +51,21 @@ class GalleryView extends React.Component {
 
 
 		render() {
+				var tags = this._getTags()
+
 				if (this.state.isLoading) {
 						return (
-								<main className="loading">
+								<main className="gallery loading">
+										<form onSubmit={this._search.bind(this)}>
+												<input type="search" ref="search" />
+										</form>
+										{tags}
 										<h2>Loading<span>.</span><span>.</span><span>.</span></h2>
 								</main>
 						)
 				}
 
 				var photos = this._getCurrentPhotos()
-
-				var tags = this._getTags()
 
 				return (
 						<main className="gallery">
@@ -92,24 +96,23 @@ class GalleryView extends React.Component {
 		_search(e) {
 				e.preventDefault()
 				var addedTags = React.findDOMNode(this.refs.search).value.split(' ')
-				var tags = this.state.tags.concat(addedTags)
+				if (addedTags.length) {
+						Array.prototype.push.apply(this.state.tags, addedTags)
 
-				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
-				else this.context.router.transitionTo('gallerynosearch', {page: 1})
-
-				React.findDOMNode(this.refs.search).value = ''
-				this.setState({isLoading: true})
+						this.context.router.transitionTo('gallerysearch', {tags: this.state.tags, page: 1})
+						React.findDOMNode(this.refs.search).value = ''
+						this.setState({isLoading: true})
+				}
 		}
 
 
 
 		_removeTag(e) {
 				var tag = e.target.parentNode.id.slice(3)
-				var tags = this.state.tags.slice()
-				tags.splice(this.state.tags.indexOf(tag), 1)
-				prevParams.deletedTag = `-${tag}`
+				var tags = this.state.tags
+				tags.splice(tags.indexOf(tag), 1)
 
-				if (tags) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
+				if (tags.length) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
 				else this.context.router.transitionTo('gallerynosearch', {page: 1})
 
 				this.setState({isLoading: true})
@@ -125,7 +128,7 @@ class GalleryView extends React.Component {
 
 		_getCurrentPhotos() {
 				var currentPhotos = this.state.paginate.currentPhotos.map((photo) => {
-						return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.id} />
+						return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.photo_id} />
 				})
 
 				if (!currentPhotos.length && !this.state.isLoading) return <h2>No results</h2>
@@ -160,41 +163,44 @@ GalleryView.contextTypes = {
 }
 
 
-var prevParams = {}
+var prevParams = [{}]
 GalleryView.willTransitionTo = function(transition, params) {
-		var wasPrevParams = Object.keys(prevParams).length
 
-		if (params.nextPageExists === undefined && prevParams.nextPageExists != null) params.nextPageExists = prevParams.nextPageExists
+		// make tags array, sort so same tags entered in different order appear same
+		if (params.tags) params.tags = params.tags.split(',').sort()
 
-		if (params.prevPageExists === undefined && prevParams.prevPageExists != null) params.prevPageExists = prevParams.prevPageExists
+		// copy params -- request and prevParams shouldn't reference same obj
+		var paramsCopy = _.assign({}, params)
 
-		var paramsEqual = _.isEqual(prevParams, params)
-		if (!prevParams.page) prevParams.page = params.page
-		if (!prevParams.tags) prevParams.tags = params.tags
+		// check if exact request has happened
+		var prevParamsMatch = prevParams.filter(function(val) {
+				return _.isEqual(val, params)
+		})
 
-		if ((prevParams.tags === params.tags) && (prevParams.page !== params.page)) {
-				if (prevParams.page > params.page) galleryActions.changePage(params.page, prevParams.prevPageExists)
-				if (prevParams.page < params.page) galleryActions.changePage(params.page, prevParams.nextPageExists)
+		// cached load
+		if (prevParamsMatch.length) {
+				galleryActions.cachedLoad(paramsCopy)
 		}
 
-		else if (wasPrevParams && paramsEqual) {
-				galleryActions.isntLoading()
-		}
+		// pagination -- store figures out if request needed or from current request
+		else if (params.tags !== undefined && params.tags === prevParams[0].tags) {
 
-		else {
-				if (params.tags) params.tags = params.tags.split(',')
-
-				if (prevParams.deletedTag) {
-						if (!params.tags) params.tags = []
-						params.tags.push(prevParams.deletedTag)
-						delete prevParams.deletedTag
+				// change the page
+				if (params.page !== prevParams[0].page) {
+						galleryActions.changePage(paramsCopy)
 				}
 
-				if (!params.tags) delete params.tags
-				galleryActions.getPhotos({}, params)
+				// no change, do nothing -- component state should remain identical
+				else return
 		}
 
-		prevParams = params
+		// request -- new params combo
+		else {
+				galleryActions.getPhotos(paramsCopy)
+		}
+
+		// save params for checking if request has been made before
+		prevParams.unshift(params)
 }
 
 

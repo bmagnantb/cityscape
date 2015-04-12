@@ -8,12 +8,9 @@ var React = require('react')
 class GalleryStore {
 
 		constructor() {
-				this.requests = []
-				this.requestPage = null
-				this.requestPages = null
-				this.tags = []
-				this.isSearch = ''
+				this.requests = {}
 				this.isLoading = <h2>Loading...</h2>
+				this.tags = []
 
 				// browser-side pagination
 				this.paginate = {
@@ -37,55 +34,55 @@ class GalleryStore {
 						getPhotos: galleryActions.getPhotos,
 						changePage: galleryActions.changePage,
 						vote: galleryActions.vote,
-						isntLoading: galleryActions.isntLoading
+						cachedLoad: galleryActions.cachedLoad
 				})
 		}
 
 
-		getPhotos(obj) {
-				var { params, data } = obj
+		getPhotos(resp) {
+				var { params, data } = resp
 				this._dataToState(data, params)
 		}
 
 
-		changePage(routerPage) {
-				this._paginate(routerPage)
-				this.isLoading = false
+		changePage(routerParams) {
+				this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1
+
+				// if requestPage is cached
+				if (this.requests[this.searchId][this.requestPage]) {
+						this._paginate(routerPage)
+						this.isLoading = false
+				}
+				else {
+						galleryActions.getPhotos(params)
+				}
 		}
 
 
 		vote(resp) {
 				this.paginate.currentPhotos.forEach((val) => {
-						if (val.id === resp.photo_id) {
+						if (val.photo_id === resp.photo_id) {
 								val.total_votes = resp.total_votes
 								val.user_votes = resp.user_votes
+								val.tag_votes = resp.tag_votes
 								val.weighted_votes =  resp.weighted_votes
 						}
 				})
 		}
 
-		isntLoading() {
-				console.log('isnt loading')
-				this.isLoading = false
-		}
 
+		cachedLoad(routerParams) {
+				// for creating route string
+				this.isSearch = routerParams.tags ? true : false
 
+				// cache ids
+				if (!routerParams.tags) routerParams.tags = ['default-Request']
+				this.searchId = routerParams.tags.join('')
 
-		_dataToState(data, routerParams) {
-				console.log(data)
-				if (data.tags !== this.tags) this.requests = []
-				this.requests[data.page] = {}
-
-				data.photo.forEach((val) => {
-						if (val.owner) val.owner_url = `https://www.flickr.com/people/${val.owner}`
-				})
-
-				this.requests[data.page] = data
-
-				this.requestPage = data.page
-				this.requestPages = data.pages
-				this.tags = data.tags
-				this.tags.length === 0 ? this.isSearch = false : this.isSearch = true
+				// current params
+				this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1
+				this.requestPages = this.requests[this.searchId][this.requestPage].requestPages
+				this.tags = this.requests[this.searchId][this.requestPage].tags.slice()
 
 				this._paginate(routerParams.page)
 				this.isLoading = false
@@ -93,33 +90,102 @@ class GalleryStore {
 
 
 
-		_paginate(routerPage) {
-				this.paginate.totalPages = this._paginateTotalPages()
-				this.paginate.currentPage = routerPage
-				this.paginate.currentPhotos =this._paginateCurrentPhotos(routerPage),
-				this.paginate.nextPageExists = this._paginatePageExists('+', routerPage)
-				this.paginate.prevPageExists = this._paginatePageExists('-', routerPage)
-				this.paginate.nextPageRoute = this._paginatePageRoute('+', routerPage)
-				this.paginate.prevPageRoute = this._paginatePageRoute('-', routerPage)
+		_dataToState(data, routerParams) {
+				// create owner url
+				console.log(data)
+				data.photo.forEach((val) => {
+						if (val.owner) val._owner_url = `https://www.flickr.com/people/${val.owner}`
+				})
+
+				// for creating route string
+				this.isSearch = routerParams.tags ? true : false
+
+				// cache ids
+				if (!routerParams.tags) routerParams.tags = ['default-Request']
+				this.searchId = routerParams.tags.join('')
+				this.requests[this.searchId] = []
+
+				// save data in search-based cache and Flickr page-based
+				this.requests[this.searchId][data.page] = {}
+				this.requests[this.searchId][data.page] = data
+
+				// set current info for easy access
+				this.requestPage = data.page
+				this.requestPages = data.pages
+				this.tags = data.tags.slice()
+
+				// paginate results for current page
+				this._paginate(routerParams.page)
+
+				this.isLoading = false
 		}
 
 
 
-		_paginateTotalPages() {
-				// pages in current request
-				var pages = Math.ceil(this.requests[this.requestPage].photo.length / this.paginate.constants.photosPerPage)
-				// pages in request and requests before
-				return pages
+		_paginate(routerPage) {
+				this.paginate.maxPossiblePages = this._paginateTotalPages(true)
+				this.paginate.availablePages = this._paginateTotalPages(false)
+				this.paginate.currentPage = routerPage
+				this.paginate.currentPhotos = this._paginateCurrentPhotos(routerPage),
+				this.paginate.nextPageRoute = this._paginatePageRoute(routerPage + 1)
+				this.paginate.prevPageRoute = this._paginatePageRoute(routerPage - 1)
+		}
+
+
+
+		// calc both maximum possible pages based on Flickr's page result and actually available pages in cache
+		_paginateTotalPages(bool) {
+				var pageConst = this.paginate.constants
+
+				//get number of requests with full 500 results
+				var numFullRequests
+
+				// if true, get number of full requests that may exist -- up to largest index in requests
+				if (bool) {
+						numFullRequests = this.requests[this.searchId].length - 1
+				}
+
+				// if false, get actual number of full requests -- filter out any empty indices
+				else {
+						numFullRequests = this.requests[this.searchId].filter(function(val) {
+								return val !== undefined
+						}).length - 1
+				}
+
+				var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest()
+
+				// last request possibly not 500 results
+				var lastRequestIndex = this.requests[this.searchId].length - 1
+				var picsInLastRequest = this.requests[this.searchId][lastRequestIndex].photo.length
+
+				var pagesInLastRequest = Math.ceil(picsInLastRequest / pageConst.photosPerPage)
+
+				// add 'em
+				var pagesInAllRequests = pagesInFullRequests + pagesInLastRequest
+
+				return pagesInAllRequests
 		}
 
 
 
 		_paginateCurrentPhotos(routerPage) {
-			// photo position == currentBrowserPage - totalBrowserPages in previous requests - 1 (index alignment) * photos per page
 				var pageConst = this.paginate.constants
-				var startPhotoIndex = ((routerPage - ((this.requestPage - 1) * pageConst.pagesPerRequest())) - 1) * pageConst.photosPerPage
 
-				return this.requests[this.requestPage].photo.slice(
+				// more maths
+				var numPrevRequests = this.requestPage - 1
+				var browserPagesInPrevRequests = numPrevRequests * pageConst.pagesPerRequest()
+				var pagesIntoCurrentRequest = routerPage - browserPagesInPrevRequests
+
+				// adjust to 0 index
+				var startPhotoIndex = (pagesIntoCurrentRequest - 1) * pageConst.photosPerPage
+
+				// get those pics
+				console.log(this.requests[this.searchId][this.requestPage].photo)
+				console.log(this.requests[this.searchId][this.requestPage].photo.slice(
+						startPhotoIndex,
+						startPhotoIndex + pageConst.photosPerPage
+				))
+				return this.requests[this.searchId][this.requestPage].photo.slice(
 						startPhotoIndex,
 						startPhotoIndex + pageConst.photosPerPage
 				)
@@ -127,25 +193,9 @@ class GalleryStore {
 
 
 
-		_paginatePageExists(change, routerPage) {
-				if (change === '+') {
-						if (routerPage < this.paginate.totalPages) return 'no-request'
-						if (this.page < this.pages) return 'request'
-						return false
-				}
-				if (change === '-') {
-						if (routerPage - 1 > (this.requestPage - 1) * 20) return 'no-request'
-						if (this.requests[this.requestPage - 1]) return 'no-request'
-						if (routerPage - 1 === 0) return false
-						return 'request'
-				}
-		}
-
-
-
-		_paginatePageRoute(change, routerPage) {
-				if (this.isSearch) return `/gallery/${this.tags.join(',')}/page${eval(routerPage+change+1)}`
-				else return `/gallery/page${eval(routerPage+change+1)}`
+		_paginatePageRoute(newPage) {
+				if (this.isSearch) return `/gallery/${this.tags.join(',')}/page${newPage}`
+				else return `/gallery/page${newPage}`
 		}
 }
 

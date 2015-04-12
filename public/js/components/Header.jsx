@@ -29,7 +29,7 @@ class Header extends React.Component {
 						userinfo = (
 								<div className="user">
 										<h6 className="username">{this.state.user.get('username')}</h6>
-										<h6 className="logout" onClick={this.logout}>(logout)</h6>
+										<h6 className="logout" onClick={this._logout.bind(this)}>(logout)</h6>
 								</div>
 						)
 				} else {
@@ -53,7 +53,7 @@ class Header extends React.Component {
 				)
 		}
 
-		logout() {
+		_logout() {
 				userActions.logout()
 		}
 }

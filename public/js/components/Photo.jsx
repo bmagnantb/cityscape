@@ -7,10 +7,12 @@ var { galleryActions } = require('../actions/GalleryActions')
 class Photo extends React.Component {
 
 		render() {
+				var photoHeight = `${this.props.photo.height_m}px`
+				var photoWidth = `${this.props.photo.width_m}px`
 				return (
 						<div key={this.props.key} className="photo">
-								<Link to="/photo/:id" params={{id: this.props.photo.photo_id}}>
-										<img src={this.props.photo.url_m} />
+								<Link to="photo" params={{id: this.props.photo.photo_id, tags: this.props.tags}}>
+										<img src={this.props.photo.url_m} style={{height: photoHeight, width: photoWidth}} />
 								</Link>
 
 								<div className="info">
@@ -29,7 +31,7 @@ class Photo extends React.Component {
 												</Link>
 										</h5>
 										<h6 className="photo-owner">
-												<a href={this.props.photo.owner_url} target="_blank">
+												<a href={this.props.photo._owner_url} target="_blank">
 														{this.props.photo.ownername}
 												</a>
 										</h6>

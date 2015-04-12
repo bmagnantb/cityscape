@@ -1,6 +1,9 @@
 var request = require('request')
 var Parse = require('parse').Parse
 var flickrApiKey = require('../flickrKey')
+var ParseClass = require('./ParseClass')
+var weightVotes = require('./weightVotes')
+var trimPhoto = require('./trimPhoto')
 
 function getDetail(req, res) {
 try {
@@ -14,6 +17,9 @@ try {
 				res.send('photo\'s id required')
 				return
 		}
+
+		if (!req.params.tags) req.params.tags = []
+		else req.params.tags = req.params.tags.split(',')
 
 		for (var key in req.query) {
 				if (counter > 0) url += '&'
@@ -30,7 +36,47 @@ try {
 
 				var data = JSON.parse(body)
 
-				res.send(data)
+				data = trimPhoto(data)
+
+				var query = new Parse.Query('Photo')
+
+				query.equalTo('photo_id', data.photo_id)
+					.first({
+						success: function(result) {
+								var savePhoto
+								if (result !== undefined) {
+										result.set(data)
+
+										data = result.toJSON()
+
+										data.hello = 'hello'
+
+										data.weighted_votes = weightVotes(data, req.params.tags)
+										res.send(data)
+
+										savePhoto = result
+								}
+								else {
+										data.total_votes = 0
+										data.user_votes = []
+										data.tag_votes = {}
+
+										savePhoto = new ParseClass.Photo(data)
+
+										data.weighted_votes = 0
+										res.send(data)
+								}
+								savePhoto.save({
+									error: function(err) {
+											console.log(err)
+									}
+								})
+						},
+						error: function(err) {
+								console.log(err)
+						}
+					})
+
 		})
 }
 catch (err) {

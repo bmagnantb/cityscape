@@ -1,19 +1,20 @@
 ;(function(exports) {
 
 var $ = require('jquery')
-var flickrOptions = require('./FlickrSettings').options
+var _ = require('lodash')
 
 class ServerClient {
 		constructor(options) {
-				this.options = options
+				this.options = _.merge(options, {format: 'json', nojsoncallback: 1})
 		}
 
 		requestPhotos(settings) {
-				return $.get(`/photos`, this.options(settings)())
+				return $.get(`/photos`, _.assign({}, this.options, settings))
 		}
 
-		requestPhoto(settings) {
-				return $.get(`/photo`, this.options(settings)())
+		requestPhoto(settings, tags) {
+				tags = `/${tags}`
+				return $.get(`/photo${tags}`, _.assign({}, this.options, settings))
 		}
 
 		vote(photoId, user, tags) {
@@ -47,8 +48,8 @@ var detailSettings = {
 
 exports.ServerClient = ServerClient
 
-exports.GalleryClient = new ServerClient(flickrOptions(gallerySettings))
+exports.GalleryClient = new ServerClient(gallerySettings)
 
-exports.DetailClient = new ServerClient(flickrOptions(detailSettings))
+exports.DetailClient = new ServerClient(detailSettings)
 
 })(typeof module === 'object' ? module.exports : window)

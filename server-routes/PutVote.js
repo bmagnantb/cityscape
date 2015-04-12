@@ -1,5 +1,8 @@
-var request = require('request'),
-		Parse = require('parse').Parse
+var request = require('request')
+var Parse = require('parse').Parse
+var weightVotes = require('./weightVotes')
+var ParseClass = require('./ParseClass')
+
 
 function vote(req, res) {
 try {
@@ -18,46 +21,40 @@ try {
 		var query = new Parse.Query('Photo')
 		query.equalTo('photo_id', photoId).first({
 				success: function(result) {
-						if (!result.get('tag_votes')) console.log(result)
-						if (result.get('user_votes').indexOf(user) === -1) {
-								if (tags.length) {
-										var tag_votes = result.get('tag_votes')
+						if (result) {
+								var data = result.toJSON()
+								if (data.user_votes.indexOf(user) === -1) {
 
-										for (var i = 0, arr = tags, imax = arr.length; i < imax; i++) {
-												Object.keys(tag_votes).indexOf(arr[i]) !== -1 ? tag_votes[arr[i]]++ : tag_votes[arr[i]] = 1
-										}
-								}
+										var tag_votes = data.tag_votes
 
-								result.save({
-										total_votes: result.get('total_votes') + 1,
-										user_votes: result.get('user_votes').concat(user),
-										tag_votes: tag_votes || result.get('tag_votes')
-								}, {
-										success: function(results) {
-												results = results.toJSON()
-												results.weighted_votes = 0
-												if (tags.length) {
-														var totalVote = results.total_votes
-														for (var i = 0, arr = tags, imax = arr.length; i < imax; i++) {
-																if (results.tag_votes[arr[i]]) {
-																		results.weighted_votes = results.tag_votes[arr[i]] * 2
-																		totalVote -= results.tag_votes[arr[i]]
-																}
-														}
-														results.weighted_vote += Math.round(totalVote / 5)
+										if (tags.length) {
+												for (var i = 0, arr = tags, imax = arr.length; i < imax; i++) {
+														Object.keys(tag_votes).indexOf(arr[i]) !== -1 ? tag_votes[arr[i]]++ : tag_votes[arr[i]] = 1
 												}
-												else results.weighted_votes = results.total_votes
-												res.send(results)
-										},
-										error: function(results, err) {
-												console.log('parse save vote error')
-												console.log(err)
-												res.send(err)
 										}
-								})
+
+										data.total_votes += 1
+										data.user_votes.push(user)
+										data.tag_votes = tag_votes
+
+										result.set(data)
+
+										data.weighted_votes = weightVotes(data, tags)
+										res.send(data)
+
+										result.save(null, {
+												error: function(results, err) {
+														console.log('parse save vote error')
+														console.log(err)
+														res.send(err)
+												}
+										})
+								} else {
+										console.log(user + 'already voted for'+result.get('photo_id'))
+										res.send('you have already voted for this photo')
+								}
 						} else {
-								console.log('already voted for'+result.get('photo_id'))
-								res.send('you have already voted for this photo')
+								console.log('photo_id not found on Parse')
 						}
 				},
 				error: function(err) {

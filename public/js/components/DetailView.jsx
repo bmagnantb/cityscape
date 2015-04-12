@@ -3,7 +3,6 @@
 var React = require('react')
 var { detailStore } = require('../stores/DetailStore')
 var { detailActions } = require('../actions/DetailActions')
-var { galleryStore } = require('../stores/GalleryStore')
 var { userStore } = require('../stores/userStore')
 var { galleryActions } = require('../actions/GalleryActions')
 
@@ -11,76 +10,75 @@ class DetailView extends React.Component {
 
 		constructor() {
 				super()
-				this.state = galleryStore.getState()
-				this.state.detail = detailStore.getState()
-				var { user } = userStore.getState()
-				this.state.user = user
+				this.state = {}
+				this.state.user = undefined
+				this.state.detail = undefined
 		}
-
-
 
 		componentWillMount() {
-				var routerParams = this.context.router.getCurrentParams()
-				if (!this.state.detail[routerParams.id]) {
-						detailActions.getDetail(routerParams.id)
-				}
+				detailStore.listen(this._onDetailChange.bind(this))
+				userStore.listen(this._onUserChange.bind(this))
 
-				detailStore.listen(this.onDetailChange.bind(this))
-				galleryStore.listen(this.onGalleryChange.bind(this))
+				var detail = this._detailInfo()
+				var user = this._userInfo()
+				var voteAllowed = this._voteAllowed(detail, user)
+				var votesMarkup = this._votesMarkup(detail, voteAllowed)
+				this.setState({detail, user, voteAllowed, votesMarkup})
 		}
-
 
 
 		componentWillUnmount() {
-				detailStore.unlisten(this.onDetailChange)
-				galleryStore.unlisten(this.onGalleryChange)
+				detailStore.unlisten(this._onDetailChange)
+				userStore.unlisten(this._onUserChange)
 		}
 
 
-
-		onDetailChange() {
-				this.setState({detail: detailStore.getState()})
+		_onDetailChange() {
+				var detail = this._detailInfo()
+				var voteAllowed = this._voteAllowed(detail, this.state.user)
+				var votesMarkup = this._votesMarkup(detail, voteAllowed)
+				this.setState({detail, voteAllowed, votesMarkup})
 		}
 
 
-
-		onGalleryChange() {
-				this.setState(galleryStore.getState())
+		_onUserChange() {
+				var user = this._userInfo()
+				var voteAllowed = this._voteAllowed(this.state.detail, user)
+				var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed)
+				this.setState({user, voteAllowed, votesMarkup})
 		}
-
 
 
 		render() {
-				var { photo, photoDetail } = this._getPhotoInfo()
-
-				var voteAllowed = this._getVoteAllowed(photo)
-
-				var votes = this._getVotes(photo, voteAllowed)
-
-				if (photoDetail) {
-						var ownerUrl = `https://www.flickr.com/people/${photoDetail.owner.path_alias}`
+				if (this.state.detail) {
 						return (
 								<main className="photo-detail">
-										<img src={photoDetail.photoUrl('b')} />
+										<img src={this.state.detail._photoUrl('b')} />
 										<div className="info">
-												{photo ? {votes} : null}
+												{this.state.votesMarkup}
 
-												<a href={photoDetail.urls.url[0]._content} target="_blank"><h3>{photoDetail.title._content}</h3></a>
+												<a href={this.state.detail.urls.url[0]._content} target="_blank"><h3>{this.state.detail.title}</h3></a>
 
-												<a href={ownerUrl} target="_blank"><h4>{photoDetail.owner.username}</h4></a>
+												{this.state.detail.owner
+														? <a href={this.state.detail._owner_url} target="_blank">this.state.detail.ownername
+																	? <h4>{this.state.detail.ownername}</h4>
+																	: null </a>
+														: this.state.detail.ownername
+																? <h4>{this.state.detail.ownername}</h4>
+																: null}
 
-												{photoDetail.description ? <h6>{photoDetail.description}</h6> : null}
+												{this.state.detail.description ? <h6>{this.state.detail.description}</h6> : null}
 
-												{photoDetail.location && photoDetail.location.locality
-														? <h6>{photoDetail.location.locality._content}</h6>
+												{this.state.detail.location && this.state.detail.location.locality
+														? <h6>{this.state.detail.location.locality._content}</h6>
 														: null}
 
-												{photoDetail.location && photoDetail.location.country
-														? <h6>{photoDetail.location.country._content}</h6>
+												{this.state.detail.location && this.state.detail.location.country
+														? <h6>{this.state.detail.location.country._content}</h6>
 														: null}
 
-												<h6>Taken {photoDetail.dates && photoDetail.dates.taken
-														? <span>{photoDetail.dates.taken.slice(0, 10).replace(/-/g, '.')}</span>
+												<h6>Taken {this.state.detail.dates && this.state.detail.dates.taken
+														? <span>{this.state.detail.dates.taken.slice(0, 10).replace(/-/g, '.')}</span>
 														: null}</h6>
 										</div>
 								</main>
@@ -91,58 +89,77 @@ class DetailView extends React.Component {
 		}
 
 
-
 		_vote() {
-				var routerParams = this.context.router.getCurrentParams()
-				galleryActions.vote(routerParams.id, this.state.user, this.state.tags)
+				var tags = this.props.params.tags
+				galleryActions.vote(this.state.detail.photo_id, this.state.user, this.props.params.tags)
 		}
 
 
-
-		_getPhotoInfo() {
-				var routerParams = this.context.router.getCurrentParams()
-
-				var photo = this.state.paginate.currentPhotos.filter((val) => {
-						return val.id === routerParams.id
-				})[0]
-
-				var photoDetail = this.state.detail[routerParams.id]
-
-				return { photo, photoDetail }
+		_detailInfo(user) {
+				var detail = detailStore.getState()[this.props.params.id]
+				return detail
 		}
 
 
-
-		_getVoteAllowed(photo) {
-				var voteAllowed = this.state.user && photo && photo.user_votes.indexOf(this.state.user.get('username')) === -1
-						? voteAllowed = <h6 className="upvote" ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
-						: <h6 className="voted">(upvoted)</h6>
-
-				return voteAllowed
+		_userInfo(detail) {
+				var user = userStore.getState().user
+				return user
 		}
 
+		_voteAllowed(detail, user) {
+				if (user && detail) {
+						if (detail.user_votes && detail.user_votes.indexOf(user.get('username') === -1)) {
+								return <h6 className="upvote" onClick={this._vote.bind(this)}>(upvote)</h6>
+						}
+						return <h6 className="voted">(upvoted)</h6>
+				}
+				return null
+		}
 
-		_getVotes(photo, voteAllowed) {
-				var votes
-				photo && photo.weighted_votes != null && this.state.tags.length
-							? votes = <div className="votes">
-														{voteAllowed}
-														<h6>(search-weighted) {photo.weighted_votes}</h6>
-														<h6>(total) {photo.total_votes}</h6>
+		_votesMarkup(detail, voteAllowed) {
+				if (detail) {
+
+						if (detail.weighted_votes != null && this.props.params.tags.length) {
+								return <div className="votes">
+														{voteAllowed ? voteAllowed : null}
+														<h6>(search-weighted) {detail.weighted_votes}</h6>
+														<h6>(total) {detail.total_votes}</h6>
 												</div>
-							: photo && photo.total_votes != null
-									? votes = <div className="votes">
-																{voteAllowed}
-																<h6>{photo.total_votes}</h6>
-														</div>
-									: null
+						}
 
-				return votes
+						else if (detail.total_votes != null) {
+								return <div className="votes">
+														{voteAllowed ? voteAllowed : null}
+														<h6>{detail.total_votes}</h6>
+												</div>
+						}
+				}
+				return null
 		}
 }
 
+
 DetailView.contextTypes = {
 		router: React.PropTypes.func.isRequired
+}
+
+
+var prevDetails = {}
+DetailView.willTransitionTo = function(transition, params) {
+
+		params.tags = typeof params.tags === 'string' && params.tags.length ? params.tags : ''
+
+		if (prevDetails[params.id] === undefined) {
+				detailActions.getDetail(params.id, params.tags)
+				prevDetails[params.id] = {}
+				if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',')
+				else prevDetails[params.id].tags = []
+		}
+
+		else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(',').sort()) === -1) {
+				detailActions.getDetail(params.id, params.tags)
+				prevDetails[params.id].tags.push(params.tags.split(',').sort())
+		}
 }
 
 

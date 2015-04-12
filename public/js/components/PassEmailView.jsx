@@ -3,13 +3,11 @@
 var React = require('react')
 
 class PassEmailView extends React.Component {
-		constructor() {
-				super()
-		}
 
 		render() {
 				return <h3>A password reset link has been sent to your email</h3>
 		}
+
 }
 
 

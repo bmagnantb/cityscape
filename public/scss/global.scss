@@ -305,6 +305,10 @@ header {
 		.photo {
 				margin-bottom: 3.5em;
 
+				img {
+						background: #eee;
+				}
+
 				.info {
 						position: relative;
 				}
@@ -355,7 +359,7 @@ header {
 		}
 }
 
-.loading {
+.loading h2 {
 		position: fixed;
 		top: 50%;
 		left: 50%;
