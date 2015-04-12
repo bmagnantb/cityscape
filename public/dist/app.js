@@ -61624,60 +61624,60 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var $ = require("jquery");
-		var _ = require("lodash");
+	var $ = require("jquery");
+	var _ = require("lodash");
 
-		var ServerClient = (function () {
-				function ServerClient(options) {
-						_classCallCheck(this, ServerClient);
+	var ServerClient = (function () {
+		function ServerClient(options) {
+			_classCallCheck(this, ServerClient);
 
-						this.options = _.merge(options, { format: "json", nojsoncallback: 1 });
+			this.options = _.merge(options, { format: "json", nojsoncallback: 1 });
+		}
+
+		_createClass(ServerClient, {
+			requestPhotos: {
+				value: function requestPhotos(settings) {
+					return $.get("/photos", _.assign({}, this.options, settings));
 				}
+			},
+			requestPhoto: {
+				value: function requestPhoto(settings, tags) {
+					tags = "/" + tags;
+					return $.get("/photo" + tags, _.assign({}, this.options, settings));
+				}
+			},
+			vote: {
+				value: function vote(photoId, user, tags) {
+					var username;
+					user ? username = user.get("username") : username = undefined;
+					return $.post("/" + username + "/photo/" + photoId + "/" + tags);
+				}
+			}
+		});
 
-				_createClass(ServerClient, {
-						requestPhotos: {
-								value: function requestPhotos(settings) {
-										return $.get("/photos", _.assign({}, this.options, settings));
-								}
-						},
-						requestPhoto: {
-								value: function requestPhoto(settings, tags) {
-										tags = "/" + tags;
-										return $.get("/photo" + tags, _.assign({}, this.options, settings));
-								}
-						},
-						vote: {
-								value: function vote(photoId, user, tags) {
-										var username;
-										user ? username = user.get("username") : username = undefined;
-										return $.post("/" + username + "/photo/" + photoId + "/" + tags);
-								}
-						}
-				});
+		return ServerClient;
+	})();
 
-				return ServerClient;
-		})();
+	// settings for Flickr url maker
+	var gallerySettings = {
+		method: "flickr.photos.search",
+		content_type: "1",
+		extras: ["url_m", "owner_name", "date_upload"],
+		per_page: "500",
+		sort: "relevance",
+		tag_mode: "all"
+	};
 
-		// settings for Flickr url maker
-		var gallerySettings = {
-				method: "flickr.photos.search",
-				content_type: "1",
-				extras: ["url_m", "owner_name", "date_upload"],
-				per_page: "500",
-				sort: "relevance",
-				tag_mode: "all"
-		};
+	var detailSettings = {
+		method: "flickr.photos.getInfo",
+		extras: ["url_m"]
+	};
 
-		var detailSettings = {
-				method: "flickr.photos.getInfo",
-				extras: ["url_m"]
-		};
+	exports.ServerClient = ServerClient;
 
-		exports.ServerClient = ServerClient;
+	exports.GalleryClient = new ServerClient(gallerySettings);
 
-		exports.GalleryClient = new ServerClient(gallerySettings);
-
-		exports.DetailClient = new ServerClient(detailSettings);
+	exports.DetailClient = new ServerClient(detailSettings);
 })(typeof module === "object" ? module.exports : window);
 
 },{"jquery":82,"lodash":83}],243:[function(require,module,exports){
@@ -61688,36 +61688,36 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
-		var _require = require("../alt-app");
+	var _require = require("../alt-app");
 
-		var alt = _require.alt;
+	var alt = _require.alt;
 
-		var _require2 = require("../ServerFlickrClient");
+	var _require2 = require("../ServerFlickrClient");
 
-		var DetailClient = _require2.DetailClient;
+	var DetailClient = _require2.DetailClient;
 
-		var DetailActions = (function () {
-				function DetailActions() {
-						_classCallCheck(this, DetailActions);
+	var DetailActions = (function () {
+		function DetailActions() {
+			_classCallCheck(this, DetailActions);
+		}
+
+		_createClass(DetailActions, {
+			getDetail: {
+				value: function getDetail(photoId, tags) {
+					var _this = this;
+
+					DetailClient.requestPhoto({ photo_id: photoId }, tags).then(function (data) {
+						console.log(data);
+						_this.dispatch(data);
+					});
 				}
+			}
+		});
 
-				_createClass(DetailActions, {
-						getDetail: {
-								value: function getDetail(photoId, tags) {
-										var _this = this;
+		return DetailActions;
+	})();
 
-										DetailClient.requestPhoto({ photo_id: photoId }, tags).then(function (data) {
-												console.log(data);
-												_this.dispatch(data);
-										});
-								}
-						}
-				});
-
-				return DetailActions;
-		})();
-
-		exports.detailActions = alt.createActions(DetailActions);
+	exports.detailActions = alt.createActions(DetailActions);
 })(typeof module === "object" ? module.exports : window);
 
 },{"../ServerFlickrClient":242,"../alt-app":246}],244:[function(require,module,exports){
@@ -61728,52 +61728,52 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
-		var _require = require("../alt-app");
+	var _require = require("../alt-app");
 
-		var alt = _require.alt;
+	var alt = _require.alt;
 
-		var _require2 = require("../ServerFlickrClient");
+	var _require2 = require("../ServerFlickrClient");
 
-		var GalleryClient = _require2.GalleryClient;
+	var GalleryClient = _require2.GalleryClient;
 
-		var GalleryActions = (function () {
-				function GalleryActions() {
-						_classCallCheck(this, GalleryActions);
+	var GalleryActions = (function () {
+		function GalleryActions() {
+			_classCallCheck(this, GalleryActions);
 
-						this.generateActions("isntLoading", "cachedLoad", "changePage");
+			this.generateActions("isntLoading", "cachedLoad", "changePage");
+		}
+
+		_createClass(GalleryActions, {
+			getPhotos: {
+				value: function getPhotos(params) {
+					var _this = this;
+
+					if (params.page) {
+						params.page = Math.floor((params.page - 1) / 25) + 1;
+					}
+					GalleryClient.requestPhotos(params).then(function (data) {
+						data = data.photos;
+						var obj = { params: params, data: data };
+						_this.dispatch(obj);
+					});
 				}
+			},
+			vote: {
+				value: function vote(photoId, user, tags) {
+					var _this = this;
 
-				_createClass(GalleryActions, {
-						getPhotos: {
-								value: function getPhotos(params) {
-										var _this = this;
+					GalleryClient.vote(photoId, user, tags).then(function (resp) {
+						return _this.dispatch(resp);
+					});
+				}
+			}
+		});
 
-										if (params.page) {
-												params.page = Math.floor((params.page - 1) / 25) + 1;
-										}
-										GalleryClient.requestPhotos(params).then(function (data) {
-												data = data.photos;
-												var obj = { params: params, data: data };
-												_this.dispatch(obj);
-										});
-								}
-						},
-						vote: {
-								value: function vote(photoId, user, tags) {
-										var _this = this;
+		return GalleryActions;
+	})();
 
-										GalleryClient.vote(photoId, user, tags).then(function (resp) {
-												return _this.dispatch(resp);
-										});
-								}
-						}
-				});
-
-				return GalleryActions;
-		})();
-
-		exports.GalleryActions = GalleryActions;
-		exports.galleryActions = alt.createActions(GalleryActions);
+	exports.GalleryActions = GalleryActions;
+	exports.galleryActions = alt.createActions(GalleryActions);
 })(typeof module === "object" ? module.exports : window);
 
 },{"../ServerFlickrClient":242,"../alt-app":246}],245:[function(require,module,exports){
@@ -61784,94 +61784,94 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
-		var _require = require("../alt-app");
+	var _require = require("../alt-app");
 
-		var alt = _require.alt;
+	var alt = _require.alt;
 
-		var _require2 = require("parse");
+	var _require2 = require("parse");
 
-		var Parse = _require2.Parse;
+	var Parse = _require2.Parse;
 
-		var UserActions = (function () {
-				function UserActions() {
-						_classCallCheck(this, UserActions);
+	var UserActions = (function () {
+		function UserActions() {
+			_classCallCheck(this, UserActions);
+		}
+
+		_createClass(UserActions, {
+			current: {
+				value: function current() {
+					var user = Parse.User.current();
+					if (user && !user.emailVerified) {
+						user.fetch();
+					}
+					this.dispatch(user);
 				}
+			},
+			login: {
+				value: function login(username, password, router) {
+					var _this = this;
 
-				_createClass(UserActions, {
-						current: {
-								value: function current() {
-										var user = Parse.User.current();
-										if (user && !user.emailVerified) {
-												user.fetch();
-										}
-										this.dispatch(user);
-								}
+					Parse.User.logIn(username, password, {
+						success: function (user) {
+							_this.dispatch(user);
+							router.transitionTo("gallerynosearch", { page: 1 });
 						},
-						login: {
-								value: function login(username, password, router) {
-										var _this = this;
-
-										Parse.User.logIn(username, password, {
-												success: function (user) {
-														_this.dispatch(user);
-														router.transitionTo("gallerynosearch", { page: 1 });
-												},
-												error: function (user, error) {
-														return console.log(error);
-												}
-										});
-								}
-						},
-						logout: {
-								value: function logout() {
-										Parse.User.logOut();
-										this.dispatch(Parse.User.current());
-								}
-						},
-						register: {
-								value: function register(username, password, email, router) {
-										var _this = this;
-
-										var user = new Parse.User();
-										user.set("username", username);
-										user.set("password", password);
-										user.set("email", email);
-										user.signUp(null, {
-												success: function () {
-														Parse.User.logIn(username, password, {
-																success: function (user) {
-																		_this.dispatch(user);
-																		router.transitionTo("gallerynosearch", { page: 1 });
-																},
-																error: function (userIn, error) {
-																		return console.log(error);
-																}
-														});
-												},
-												error: function (user, error) {
-														return console.log(error);
-												}
-										});
-								}
-						},
-						resetPassword: {
-								value: function resetPassword(email) {
-										Parse.User.requestPasswordReset(email, {
-												success: function () {
-														router.transitionTo("passemailsent");
-												},
-												error: function () {
-														return console.log(error);
-												}
-										});
-								}
+						error: function (user, error) {
+							return console.log(error);
 						}
-				});
+					});
+				}
+			},
+			logout: {
+				value: function logout() {
+					Parse.User.logOut();
+					this.dispatch(Parse.User.current());
+				}
+			},
+			register: {
+				value: function register(username, password, email, router) {
+					var _this = this;
 
-				return UserActions;
-		})();
+					var user = new Parse.User();
+					user.set("username", username);
+					user.set("password", password);
+					user.set("email", email);
+					user.signUp(null, {
+						success: function () {
+							Parse.User.logIn(username, password, {
+								success: function (user) {
+									_this.dispatch(user);
+									router.transitionTo("gallerynosearch", { page: 1 });
+								},
+								error: function (userIn, error) {
+									return console.log(error);
+								}
+							});
+						},
+						error: function (user, error) {
+							return console.log(error);
+						}
+					});
+				}
+			},
+			resetPassword: {
+				value: function resetPassword(email) {
+					Parse.User.requestPasswordReset(email, {
+						success: function () {
+							router.transitionTo("passemailsent");
+						},
+						error: function () {
+							return console.log(error);
+						}
+					});
+				}
+			}
+		});
 
-		exports.userActions = alt.createActions(UserActions);
+		return UserActions;
+	})();
+
+	exports.userActions = alt.createActions(UserActions);
 })(typeof module === "object" ? module.exports : window);
 
 },{"../alt-app":246,"parse":84}],246:[function(require,module,exports){
@@ -61904,16 +61904,16 @@ var router = _require2.router;
 window.onload = app;
 
 function app() {
-		console.log("app time");
+	console.log("app time");
 
-		Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm");
+	Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm");
 
-		router.run(function (Handler, state) {
-				var path = state.path;
-				var params = state.params;
+	router.run(function (Handler, state) {
+		var path = state.path;
+		var params = state.params;
 
-				React.render(React.createElement(Handler, { params: params }), document.querySelector("#container"));
-		});
+		React.render(React.createElement(Handler, { params: params }), document.querySelector("#container"));
+	});
 }
 
 },{"./router/Router":256,"parse":84,"react":241}],248:[function(require,module,exports){
@@ -61929,48 +61929,48 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
+	var React = require("react");
 
-		var _require = require("../../../modules_other/react-router");
+	var _require = require("../../../modules_other/react-router");
 
-		var RouteHandler = _require.RouteHandler;
+	var RouteHandler = _require.RouteHandler;
 
-		var _require2 = require("./Header");
+	var _require2 = require("./Header");
 
-		var Header = _require2.Header;
+	var Header = _require2.Header;
 
-		var _require3 = require("../actions/UserActions");
+	var _require3 = require("../actions/UserActions");
 
-		var userActions = _require3.userActions;
+	var userActions = _require3.userActions;
 
-		var AppView = (function (_React$Component) {
-				function AppView() {
-						_classCallCheck(this, AppView);
+	var AppView = (function (_React$Component) {
+		function AppView() {
+			_classCallCheck(this, AppView);
 
-						_get(Object.getPrototypeOf(AppView.prototype), "constructor", this).call(this);
-						this.state = {};
-						userActions.current();
+			_get(Object.getPrototypeOf(AppView.prototype), "constructor", this).call(this);
+			this.state = {};
+			userActions.current();
+		}
+
+		_inherits(AppView, _React$Component);
+
+		_createClass(AppView, {
+			render: {
+				value: function render() {
+					return React.createElement(
+						"div",
+						{ className: "app" },
+						React.createElement(Header, null),
+						React.createElement(RouteHandler, { params: this.props.params })
+					);
 				}
+			}
+		});
 
-				_inherits(AppView, _React$Component);
+		return AppView;
+	})(React.Component);
 
-				_createClass(AppView, {
-						render: {
-								value: function render() {
-										return React.createElement(
-												"div",
-												{ className: "app" },
-												React.createElement(Header, null),
-												React.createElement(RouteHandler, { params: this.props.params })
-										);
-								}
-						}
-				});
-
-				return AppView;
-		})(React.Component);
-
-		exports.AppView = AppView;
+	exports.AppView = AppView;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"../actions/UserActions":245,"./Header":251,"react":241}],249:[function(require,module,exports){
@@ -61986,238 +61986,237 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
+	var React = require("react");
 
-		var _require = require("../stores/DetailStore");
+	var _require = require("../stores/DetailStore");
 
-		var detailStore = _require.detailStore;
+	var detailStore = _require.detailStore;
 
-		var _require2 = require("../actions/DetailActions");
+	var _require2 = require("../actions/DetailActions");
 
-		var detailActions = _require2.detailActions;
+	var detailActions = _require2.detailActions;
 
-		var _require3 = require("../stores/userStore");
+	var _require3 = require("../stores/userStore");
 
-		var userStore = _require3.userStore;
+	var userStore = _require3.userStore;
 
-		var _require4 = require("../actions/GalleryActions");
+	var _require4 = require("../actions/GalleryActions");
 
-		var galleryActions = _require4.galleryActions;
+	var galleryActions = _require4.galleryActions;
 
-		var DetailView = (function (_React$Component) {
-				function DetailView() {
-						_classCallCheck(this, DetailView);
+	var DetailView = (function (_React$Component) {
+		function DetailView() {
+			_classCallCheck(this, DetailView);
 
-						_get(Object.getPrototypeOf(DetailView.prototype), "constructor", this).call(this);
-						this.state = {};
-						this.state.user = undefined;
-						this.state.detail = undefined;
+			_get(Object.getPrototypeOf(DetailView.prototype), "constructor", this).call(this);
+			this.state = {};
+		}
+
+		_inherits(DetailView, _React$Component);
+
+		_createClass(DetailView, {
+			componentWillMount: {
+				value: function componentWillMount() {
+					detailStore.listen(this._onDetailChange.bind(this));
+					userStore.listen(this._onUserChange.bind(this));
+
+					var detail = this._detailInfo();
+					var user = this._userInfo();
+					var voteAllowed = this._voteAllowed(detail, user);
+					var votesMarkup = this._votesMarkup(detail, voteAllowed);
+					this.setState({ detail: detail, user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
 				}
-
-				_inherits(DetailView, _React$Component);
-
-				_createClass(DetailView, {
-						componentWillMount: {
-								value: function componentWillMount() {
-										detailStore.listen(this._onDetailChange.bind(this));
-										userStore.listen(this._onUserChange.bind(this));
-
-										var detail = this._detailInfo();
-										var user = this._userInfo();
-										var voteAllowed = this._voteAllowed(detail, user);
-										var votesMarkup = this._votesMarkup(detail, voteAllowed);
-										this.setState({ detail: detail, user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
-								}
-						},
-						componentWillUnmount: {
-								value: function componentWillUnmount() {
-										detailStore.unlisten(this._onDetailChange);
-										userStore.unlisten(this._onUserChange);
-								}
-						},
-						_onDetailChange: {
-								value: function _onDetailChange() {
-										var detail = this._detailInfo();
-										var voteAllowed = this._voteAllowed(detail, this.state.user);
-										var votesMarkup = this._votesMarkup(detail, voteAllowed);
-										this.setState({ detail: detail, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
-								}
-						},
-						_onUserChange: {
-								value: function _onUserChange() {
-										var user = this._userInfo();
-										var voteAllowed = this._voteAllowed(this.state.detail, user);
-										var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed);
-										this.setState({ user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
-								}
-						},
-						render: {
-								value: function render() {
-										if (this.state.detail) {
-												return React.createElement(
-														"main",
-														{ className: "photo-detail" },
-														React.createElement("img", { src: this.state.detail._photoUrl("b") }),
-														React.createElement(
-																"div",
-																{ className: "info" },
-																this.state.votesMarkup,
-																React.createElement(
-																		"a",
-																		{ href: this.state.detail.urls.url[0]._content, target: "_blank" },
-																		React.createElement(
-																				"h3",
-																				null,
-																				this.state.detail.title
-																		)
-																),
-																this.state.detail.owner ? React.createElement(
-																		"a",
-																		{ href: this.state.detail._owner_url, target: "_blank" },
-																		"this.state.detail.ownername ? ",
-																		React.createElement(
-																				"h4",
-																				null,
-																				this.state.detail.ownername
-																		),
-																		": null "
-																) : this.state.detail.ownername ? React.createElement(
-																		"h4",
-																		null,
-																		this.state.detail.ownername
-																) : null,
-																this.state.detail.description ? React.createElement(
-																		"h6",
-																		null,
-																		this.state.detail.description
-																) : null,
-																this.state.detail.location && this.state.detail.location.locality ? React.createElement(
-																		"h6",
-																		null,
-																		this.state.detail.location.locality._content
-																) : null,
-																this.state.detail.location && this.state.detail.location.country ? React.createElement(
-																		"h6",
-																		null,
-																		this.state.detail.location.country._content
-																) : null,
-																React.createElement(
-																		"h6",
-																		null,
-																		"Taken ",
-																		this.state.detail.dates && this.state.detail.dates.taken ? React.createElement(
-																				"span",
-																				null,
-																				this.state.detail.dates.taken.slice(0, 10).replace(/-/g, ".")
-																		) : null
-																)
-														)
-												);
-										} else {
-												return React.createElement("span", null);
-										}
-								}
-						},
-						_vote: {
-								value: function _vote() {
-										var tags = this.props.params.tags;
-										galleryActions.vote(this.state.detail.photo_id, this.state.user, this.props.params.tags);
-								}
-						},
-						_detailInfo: {
-								value: function _detailInfo(user) {
-										var detail = detailStore.getState()[this.props.params.id];
-										return detail;
-								}
-						},
-						_userInfo: {
-								value: function _userInfo(detail) {
-										var user = userStore.getState().user;
-										return user;
-								}
-						},
-						_voteAllowed: {
-								value: function _voteAllowed(detail, user) {
-										if (user && detail) {
-												if (detail.user_votes && detail.user_votes.indexOf(user.get("username") === -1)) {
-														return React.createElement(
-																"h6",
-																{ className: "upvote", onClick: this._vote.bind(this) },
-																"(upvote)"
-														);
-												}
-												return React.createElement(
-														"h6",
-														{ className: "voted" },
-														"(upvoted)"
-												);
-										}
-										return null;
-								}
-						},
-						_votesMarkup: {
-								value: function _votesMarkup(detail, voteAllowed) {
-										if (detail) {
-
-												if (detail.weighted_votes != null && this.props.params.tags.length) {
-														return React.createElement(
-																"div",
-																{ className: "votes" },
-																voteAllowed ? voteAllowed : null,
-																React.createElement(
-																		"h6",
-																		null,
-																		"(search-weighted) ",
-																		detail.weighted_votes
-																),
-																React.createElement(
-																		"h6",
-																		null,
-																		"(total) ",
-																		detail.total_votes
-																)
-														);
-												} else if (detail.total_votes != null) {
-														return React.createElement(
-																"div",
-																{ className: "votes" },
-																voteAllowed ? voteAllowed : null,
-																React.createElement(
-																		"h6",
-																		null,
-																		detail.total_votes
-																)
-														);
-												}
-										}
-										return null;
-								}
+			},
+			componentWillUnmount: {
+				value: function componentWillUnmount() {
+					detailStore.unlisten(this._onDetailChange);
+					userStore.unlisten(this._onUserChange);
+				}
+			},
+			_onDetailChange: {
+				value: function _onDetailChange() {
+					var detail = this._detailInfo();
+					var voteAllowed = this._voteAllowed(detail, this.state.user);
+					var votesMarkup = this._votesMarkup(detail, voteAllowed);
+					this.setState({ detail: detail, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
+				}
+			},
+			_onUserChange: {
+				value: function _onUserChange() {
+					var user = this._userInfo();
+					var voteAllowed = this._voteAllowed(this.state.detail, user);
+					var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed);
+					this.setState({ user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
+				}
+			},
+			render: {
+				value: function render() {
+					if (this.state.detail) {
+						return React.createElement(
+							"main",
+							{ className: "photo-detail" },
+							React.createElement("img", { src: this.state.detail._photoUrl("b") }),
+							React.createElement(
+								"div",
+								{ className: "info" },
+								this.state.votesMarkup,
+								React.createElement(
+									"a",
+									{ href: this.state.detail.urls.url[0]._content, target: "_blank" },
+									React.createElement(
+										"h3",
+										null,
+										this.state.detail.title
+									)
+								),
+								this.state.detail.owner ? React.createElement(
+									"a",
+									{ href: this.state.detail._owner_url, target: "_blank" },
+									"this.state.detail.ownername ? ",
+									React.createElement(
+										"h4",
+										null,
+										this.state.detail.ownername
+									),
+									": null "
+								) : this.state.detail.ownername ? React.createElement(
+									"h4",
+									null,
+									this.state.detail.ownername
+								) : null,
+								this.state.detail.description ? React.createElement(
+									"h6",
+									null,
+									this.state.detail.description
+								) : null,
+								this.state.detail.location && this.state.detail.location.locality ? React.createElement(
+									"h6",
+									null,
+									this.state.detail.location.locality._content
+								) : null,
+								this.state.detail.location && this.state.detail.location.country ? React.createElement(
+									"h6",
+									null,
+									this.state.detail.location.country._content
+								) : null,
+								React.createElement(
+									"h6",
+									null,
+									"Taken ",
+									this.state.detail.dates && this.state.detail.dates.taken ? React.createElement(
+										"span",
+										null,
+										this.state.detail.dates.taken.slice(0, 10).replace(/-/g, ".")
+									) : null
+								)
+							)
+						);
+					} else {
+						return React.createElement("span", null);
+					}
+				}
+			},
+			_vote: {
+				value: function _vote() {
+					var tags = this.props.params.tags;
+					galleryActions.vote(this.state.detail.photo_id, this.state.user, this.props.params.tags);
+				}
+			},
+			_detailInfo: {
+				value: function _detailInfo(user) {
+					var detail = detailStore.getState()[this.props.params.id];
+					return detail;
+				}
+			},
+			_userInfo: {
+				value: function _userInfo(detail) {
+					var user = userStore.getState().user;
+					return user;
+				}
+			},
+			_voteAllowed: {
+				value: function _voteAllowed(detail, user) {
+					if (user && detail) {
+						if (detail.user_votes && detail.user_votes.indexOf(user.get("username") === -1)) {
+							return React.createElement(
+								"h6",
+								{ className: "upvote", onClick: this._vote.bind(this) },
+								"(upvote)"
+							);
 						}
-				});
-
-				return DetailView;
-		})(React.Component);
-
-		DetailView.contextTypes = {
-				router: React.PropTypes.func.isRequired
-		};
-
-		var prevDetails = {};
-		DetailView.willTransitionTo = function (transition, params) {
-
-				params.tags = typeof params.tags === "string" && params.tags.length ? params.tags : "";
-
-				if (prevDetails[params.id] === undefined) {
-						detailActions.getDetail(params.id, params.tags);
-						prevDetails[params.id] = {};
-						if (params.tags.length) prevDetails[params.id].tags = params.tags.split(",");else prevDetails[params.id].tags = [];
-				} else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(",").sort()) === -1) {
-						detailActions.getDetail(params.id, params.tags);
-						prevDetails[params.id].tags.push(params.tags.split(",").sort());
+						return React.createElement(
+							"h6",
+							{ className: "voted" },
+							"(upvoted)"
+						);
+					}
+					return false;
 				}
-		};
+			},
+			_votesMarkup: {
+				value: function _votesMarkup(detail, voteAllowed) {
+					if (detail) {
 
-		exports.DetailView = DetailView;
+						if (detail.weighted_votes != null && this.props.params.tags.length) {
+							return React.createElement(
+								"div",
+								{ className: "votes" },
+								voteAllowed ? voteAllowed : null,
+								React.createElement(
+									"h6",
+									null,
+									"(search-weighted) ",
+									detail.weighted_votes
+								),
+								React.createElement(
+									"h6",
+									null,
+									"(total) ",
+									detail.total_votes
+								)
+							);
+						} else if (detail.total_votes != null) {
+							return React.createElement(
+								"div",
+								{ className: "votes" },
+								voteAllowed ? voteAllowed : null,
+								React.createElement(
+									"h6",
+									null,
+									detail.total_votes
+								)
+							);
+						}
+					}
+
+					return null;
+				}
+			}
+		});
+
+		return DetailView;
+	})(React.Component);
+
+	DetailView.contextTypes = {
+		router: React.PropTypes.func.isRequired
+	};
+
+	var prevDetails = {};
+	DetailView.willTransitionTo = function (transition, params) {
+
+		params.tags = typeof params.tags === "string" && params.tags.length ? params.tags : "";
+
+		if (prevDetails[params.id] === undefined) {
+			detailActions.getDetail(params.id, params.tags);
+			prevDetails[params.id] = {};
+			if (params.tags.length) prevDetails[params.id].tags = params.tags.split(",");else prevDetails[params.id].tags = [];
+		} else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(",").sort()) === -1) {
+			detailActions.getDetail(params.id, params.tags);
+			prevDetails[params.id].tags.push(params.tags.split(",").sort());
+		}
+	};
+
+	exports.DetailView = DetailView;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../actions/DetailActions":243,"../actions/GalleryActions":244,"../stores/DetailStore":258,"../stores/userStore":261,"react":241}],250:[function(require,module,exports){
@@ -62233,280 +62232,281 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
+	var React = require("react");
 
-		var _require = require("../actions/GalleryActions");
+	var _require = require("../actions/GalleryActions");
 
-		var galleryActions = _require.galleryActions;
+	var galleryActions = _require.galleryActions;
 
-		var _require2 = require("../stores/GalleryStore");
+	var _require2 = require("../stores/GalleryStore");
 
-		var galleryStore = _require2.galleryStore;
+	var galleryStore = _require2.galleryStore;
 
-		var _require3 = require("../actions/UserActions");
+	var _require3 = require("../actions/UserActions");
 
-		var userActions = _require3.userActions;
+	var userActions = _require3.userActions;
 
-		var _require4 = require("../stores/UserStore");
+	var _require4 = require("../stores/UserStore");
 
-		var userStore = _require4.userStore;
+	var userStore = _require4.userStore;
 
-		var _require5 = require("../../../modules_other/react-router");
+	var _require5 = require("../../../modules_other/react-router");
 
-		var Link = _require5.Link;
+	var Link = _require5.Link;
 
-		var _require6 = require("./Photo");
+	var _require6 = require("./Photo");
 
-		var Photo = _require6.Photo;
+	var Photo = _require6.Photo;
 
-		var _ = require("lodash");
+	var _ = require("lodash");
 
-		var GalleryView = (function (_React$Component) {
-				function GalleryView() {
-						_classCallCheck(this, GalleryView);
+	var GalleryView = (function (_React$Component) {
+		function GalleryView() {
+			_classCallCheck(this, GalleryView);
 
-						_get(Object.getPrototypeOf(GalleryView.prototype), "constructor", this).call(this);
-						this.state = galleryStore.getState();
-						this.state.user = userStore.getState().user;
+			_get(Object.getPrototypeOf(GalleryView.prototype), "constructor", this).call(this);
+			this.state = galleryStore.getState();
+			this.state.user = userStore.getState().user;
+		}
+
+		_inherits(GalleryView, _React$Component);
+
+		_createClass(GalleryView, {
+			componentWillMount: {
+				value: function componentWillMount() {
+					this.state = galleryStore.getState();
+					userActions.current();
+
+					userStore.listen(this.onUserChange.bind(this));
+					galleryStore.listen(this.onGalleryChange.bind(this));
 				}
-
-				_inherits(GalleryView, _React$Component);
-
-				_createClass(GalleryView, {
-						componentWillMount: {
-								value: function componentWillMount() {
-										this.state = galleryStore.getState();
-										userActions.current();
-
-										userStore.listen(this.onUserChange.bind(this));
-										galleryStore.listen(this.onGalleryChange.bind(this));
-								}
-						},
-						componentWillUnmount: {
-								value: function componentWillUnmount() {
-										userStore.unlisten(this.onUserChange);
-										galleryStore.unlisten(this.onGalleryChange);
-								}
-						},
-						onGalleryChange: {
-								value: function onGalleryChange() {
-										this.setState(galleryStore.getState());
-								}
-						},
-						onUserChange: {
-								value: function onUserChange() {
-										this.setState(userStore.getState());
-								}
-						},
-						render: {
-								value: function render() {
-										var tags = this._getTags();
-
-										if (this.state.isLoading) {
-												return React.createElement(
-														"main",
-														{ className: "gallery loading" },
-														React.createElement(
-																"form",
-																{ onSubmit: this._search.bind(this) },
-																React.createElement("input", { type: "search", ref: "search" })
-														),
-														tags,
-														React.createElement(
-																"h2",
-																null,
-																"Loading",
-																React.createElement(
-																		"span",
-																		null,
-																		"."
-																),
-																React.createElement(
-																		"span",
-																		null,
-																		"."
-																),
-																React.createElement(
-																		"span",
-																		null,
-																		"."
-																)
-														)
-												);
-										}
-
-										var photos = this._getCurrentPhotos();
-
-										return React.createElement(
-												"main",
-												{ className: "gallery" },
-												React.createElement(
-														"form",
-														{ onSubmit: this._search.bind(this) },
-														React.createElement("input", { type: "search", ref: "search" })
-												),
-												tags,
-												React.createElement(
-														"div",
-														{ className: "photos" },
-														photos
-												),
-												React.createElement(
-														"div",
-														{ className: "pages" },
-														this.state.paginate.prevPageExists ? React.createElement(
-																Link,
-																{ to: this.state.paginate.prevPageRoute, onClick: this._changePage.bind(this) },
-																React.createElement(
-																		"h6",
-																		{ className: "prev" },
-																		"Prev"
-																)
-														) : React.createElement("h6", null),
-														React.createElement(
-																"h6",
-																{ className: "current" },
-																this.state.paginate.currentPage
-														),
-														this.state.paginate.nextPageExists ? React.createElement(
-																Link,
-																{ to: this.state.paginate.nextPageRoute, onClick: this._changePage.bind(this) },
-																React.createElement(
-																		"h6",
-																		{ className: "next" },
-																		"Next"
-																)
-														) : React.createElement("h6", null)
-												)
-										);
-								}
-						},
-						_search: {
-								value: function _search(e) {
-										e.preventDefault();
-										var addedTags = React.findDOMNode(this.refs.search).value.split(" ");
-										if (addedTags.length) {
-												Array.prototype.push.apply(this.state.tags, addedTags);
-
-												this.context.router.transitionTo("gallerysearch", { tags: this.state.tags, page: 1 });
-												React.findDOMNode(this.refs.search).value = "";
-												this.setState({ isLoading: true });
-										}
-								}
-						},
-						_removeTag: {
-								value: function _removeTag(e) {
-										var tag = e.target.parentNode.id.slice(3);
-										var tags = this.state.tags;
-										tags.splice(tags.indexOf(tag), 1);
-
-										if (tags.length) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
-
-										this.setState({ isLoading: true });
-								}
-						},
-						_changePage: {
-								value: function _changePage() {
-										this.setState({ isLoading: true });
-								}
-						},
-						_getCurrentPhotos: {
-								value: function _getCurrentPhotos() {
-										var _this = this;
-
-										var currentPhotos = this.state.paginate.currentPhotos.map(function (photo) {
-												return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.photo_id });
-										});
-
-										if (!currentPhotos.length && !this.state.isLoading) {
-												return React.createElement(
-														"h2",
-														null,
-														"No results"
-												);
-										}return currentPhotos;
-								}
-						},
-						_getTags: {
-								value: function _getTags() {
-										var _this = this;
-
-										var tags;
-										this.state.tags.length ? tags = React.createElement(
-												"div",
-												{ className: "tags" },
-												this.state.tags.map(function (tag) {
-														var id = "tag" + tag;
-														return React.createElement(
-																"span",
-																{ className: "tag", key: tag, id: id },
-																React.createElement(
-																		"span",
-																		null,
-																		tag
-																),
-																React.createElement(
-																		"span",
-																		{ className: "x", onClick: _this._removeTag.bind(_this) },
-																		"x"
-																)
-														);
-												})
-										) : null;
-
-										return tags;
-								}
-						}
-				});
-
-				return GalleryView;
-		})(React.Component);
-
-		GalleryView.contextTypes = {
-				router: React.PropTypes.func.isRequired
-		};
-
-		var prevParams = [{}];
-		GalleryView.willTransitionTo = function (transition, params) {
-
-				// make tags array, sort so same tags entered in different order appear same
-				if (params.tags) params.tags = params.tags.split(",").sort();
-
-				// copy params -- request and prevParams shouldn't reference same obj
-				var paramsCopy = _.assign({}, params);
-
-				// check if exact request has happened
-				var prevParamsMatch = prevParams.filter(function (val) {
-						return _.isEqual(val, params);
-				});
-
-				// cached load
-				if (prevParamsMatch.length) {
-						galleryActions.cachedLoad(paramsCopy);
+			},
+			componentWillUnmount: {
+				value: function componentWillUnmount() {
+					userStore.unlisten(this.onUserChange);
+					galleryStore.unlisten(this.onGalleryChange);
 				}
-
-				// pagination -- store figures out if request needed or from current request
-				else if (params.tags !== undefined && params.tags === prevParams[0].tags) {
-
-						// change the page
-						if (params.page !== prevParams[0].page) {
-								galleryActions.changePage(paramsCopy);
-						}
-
-						// no change, do nothing -- component state should remain identical
-						else return;
+			},
+			onGalleryChange: {
+				value: function onGalleryChange() {
+					this.setState(galleryStore.getState());
 				}
-
-				// request -- new params combo
-				else {
-						galleryActions.getPhotos(paramsCopy);
+			},
+			onUserChange: {
+				value: function onUserChange() {
+					this.setState(userStore.getState());
 				}
+			},
+			render: {
+				value: function render() {
+					var tags = this._getTags();
 
-				// save params for checking if request has been made before
-				prevParams.unshift(params);
-		};
+					if (this.state.isLoading) {
+						return React.createElement(
+							"main",
+							{ className: "gallery loading" },
+							React.createElement(
+								"form",
+								{ onSubmit: this._search.bind(this) },
+								React.createElement("input", { type: "search", ref: "search" })
+							),
+							tags,
+							React.createElement(
+								"h2",
+								null,
+								"Loading",
+								React.createElement(
+									"span",
+									null,
+									"."
+								),
+								React.createElement(
+									"span",
+									null,
+									"."
+								),
+								React.createElement(
+									"span",
+									null,
+									"."
+								)
+							)
+						);
+					}
 
-		exports.GalleryView = GalleryView;
+					var photos = this._getCurrentPhotos();
+
+					return React.createElement(
+						"main",
+						{ className: "gallery" },
+						React.createElement(
+							"form",
+							{ onSubmit: this._search.bind(this) },
+							React.createElement("input", { type: "search", ref: "search" })
+						),
+						tags,
+						React.createElement(
+							"div",
+							{ className: "photos" },
+							photos
+						),
+						React.createElement(
+							"div",
+							{ className: "pages" },
+							this.state.paginate.prevPageExists ? React.createElement(
+								Link,
+								{ to: this.state.paginate.prevPageRoute, onClick: this._changePage.bind(this) },
+								React.createElement(
+									"h6",
+									{ className: "prev" },
+									"Prev"
+								)
+							) : React.createElement("h6", null),
+							React.createElement(
+								"h6",
+								{ className: "current" },
+								this.state.paginate.currentPage
+							),
+							this.state.paginate.nextPageExists ? React.createElement(
+								Link,
+								{ to: this.state.paginate.nextPageRoute, onClick: this._changePage.bind(this) },
+								React.createElement(
+									"h6",
+									{ className: "next" },
+									"Next"
+								)
+							) : React.createElement("h6", null)
+						)
+					);
+				}
+			},
+			_search: {
+				value: function _search(e) {
+					e.preventDefault();
+					var addedTags = React.findDOMNode(this.refs.search).value.split(" ");
+					if (addedTags.length) {
+						Array.prototype.push.apply(this.state.tags, addedTags);
+
+						this.context.router.transitionTo("gallerysearch", { tags: this.state.tags, page: 1 });
+						React.findDOMNode(this.refs.search).value = "";
+						this.setState({ isLoading: true });
+					}
+				}
+			},
+			_removeTag: {
+				value: function _removeTag(e) {
+					var tag = e.target.parentNode.id.slice(3);
+					var tags = this.state.tags;
+					tags.splice(tags.indexOf(tag), 1);
+
+					if (tags.length) this.context.router.transitionTo("gallerysearch", { tags: tags, page: 1 });else this.context.router.transitionTo("gallerynosearch", { page: 1 });
+
+					this.setState({ isLoading: true });
+				}
+			},
+			_changePage: {
+				value: function _changePage() {
+					this.setState({ isLoading: true });
+				}
+			},
+			_getCurrentPhotos: {
+				value: function _getCurrentPhotos() {
+					var _this = this;
+
+					var currentPhotos = this.state.paginate.currentPhotos.map(function (photo) {
+						return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.photo_id });
+					});
+
+					if (!currentPhotos.length && !this.state.isLoading) {
+						return React.createElement(
+							"h2",
+							null,
+							"No results"
+						);
+					}return currentPhotos;
+				}
+			},
+			_getTags: {
+				value: function _getTags() {
+					var _this = this;
+
+					var tags;
+
+					this.state.tags.length ? tags = React.createElement(
+						"div",
+						{ className: "tags" },
+						this.state.tags.map(function (tag) {
+							var id = "tag" + tag;
+							return React.createElement(
+								"span",
+								{ className: "tag", key: tag, id: id },
+								React.createElement(
+									"span",
+									null,
+									tag
+								),
+								React.createElement(
+									"span",
+									{ className: "x", onClick: _this._removeTag.bind(_this) },
+									"x"
+								)
+							);
+						})
+					) : null;
+
+					return tags;
+				}
+			}
+		});
+
+		return GalleryView;
+	})(React.Component);
+
+	GalleryView.contextTypes = {
+		router: React.PropTypes.func.isRequired
+	};
+
+	var prevParams = [{}];
+	GalleryView.willTransitionTo = function (transition, params) {
+
+		// make tags array, sort so same tags entered in different order appear same
+		if (params.tags) params.tags = params.tags.split(",").sort();
+
+		// copy params -- request and prevParams shouldn't reference same obj
+		var paramsCopy = _.assign({}, params);
+
+		// check if exact request has happened
+		var prevParamsMatch = prevParams.filter(function (val) {
+			return _.isEqual(val, params);
+		});
+
+		// cached load
+		if (prevParamsMatch.length) {
+			galleryActions.cachedLoad(paramsCopy);
+		}
+
+		// pagination -- store figures out if request needed or from current request
+		else if (params.tags !== undefined && params.tags === prevParams[0].tags) {
+
+			// change the page
+			if (params.page !== prevParams[0].page) {
+				galleryActions.changePage(paramsCopy);
+			}
+
+			// no change, do nothing -- component state should remain identical
+			else return;
+		}
+
+		// request -- new params combo
+		else {
+			galleryActions.getPhotos(paramsCopy);
+		}
+
+		// save params for checking if request has been made before
+		prevParams.unshift(params);
+	};
+
+	exports.GalleryView = GalleryView;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"../actions/GalleryActions":244,"../actions/UserActions":245,"../stores/GalleryStore":259,"../stores/UserStore":260,"./Photo":254,"lodash":83,"react":241}],251:[function(require,module,exports){
@@ -62522,116 +62522,116 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
+	var React = require("react");
 
-		var _require = require("../../../modules_other/react-router");
+	var _require = require("../../../modules_other/react-router");
 
-		var Link = _require.Link;
+	var Link = _require.Link;
 
-		var _require2 = require("../stores/UserStore");
+	var _require2 = require("../stores/UserStore");
 
-		var userStore = _require2.userStore;
+	var userStore = _require2.userStore;
 
-		var _require3 = require("../actions/UserActions");
+	var _require3 = require("../actions/UserActions");
 
-		var userActions = _require3.userActions;
+	var userActions = _require3.userActions;
 
-		var Header = (function (_React$Component) {
-				function Header() {
-						_classCallCheck(this, Header);
+	var Header = (function (_React$Component) {
+		function Header() {
+			_classCallCheck(this, Header);
 
-						_get(Object.getPrototypeOf(Header.prototype), "constructor", this).call(this);
-						this.state = userStore.getState();
+			_get(Object.getPrototypeOf(Header.prototype), "constructor", this).call(this);
+			this.state = userStore.getState();
+		}
+
+		_inherits(Header, _React$Component);
+
+		_createClass(Header, {
+			componentWillMount: {
+				value: function componentWillMount() {
+					userStore.listen(this.onUserChange.bind(this));
 				}
+			},
+			componentWillUnmount: {
+				value: function componentWillUnmount() {
+					userStore.unlisten(this.onUserChange);
+				}
+			},
+			onUserChange: {
+				value: function onUserChange() {
+					this.setState(userStore.getState());
+				}
+			},
+			render: {
+				value: function render() {
+					var userinfo;
+					if (this.state.user) {
+						userinfo = React.createElement(
+							"div",
+							{ className: "user" },
+							React.createElement(
+								"h6",
+								{ className: "username" },
+								this.state.user.get("username")
+							),
+							React.createElement(
+								"h6",
+								{ className: "logout", onClick: this._logout.bind(this) },
+								"(logout)"
+							)
+						);
+					} else {
+						userinfo = React.createElement(
+							"div",
+							{ className: "user" },
+							React.createElement(
+								"h6",
+								null,
+								React.createElement(
+									Link,
+									{ to: "login" },
+									"(login)"
+								)
+							),
+							React.createElement(
+								"h6",
+								null,
+								React.createElement(
+									Link,
+									{ to: "register" },
+									"(register)"
+								)
+							)
+						);
+					}
 
-				_inherits(Header, _React$Component);
+					return React.createElement(
+						"header",
+						null,
+						React.createElement(
+							"h1",
+							null,
+							React.createElement(
+								Link,
+								{ to: "gallerynosearch", params: { page: 1 } },
+								"CITYSCAPE"
+							)
+						),
+						userinfo
+					);
+				}
+			},
+			_logout: {
+				value: function _logout() {
+					userActions.logout();
+				}
+			}
+		});
 
-				_createClass(Header, {
-						componentWillMount: {
-								value: function componentWillMount() {
-										userStore.listen(this.onUserChange.bind(this));
-								}
-						},
-						componentWillUnmount: {
-								value: function componentWillUnmount() {
-										userStore.unlisten(this.onUserChange);
-								}
-						},
-						onUserChange: {
-								value: function onUserChange() {
-										this.setState(userStore.getState());
-								}
-						},
-						render: {
-								value: function render() {
-										var userinfo;
-										if (this.state.user) {
-												userinfo = React.createElement(
-														"div",
-														{ className: "user" },
-														React.createElement(
-																"h6",
-																{ className: "username" },
-																this.state.user.get("username")
-														),
-														React.createElement(
-																"h6",
-																{ className: "logout", onClick: this._logout.bind(this) },
-																"(logout)"
-														)
-												);
-										} else {
-												userinfo = React.createElement(
-														"div",
-														{ className: "user" },
-														React.createElement(
-																"h6",
-																null,
-																React.createElement(
-																		Link,
-																		{ to: "login" },
-																		"(login)"
-																)
-														),
-														React.createElement(
-																"h6",
-																null,
-																React.createElement(
-																		Link,
-																		{ to: "register" },
-																		"(register)"
-																)
-														)
-												);
-										}
+		return Header;
+	})(React.Component);
 
-										return React.createElement(
-												"header",
-												null,
-												React.createElement(
-														"h1",
-														null,
-														React.createElement(
-																Link,
-																{ to: "gallerynosearch", params: { page: 1 } },
-																"CITYSCAPE"
-														)
-												),
-												userinfo
-										);
-								}
-						},
-						_logout: {
-								value: function _logout() {
-										userActions.logout();
-								}
-						}
-				});
-
-				return Header;
-		})(React.Component);
-
-		exports.Header = Header;
+	exports.Header = Header;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"../actions/UserActions":245,"../stores/UserStore":260,"react":241}],252:[function(require,module,exports){
@@ -62647,77 +62647,77 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
-		var Parse = require("Parse");
+	var React = require("react");
+	var Parse = require("Parse");
 
-		var _require = require("../../../modules_other/react-router");
+	var _require = require("../../../modules_other/react-router");
 
-		var Link = _require.Link;
+	var Link = _require.Link;
 
-		var _require2 = require("../actions/UserActions");
+	var _require2 = require("../actions/UserActions");
 
-		var userActions = _require2.userActions;
+	var userActions = _require2.userActions;
 
-		var _require3 = require("../stores/UserStore");
+	var _require3 = require("../stores/UserStore");
 
-		var userStore = _require3.userStore;
+	var userStore = _require3.userStore;
 
-		var LoginView = (function (_React$Component) {
-				function LoginView() {
-						_classCallCheck(this, LoginView);
+	var LoginView = (function (_React$Component) {
+		function LoginView() {
+			_classCallCheck(this, LoginView);
 
-						_get(Object.getPrototypeOf(LoginView.prototype), "constructor", this).call(this);
-						this.state = userStore.getState();
+			_get(Object.getPrototypeOf(LoginView.prototype), "constructor", this).call(this);
+			this.state = userStore.getState();
+		}
+
+		_inherits(LoginView, _React$Component);
+
+		_createClass(LoginView, {
+			render: {
+				value: function render() {
+					return React.createElement(
+						"main",
+						{ className: "login" },
+						React.createElement(
+							"h4",
+							null,
+							"Login"
+						),
+						React.createElement(
+							"form",
+							{ onSubmit: this.login.bind(this) },
+							React.createElement("input", { type: "username", ref: "username", placeholder: "username" }),
+							React.createElement("input", { type: "password", ref: "password", placeholder: "password" }),
+							React.createElement(
+								"button",
+								null,
+								"Submit"
+							)
+						),
+						React.createElement(
+							Link,
+							{ to: "register" },
+							"Create an account"
+						)
+					);
 				}
+			},
+			login: {
+				value: function login(e) {
+					e.preventDefault();
+					userActions.login(React.findDOMNode(this.refs.username).value, React.findDOMNode(this.refs.password).value, this.context.router);
+				}
+			}
+		});
 
-				_inherits(LoginView, _React$Component);
+		return LoginView;
+	})(React.Component);
 
-				_createClass(LoginView, {
-						render: {
-								value: function render() {
-										return React.createElement(
-												"main",
-												{ className: "login" },
-												React.createElement(
-														"h4",
-														null,
-														"Login"
-												),
-												React.createElement(
-														"form",
-														{ onSubmit: this.login.bind(this) },
-														React.createElement("input", { type: "username", ref: "username", placeholder: "username" }),
-														React.createElement("input", { type: "password", ref: "password", placeholder: "password" }),
-														React.createElement(
-																"button",
-																null,
-																"Submit"
-														)
-												),
-												React.createElement(
-														Link,
-														{ to: "register" },
-														"Create an account"
-												)
-										);
-								}
-						},
-						login: {
-								value: function login(e) {
-										e.preventDefault();
-										userActions.login(React.findDOMNode(this.refs.username).value, React.findDOMNode(this.refs.password).value, this.context.router);
-								}
-						}
-				});
+	LoginView.contextTypes = {
+		router: React.PropTypes.func.isRequired
+	};
 
-				return LoginView;
-		})(React.Component);
-
-		LoginView.contextTypes = {
-				router: React.PropTypes.func.isRequired
-		};
-
-		exports.LoginView = LoginView;
+	exports.LoginView = LoginView;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"../actions/UserActions":245,"../stores/UserStore":260,"Parse":37,"react":241}],253:[function(require,module,exports){
@@ -62731,35 +62731,35 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
+	var React = require("react");
 
-		var PassEmailView = (function (_React$Component) {
-				function PassEmailView() {
-						_classCallCheck(this, PassEmailView);
+	var PassEmailView = (function (_React$Component) {
+		function PassEmailView() {
+			_classCallCheck(this, PassEmailView);
 
-						if (_React$Component != null) {
-								_React$Component.apply(this, arguments);
-						}
+			if (_React$Component != null) {
+				_React$Component.apply(this, arguments);
+			}
+		}
+
+		_inherits(PassEmailView, _React$Component);
+
+		_createClass(PassEmailView, {
+			render: {
+				value: function render() {
+					return React.createElement(
+						"h3",
+						null,
+						"A password reset link has been sent to your email"
+					);
 				}
+			}
+		});
 
-				_inherits(PassEmailView, _React$Component);
+		return PassEmailView;
+	})(React.Component);
 
-				_createClass(PassEmailView, {
-						render: {
-								value: function render() {
-										return React.createElement(
-												"h3",
-												null,
-												"A password reset link has been sent to your email"
-										);
-								}
-						}
-				});
-
-				return PassEmailView;
-		})(React.Component);
-
-		exports.PassEmailView = PassEmailView;
+	exports.PassEmailView = PassEmailView;
 })(typeof module === "object" ? module.exports : window);
 
 },{"react":241}],254:[function(require,module,exports){
@@ -62773,94 +62773,95 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
+	var React = require("react");
 
-		var _require = require("../../../modules_other/react-router");
+	var _require = require("../../../modules_other/react-router");
 
-		var Link = _require.Link;
+	var Link = _require.Link;
 
-		var _require2 = require("../actions/GalleryActions");
+	var _require2 = require("../actions/GalleryActions");
 
-		var galleryActions = _require2.galleryActions;
+	var galleryActions = _require2.galleryActions;
 
-		var Photo = (function (_React$Component) {
-				function Photo() {
-						_classCallCheck(this, Photo);
+	var Photo = (function (_React$Component) {
+		function Photo() {
+			_classCallCheck(this, Photo);
 
-						if (_React$Component != null) {
-								_React$Component.apply(this, arguments);
-						}
+			if (_React$Component != null) {
+				_React$Component.apply(this, arguments);
+			}
+		}
+
+		_inherits(Photo, _React$Component);
+
+		_createClass(Photo, {
+			render: {
+				value: function render() {
+					var photoHeight = "" + this.props.photo.height_m + "px";
+					var photoWidth = "" + this.props.photo.width_m + "px";
+
+					return React.createElement(
+						"div",
+						{ key: this.props.key, className: "photo" },
+						React.createElement(
+							Link,
+							{ to: "photo", params: { id: this.props.photo.photo_id, tags: this.props.tags } },
+							React.createElement("img", { src: this.props.photo.url_m, style: { height: photoHeight, width: photoWidth } })
+						),
+						React.createElement(
+							"div",
+							{ className: "info" },
+							React.createElement(
+								"div",
+								{ className: "votes" },
+								this.props.user && this.props.photo.user_votes ? this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
+									"h6",
+									{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
+									"(upvote)"
+								) : React.createElement(
+									"h6",
+									{ className: "voted" },
+									"(upvoted)"
+								) : null,
+								this.props.photo.weighted_votes != null ? React.createElement(
+									"h6",
+									null,
+									this.props.photo.weighted_votes
+								) : null
+							),
+							React.createElement(
+								"h5",
+								{ className: "photo-title" },
+								React.createElement(
+									Link,
+									{ to: "/photo/:id", params: { id: this.props.photo.photo_id } },
+									this.props.photo.title
+								)
+							),
+							React.createElement(
+								"h6",
+								{ className: "photo-owner" },
+								React.createElement(
+									"a",
+									{ href: this.props.photo._owner_url, target: "_blank" },
+									this.props.photo.ownername
+								)
+							)
+						)
+					);
 				}
+			},
+			_vote: {
+				value: function _vote() {
+					galleryActions.vote(this.props.photo.photo_id, this.props.user, this.props.tags);
+				}
+			}
+		});
 
-				_inherits(Photo, _React$Component);
+		return Photo;
+	})(React.Component);
 
-				_createClass(Photo, {
-						render: {
-								value: function render() {
-										var photoHeight = "" + this.props.photo.height_m + "px";
-										var photoWidth = "" + this.props.photo.width_m + "px";
-										return React.createElement(
-												"div",
-												{ key: this.props.key, className: "photo" },
-												React.createElement(
-														Link,
-														{ to: "photo", params: { id: this.props.photo.photo_id, tags: this.props.tags } },
-														React.createElement("img", { src: this.props.photo.url_m, style: { height: photoHeight, width: photoWidth } })
-												),
-												React.createElement(
-														"div",
-														{ className: "info" },
-														React.createElement(
-																"div",
-																{ className: "votes" },
-																this.props.user && this.props.photo.user_votes ? this.props.photo.user_votes.indexOf(this.props.user.get("username")) === -1 ? React.createElement(
-																		"h6",
-																		{ className: "upvote", ref: "vote", onClick: this._vote.bind(this) },
-																		"(upvote)"
-																) : React.createElement(
-																		"h6",
-																		{ className: "voted" },
-																		"(upvoted)"
-																) : null,
-																this.props.photo.weighted_votes != null ? React.createElement(
-																		"h6",
-																		null,
-																		this.props.photo.weighted_votes
-																) : null
-														),
-														React.createElement(
-																"h5",
-																{ className: "photo-title" },
-																React.createElement(
-																		Link,
-																		{ to: "/photo/:id", params: { id: this.props.photo.photo_id } },
-																		this.props.photo.title
-																)
-														),
-														React.createElement(
-																"h6",
-																{ className: "photo-owner" },
-																React.createElement(
-																		"a",
-																		{ href: this.props.photo._owner_url, target: "_blank" },
-																		this.props.photo.ownername
-																)
-														)
-												)
-										);
-								}
-						},
-						_vote: {
-								value: function _vote() {
-										galleryActions.vote(this.props.photo.photo_id, this.props.user, this.props.tags);
-								}
-						}
-				});
-
-				return Photo;
-		})(React.Component);
-
-		exports.Photo = Photo;
+	exports.Photo = Photo;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"../actions/GalleryActions":244,"react":241}],255:[function(require,module,exports){
@@ -62876,86 +62877,86 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
+	var React = require("react");
 
-		var _require = require("../../../modules_other/react-router");
+	var _require = require("../../../modules_other/react-router");
 
-		var Link = _require.Link;
+	var Link = _require.Link;
 
-		var _require2 = require("../actions/UserActions");
+	var _require2 = require("../actions/UserActions");
 
-		var userActions = _require2.userActions;
+	var userActions = _require2.userActions;
 
-		var _require3 = require("../stores/UserStore");
+	var _require3 = require("../stores/UserStore");
 
-		var userStore = _require3.userStore;
+	var userStore = _require3.userStore;
 
-		var RegisterView = (function (_React$Component) {
-				function RegisterView() {
-						_classCallCheck(this, RegisterView);
+	var RegisterView = (function (_React$Component) {
+		function RegisterView() {
+			_classCallCheck(this, RegisterView);
 
-						_get(Object.getPrototypeOf(RegisterView.prototype), "constructor", this).call(this);
-						this.state = userStore.getState();
+			_get(Object.getPrototypeOf(RegisterView.prototype), "constructor", this).call(this);
+			this.state = userStore.getState();
+		}
+
+		_inherits(RegisterView, _React$Component);
+
+		_createClass(RegisterView, {
+			render: {
+				value: function render() {
+					return React.createElement(
+						"main",
+						{ className: "register" },
+						React.createElement(
+							"h4",
+							null,
+							"Register"
+						),
+						React.createElement(
+							"form",
+							{ onSubmit: this.register.bind(this) },
+							React.createElement("input", { type: "text", ref: "username", placeholder: "username" }),
+							React.createElement("input", { type: "email", ref: "email", placeholder: "email" }),
+							React.createElement("input", { type: "password", ref: "pass", placeholder: "password" }),
+							React.createElement("input", { type: "password", ref: "pass2", placeholder: "confirm password" }),
+							React.createElement(
+								"button",
+								null,
+								"Submit"
+							)
+						),
+						React.createElement(
+							Link,
+							{ to: "login" },
+							"Already have an account?"
+						)
+					);
 				}
+			},
+			register: {
+				value: function register(e) {
+					e.preventDefault();
+					var username = React.findDOMNode(this.refs.username).value;
+					var email = React.findDOMNode(this.refs.email).value;
+					var pass = React.findDOMNode(this.refs.pass).value;
+					var pass2 = React.findDOMNode(this.refs.pass2).value;
+					if (pass === pass2) {
+						userActions.register(username, pass, email, this.context.router);
+					} else {
+						console.log("passwords must match)");
+					}
+				}
+			}
+		});
 
-				_inherits(RegisterView, _React$Component);
+		return RegisterView;
+	})(React.Component);
 
-				_createClass(RegisterView, {
-						render: {
-								value: function render() {
-										return React.createElement(
-												"main",
-												{ className: "register" },
-												React.createElement(
-														"h4",
-														null,
-														"Register"
-												),
-												React.createElement(
-														"form",
-														{ onSubmit: this.register.bind(this) },
-														React.createElement("input", { type: "text", ref: "username", placeholder: "username" }),
-														React.createElement("input", { type: "email", ref: "email", placeholder: "email" }),
-														React.createElement("input", { type: "password", ref: "pass", placeholder: "password" }),
-														React.createElement("input", { type: "password", ref: "pass2", placeholder: "confirm password" }),
-														React.createElement(
-																"button",
-																null,
-																"Submit"
-														)
-												),
-												React.createElement(
-														Link,
-														{ to: "login" },
-														"Already have an account?"
-												)
-										);
-								}
-						},
-						register: {
-								value: function register(e) {
-										e.preventDefault();
-										var username = React.findDOMNode(this.refs.username).value;
-										var email = React.findDOMNode(this.refs.email).value;
-										var pass = React.findDOMNode(this.refs.pass).value;
-										var pass2 = React.findDOMNode(this.refs.pass2).value;
-										if (pass === pass2) {
-												userActions.register(username, pass, email, this.context.router);
-										} else {
-												console.log("passwords must match)");
-										}
-								}
-						}
-				});
+	RegisterView.contextTypes = {
+		router: React.PropTypes.func.isRequired
+	};
 
-				return RegisterView;
-		})(React.Component);
-
-		RegisterView.contextTypes = {
-				router: React.PropTypes.func.isRequired
-		};
-
-		exports.RegisterView = RegisterView;
+	exports.RegisterView = RegisterView;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"../actions/UserActions":245,"../stores/UserStore":260,"react":241}],256:[function(require,module,exports){
@@ -62963,65 +62964,65 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
-		// modified react-router for React v0.13 compatibility
-		// clone from git@github.com:nhunzaker/react-router.git
-		var Router = require("../../../modules_other/react-router");
+	var React = require("react");
+	// modified react-router for React v0.13 compatibility
+	// clone from git@github.com:nhunzaker/react-router.git
+	var Router = require("../../../modules_other/react-router");
 
-		var _require = require("../components/AppView");
+	var _require = require("../components/AppView");
 
-		var AppView = _require.AppView;
+	var AppView = _require.AppView;
 
-		var _require2 = require("../components/GalleryView");
+	var _require2 = require("../components/GalleryView");
 
-		var GalleryView = _require2.GalleryView;
+	var GalleryView = _require2.GalleryView;
 
-		var _require3 = require("../components/LoginView");
+	var _require3 = require("../components/LoginView");
 
-		var LoginView = _require3.LoginView;
+	var LoginView = _require3.LoginView;
 
-		var _require4 = require("../components/RegisterView");
+	var _require4 = require("../components/RegisterView");
 
-		var RegisterView = _require4.RegisterView;
+	var RegisterView = _require4.RegisterView;
 
-		var _require5 = require("../components/DetailView");
+	var _require5 = require("../components/DetailView");
 
-		var DetailView = _require5.DetailView;
+	var DetailView = _require5.DetailView;
 
-		var _require6 = require("../components/PassEmailView");
+	var _require6 = require("../components/PassEmailView");
 
-		var PassEmailView = _require6.PassEmailView;
+	var PassEmailView = _require6.PassEmailView;
 
-		var _require7 = require("./defaultParams");
+	var _require7 = require("./defaultParams");
 
-		var GalleryAddPage = _require7.GalleryAddPage;
+	var GalleryAddPage = _require7.GalleryAddPage;
 
-		var DefaultRoute = Router.DefaultRoute;
-		var Route = Router.Route;
-		var Redirect = Router.Redirect;
+	var DefaultRoute = Router.DefaultRoute;
+	var Route = Router.Route;
+	var Redirect = Router.Redirect;
 
-		var routes = React.createElement(
-				Route,
-				{ name: "app", path: "/", handler: AppView },
-				React.createElement(
-						Route,
-						{ path: "/gallery" },
-						React.createElement(Route, { name: "gallerysearch", path: "/gallery/:tags/page:page", handler: GalleryView }),
-						React.createElement(Route, { name: "gallerynosearch", path: "/gallery/page:page", handler: GalleryView }),
-						React.createElement(DefaultRoute, { handler: GalleryAddPage })
-				),
-				React.createElement(Route, { name: "photo", path: "/photo/:id/:tags?", handler: DetailView }),
-				React.createElement(Redirect, { from: "details", to: "photo" }),
-				React.createElement(Route, { name: "login", path: "/login", handler: LoginView }),
-				React.createElement(Redirect, { from: "signin", to: "login" }),
-				React.createElement(Route, { name: "register", path: "/register", handler: RegisterView }),
-				React.createElement(Route, { name: "passemailsent", path: "/passemailsent", handler: PassEmailView }),
-				React.createElement(Redirect, { from: "*", to: "gallerynosearch", params: { page: 1 } })
-		);
+	var routes = React.createElement(
+		Route,
+		{ name: "app", path: "/", handler: AppView },
+		React.createElement(
+			Route,
+			{ path: "/gallery" },
+			React.createElement(Route, { name: "gallerysearch", path: "/gallery/:tags/page:page", handler: GalleryView }),
+			React.createElement(Route, { name: "gallerynosearch", path: "/gallery/page:page", handler: GalleryView }),
+			React.createElement(DefaultRoute, { handler: GalleryAddPage })
+		),
+		React.createElement(Route, { name: "photo", path: "/photo/:id/:tags?", handler: DetailView }),
+		React.createElement(Redirect, { from: "details", to: "photo" }),
+		React.createElement(Route, { name: "login", path: "/login", handler: LoginView }),
+		React.createElement(Redirect, { from: "signin", to: "login" }),
+		React.createElement(Route, { name: "register", path: "/register", handler: RegisterView }),
+		React.createElement(Route, { name: "passemailsent", path: "/passemailsent", handler: PassEmailView }),
+		React.createElement(Redirect, { from: "*", to: "gallerynosearch", params: { page: 1 } })
+	);
 
-		var router = Router.create(routes);
+	var router = Router.create(routes);
 
-		exports.router = router;
+	exports.router = router;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"../components/AppView":248,"../components/DetailView":249,"../components/GalleryView":250,"../components/LoginView":252,"../components/PassEmailView":253,"../components/RegisterView":255,"./defaultParams":257,"react":241}],257:[function(require,module,exports){
@@ -63033,28 +63034,28 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var React = require("react");
-		var Router = require("../../../modules_other/react-router");
+	var React = require("react");
+	var Router = require("../../../modules_other/react-router");
 
-		var GalleryAddPage = (function (_React$Component) {
-				function GalleryAddPage() {
-						_classCallCheck(this, GalleryAddPage);
+	var GalleryAddPage = (function (_React$Component) {
+		function GalleryAddPage() {
+			_classCallCheck(this, GalleryAddPage);
 
-						if (_React$Component != null) {
-								_React$Component.apply(this, arguments);
-						}
-				}
+			if (_React$Component != null) {
+				_React$Component.apply(this, arguments);
+			}
+		}
 
-				_inherits(GalleryAddPage, _React$Component);
+		_inherits(GalleryAddPage, _React$Component);
 
-				return GalleryAddPage;
-		})(React.Component);
+		return GalleryAddPage;
+	})(React.Component);
 
-		GalleryAddPage.willTransitionTo = function (transition, params) {
-				if (params.tags) transition.redirect("/gallery/" + params.tags + "/page1");else transition.redirect("/gallery/page1");
-		};
+	GalleryAddPage.willTransitionTo = function (transition, params) {
+		if (params.tags) transition.redirect("/gallery/" + params.tags + "/page1");else transition.redirect("/gallery/page1");
+	};
 
-		exports.GalleryAddPage = GalleryAddPage;
+	exports.GalleryAddPage = GalleryAddPage;
 })(typeof module === "object" ? module.exports : window);
 
 },{"../../../modules_other/react-router":24,"react":241}],258:[function(require,module,exports){
@@ -63065,54 +63066,54 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
-		var _require = require("../alt-app");
+	var _require = require("../alt-app");
 
-		var alt = _require.alt;
+	var alt = _require.alt;
 
-		var _require2 = require("../actions/DetailActions");
+	var _require2 = require("../actions/DetailActions");
 
-		var detailActions = _require2.detailActions;
+	var detailActions = _require2.detailActions;
 
-		var _require3 = require("../actions/GalleryActions");
+	var _require3 = require("../actions/GalleryActions");
 
-		var galleryActions = _require3.galleryActions;
+	var galleryActions = _require3.galleryActions;
 
-		var DetailStore = (function () {
-				function DetailStore() {
-						_classCallCheck(this, DetailStore);
+	var DetailStore = (function () {
+		function DetailStore() {
+			_classCallCheck(this, DetailStore);
 
-						this.bindListeners({
-								getInfo: detailActions.getDetail,
-								vote: galleryActions.vote
-						});
+			this.bindListeners({
+				getInfo: detailActions.getDetail,
+				vote: galleryActions.vote
+			});
+		}
+
+		_createClass(DetailStore, {
+			getInfo: {
+				value: function getInfo(data) {
+					this[data.photo_id] = data;
+					this[data.photo_id]._photoUrl = function (size) {
+						return "https://farm" + data.farm + ".staticflickr.com/" + data.server + "/" + data.photo_id + "_" + data.secret + "_" + size + "." + (data.originalformat ? data.originalformat : "jpg");
+					};
+					this[data.photo_id]._ownerUrl = "https://www.flickr.com/people/" + data.owner;
 				}
+			},
+			vote: {
+				value: function vote(data) {
+					console.log(data);
+					var photo = this[data.photo_id];
+					photo.total_votes = data.total_votes;
+					photo.user_votes = data.user_votes;
+					photo.tag_votes = data.tag_votes;
+					photo.weighted_votes = data.weighted_votes;
+				}
+			}
+		});
 
-				_createClass(DetailStore, {
-						getInfo: {
-								value: function getInfo(data) {
-										this[data.photo_id] = data;
-										this[data.photo_id]._photoUrl = function (size) {
-												return "https://farm" + data.farm + ".staticflickr.com/" + data.server + "/" + data.photo_id + "_" + data.secret + "_" + size + "." + (data.originalformat ? data.originalformat : "jpg");
-										};
-										this[data.photo_id]._ownerUrl = "https://www.flickr.com/people/" + data.owner;
-								}
-						},
-						vote: {
-								value: function vote(data) {
-										console.log(data);
-										var photo = this[data.photo_id];
-										photo.total_votes = data.total_votes;
-										photo.user_votes = data.user_votes;
-										photo.tag_votes = data.tag_votes;
-										photo.weighted_votes = data.weighted_votes;
-								}
-						}
-				});
+		return DetailStore;
+	})();
 
-				return DetailStore;
-		})();
-
-		exports.detailStore = alt.createStore(DetailStore);
+	exports.detailStore = alt.createStore(DetailStore);
 })(typeof module === "object" ? module.exports : window);
 
 },{"../actions/DetailActions":243,"../actions/GalleryActions":244,"../alt-app":246}],259:[function(require,module,exports){
@@ -63124,219 +63125,219 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 ;(function (exports) {
 
-		var $ = require("jquery");
+	var $ = require("jquery");
 
-		var _require = require("../alt-app");
+	var _require = require("../alt-app");
 
-		var alt = _require.alt;
+	var alt = _require.alt;
 
-		var _require2 = require("../actions/GalleryActions");
+	var _require2 = require("../actions/GalleryActions");
 
-		var galleryActions = _require2.galleryActions;
+	var galleryActions = _require2.galleryActions;
 
-		var React = require("react");
+	var React = require("react");
 
-		var GalleryStore = (function () {
-				function GalleryStore() {
-						var _this = this;
+	var GalleryStore = (function () {
+		function GalleryStore() {
+			var _this = this;
 
-						_classCallCheck(this, GalleryStore);
+			_classCallCheck(this, GalleryStore);
 
-						this.requests = {};
-						this.isLoading = React.createElement(
-								"h2",
-								null,
-								"Loading..."
-						);
-						this.tags = [];
+			this.requests = {};
+			this.isLoading = React.createElement(
+				"h2",
+				null,
+				"Loading..."
+			);
+			this.tags = [];
 
-						// browser-side pagination
-						this.paginate = {
-								constants: {
-										photosPerPage: 20,
-										photosPerRequest: 500,
-										pagesPerRequest: function () {
-												return _this.paginate.constants.photosPerRequest / _this.paginate.constants.photosPerPage;
-										}
-								},
-								totalPages: null,
-								currentPage: 1,
-								currentPhotos: [],
-								nextPageExists: false,
-								prevPageExists: false,
-								nextPageRoute: null,
-								prevPageRoute: null
-						};
+			// browser-side pagination
+			this.paginate = {
+				constants: {
+					photosPerPage: 20,
+					photosPerRequest: 500,
+					pagesPerRequest: function () {
+						return _this.paginate.constants.photosPerRequest / _this.paginate.constants.photosPerPage;
+					}
+				},
+				totalPages: null,
+				currentPage: 1,
+				currentPhotos: [],
+				nextPageExists: false,
+				prevPageExists: false,
+				nextPageRoute: null,
+				prevPageRoute: null
+			};
 
-						this.bindListeners({
-								getPhotos: galleryActions.getPhotos,
-								changePage: galleryActions.changePage,
-								vote: galleryActions.vote,
-								cachedLoad: galleryActions.cachedLoad
-						});
+			this.bindListeners({
+				getPhotos: galleryActions.getPhotos,
+				changePage: galleryActions.changePage,
+				vote: galleryActions.vote,
+				cachedLoad: galleryActions.cachedLoad
+			});
+		}
+
+		_createClass(GalleryStore, {
+			getPhotos: {
+				value: function getPhotos(resp) {
+					var params = resp.params;
+					var data = resp.data;
+
+					this._dataToState(data, params);
 				}
+			},
+			changePage: {
+				value: function changePage(routerParams) {
+					this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1;
 
-				_createClass(GalleryStore, {
-						getPhotos: {
-								value: function getPhotos(resp) {
-										var params = resp.params;
-										var data = resp.data;
-
-										this._dataToState(data, params);
-								}
-						},
-						changePage: {
-								value: function changePage(routerParams) {
-										this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1;
-
-										// if requestPage is cached
-										if (this.requests[this.searchId][this.requestPage]) {
-												this._paginate(routerPage);
-												this.isLoading = false;
-										} else {
-												galleryActions.getPhotos(params);
-										}
-								}
-						},
-						vote: {
-								value: function vote(resp) {
-										this.paginate.currentPhotos.forEach(function (val) {
-												if (val.photo_id === resp.photo_id) {
-														val.total_votes = resp.total_votes;
-														val.user_votes = resp.user_votes;
-														val.tag_votes = resp.tag_votes;
-														val.weighted_votes = resp.weighted_votes;
-												}
-										});
-								}
-						},
-						cachedLoad: {
-								value: function cachedLoad(routerParams) {
-										// for creating route string
-										this.isSearch = routerParams.tags ? true : false;
-
-										// cache ids
-										if (!routerParams.tags) routerParams.tags = ["default-Request"];
-										this.searchId = routerParams.tags.join("");
-
-										// current params
-										this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1;
-										this.requestPages = this.requests[this.searchId][this.requestPage].requestPages;
-										this.tags = this.requests[this.searchId][this.requestPage].tags.slice();
-
-										this._paginate(routerParams.page);
-										this.isLoading = false;
-								}
-						},
-						_dataToState: {
-								value: function _dataToState(data, routerParams) {
-										// create owner url
-										console.log(data);
-										data.photo.forEach(function (val) {
-												if (val.owner) val._owner_url = "https://www.flickr.com/people/" + val.owner;
-										});
-
-										// for creating route string
-										this.isSearch = routerParams.tags ? true : false;
-
-										// cache ids
-										if (!routerParams.tags) routerParams.tags = ["default-Request"];
-										this.searchId = routerParams.tags.join("");
-										this.requests[this.searchId] = [];
-
-										// save data in search-based cache and Flickr page-based
-										this.requests[this.searchId][data.page] = {};
-										this.requests[this.searchId][data.page] = data;
-
-										// set current info for easy access
-										this.requestPage = data.page;
-										this.requestPages = data.pages;
-										this.tags = data.tags.slice();
-
-										// paginate results for current page
-										this._paginate(routerParams.page);
-
-										this.isLoading = false;
-								}
-						},
-						_paginate: {
-								value: function _paginate(routerPage) {
-										this.paginate.maxPossiblePages = this._paginateTotalPages(true);
-										this.paginate.availablePages = this._paginateTotalPages(false);
-										this.paginate.currentPage = routerPage;
-										this.paginate.currentPhotos = this._paginateCurrentPhotos(routerPage), this.paginate.nextPageRoute = this._paginatePageRoute(routerPage + 1);
-										this.paginate.prevPageRoute = this._paginatePageRoute(routerPage - 1);
-								}
-						},
-						_paginateTotalPages: {
-
-								// calc both maximum possible pages based on Flickr's page result and actually available pages in cache
-
-								value: function _paginateTotalPages(bool) {
-										var pageConst = this.paginate.constants;
-
-										//get number of requests with full 500 results
-										var numFullRequests;
-
-										// if true, get number of full requests that may exist -- up to largest index in requests
-										if (bool) {
-												numFullRequests = this.requests[this.searchId].length - 1;
-										}
-
-										// if false, get actual number of full requests -- filter out any empty indices
-										else {
-												numFullRequests = this.requests[this.searchId].filter(function (val) {
-														return val !== undefined;
-												}).length - 1;
-										}
-
-										var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest();
-
-										// last request possibly not 500 results
-										var lastRequestIndex = this.requests[this.searchId].length - 1;
-										var picsInLastRequest = this.requests[this.searchId][lastRequestIndex].photo.length;
-
-										var pagesInLastRequest = Math.ceil(picsInLastRequest / pageConst.photosPerPage);
-
-										// add 'em
-										var pagesInAllRequests = pagesInFullRequests + pagesInLastRequest;
-
-										return pagesInAllRequests;
-								}
-						},
-						_paginateCurrentPhotos: {
-								value: function _paginateCurrentPhotos(routerPage) {
-										var pageConst = this.paginate.constants;
-
-										// more maths
-										var numPrevRequests = this.requestPage - 1;
-										var browserPagesInPrevRequests = numPrevRequests * pageConst.pagesPerRequest();
-										var pagesIntoCurrentRequest = routerPage - browserPagesInPrevRequests;
-
-										// adjust to 0 index
-										var startPhotoIndex = (pagesIntoCurrentRequest - 1) * pageConst.photosPerPage;
-
-										// get those pics
-										console.log(this.requests[this.searchId][this.requestPage].photo);
-										console.log(this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage));
-										return this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage);
-								}
-						},
-						_paginatePageRoute: {
-								value: function _paginatePageRoute(newPage) {
-										if (this.isSearch) {
-												return "/gallery/" + this.tags.join(",") + "/page" + newPage;
-										} else {
-												return "/gallery/page" + newPage;
-										}
-								}
+					// if requestPage is cached
+					if (this.requests[this.searchId][this.requestPage]) {
+						this._paginate(routerPage);
+						this.isLoading = false;
+					} else {
+						galleryActions.getPhotos(params);
+					}
+				}
+			},
+			vote: {
+				value: function vote(resp) {
+					this.paginate.currentPhotos.forEach(function (val) {
+						if (val.photo_id === resp.photo_id) {
+							val.total_votes = resp.total_votes;
+							val.user_votes = resp.user_votes;
+							val.tag_votes = resp.tag_votes;
+							val.weighted_votes = resp.weighted_votes;
 						}
-				});
+					});
+				}
+			},
+			cachedLoad: {
+				value: function cachedLoad(routerParams) {
+					// for creating route string
+					this.isSearch = routerParams.tags ? true : false;
 
-				return GalleryStore;
-		})();
+					// cache ids
+					if (!routerParams.tags) routerParams.tags = ["default-Request"];
+					this.searchId = routerParams.tags.join("");
 
-		exports.galleryStore = alt.createStore(GalleryStore);
+					// current params
+					this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1;
+					this.requestPages = this.requests[this.searchId][this.requestPage].requestPages;
+					this.tags = this.requests[this.searchId][this.requestPage].tags.slice();
+
+					this._paginate(routerParams.page);
+					this.isLoading = false;
+				}
+			},
+			_dataToState: {
+				value: function _dataToState(data, routerParams) {
+					// create owner url
+					console.log(data);
+					data.photo.forEach(function (val) {
+						if (val.owner) val._owner_url = "https://www.flickr.com/people/" + val.owner;
+					});
+
+					// for creating route string
+					this.isSearch = routerParams.tags ? true : false;
+
+					// cache ids
+					if (!routerParams.tags) routerParams.tags = ["default-Request"];
+					this.searchId = routerParams.tags.join("");
+					this.requests[this.searchId] = [];
+
+					// save data in search-based cache and Flickr page-based
+					this.requests[this.searchId][data.page] = {};
+					this.requests[this.searchId][data.page] = data;
+
+					// set current info for easy access
+					this.requestPage = data.page;
+					this.requestPages = data.pages;
+					this.tags = data.tags.slice();
+
+					// paginate results for current page
+					this._paginate(routerParams.page);
+
+					this.isLoading = false;
+				}
+			},
+			_paginate: {
+				value: function _paginate(routerPage) {
+					this.paginate.maxPossiblePages = this._paginateTotalPages(true);
+					this.paginate.availablePages = this._paginateTotalPages(false);
+					this.paginate.currentPage = routerPage;
+					this.paginate.currentPhotos = this._paginateCurrentPhotos(routerPage), this.paginate.nextPageRoute = this._paginatePageRoute(routerPage + 1);
+					this.paginate.prevPageRoute = this._paginatePageRoute(routerPage - 1);
+				}
+			},
+			_paginateTotalPages: {
+
+				// calc both maximum possible pages based on Flickr's page result and actually available pages in cache
+
+				value: function _paginateTotalPages(bool) {
+					var pageConst = this.paginate.constants;
+
+					//get number of requests with full 500 results
+					var numFullRequests;
+
+					// if true, get number of full requests that may exist -- up to largest index in requests
+					if (bool) {
+						numFullRequests = this.requests[this.searchId].length - 1;
+					}
+
+					// if false, get actual number of full requests -- filter out any empty indices
+					else {
+						numFullRequests = this.requests[this.searchId].filter(function (val) {
+							return val !== undefined;
+						}).length - 1;
+					}
+
+					var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest();
+
+					// last request possibly not 500 results
+					var lastRequestIndex = this.requests[this.searchId].length - 1;
+					var picsInLastRequest = this.requests[this.searchId][lastRequestIndex].photo.length;
+
+					var pagesInLastRequest = Math.ceil(picsInLastRequest / pageConst.photosPerPage);
+
+					// add 'em
+					var pagesInAllRequests = pagesInFullRequests + pagesInLastRequest;
+
+					return pagesInAllRequests;
+				}
+			},
+			_paginateCurrentPhotos: {
+				value: function _paginateCurrentPhotos(routerPage) {
+					var pageConst = this.paginate.constants;
+
+					// more maths
+					var numPrevRequests = this.requestPage - 1;
+					var browserPagesInPrevRequests = numPrevRequests * pageConst.pagesPerRequest();
+					var pagesIntoCurrentRequest = routerPage - browserPagesInPrevRequests;
+
+					// adjust to 0 index
+					var startPhotoIndex = (pagesIntoCurrentRequest - 1) * pageConst.photosPerPage;
+
+					// get those pics
+					console.log(this.requests[this.searchId][this.requestPage].photo);
+					console.log(this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage));
+					return this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage);
+				}
+			},
+			_paginatePageRoute: {
+				value: function _paginatePageRoute(newPage) {
+					if (this.isSearch) {
+						return "/gallery/" + this.tags.join(",") + "/page" + newPage;
+					} else {
+						return "/gallery/page" + newPage;
+					}
+				}
+			}
+		});
+
+		return GalleryStore;
+	})();
+
+	exports.galleryStore = alt.createStore(GalleryStore);
 })(typeof module === "object" ? module.exports : window);
 
 },{"../actions/GalleryActions":244,"../alt-app":246,"jquery":82,"react":241}],260:[function(require,module,exports){
@@ -63347,41 +63348,41 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
-		var _require = require("../alt-app");
+	var _require = require("../alt-app");
 
-		var alt = _require.alt;
+	var alt = _require.alt;
 
-		var _require2 = require("parse");
+	var _require2 = require("parse");
 
-		var Parse = _require2.Parse;
+	var Parse = _require2.Parse;
 
-		var _require3 = require("../actions/UserActions");
+	var _require3 = require("../actions/UserActions");
 
-		var userActions = _require3.userActions;
+	var userActions = _require3.userActions;
 
-		var UserStore = (function () {
-				function UserStore() {
-						_classCallCheck(this, UserStore);
+	var UserStore = (function () {
+		function UserStore() {
+			_classCallCheck(this, UserStore);
 
-						this.user = null;
+			this.user = null;
 
-						this.bindListeners({
-								setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
-						});
+			this.bindListeners({
+				setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
+			});
+		}
+
+		_createClass(UserStore, {
+			setUser: {
+				value: function setUser(user) {
+					this.user = user;
 				}
+			}
+		});
 
-				_createClass(UserStore, {
-						setUser: {
-								value: function setUser(user) {
-										this.user = user;
-								}
-						}
-				});
+		return UserStore;
+	})();
 
-				return UserStore;
-		})();
-
-		exports.userStore = alt.createStore(UserStore);
+	exports.userStore = alt.createStore(UserStore);
 })(typeof module === "object" ? module.exports : window);
 
 },{"../actions/UserActions":245,"../alt-app":246,"parse":84}],261:[function(require,module,exports){
@@ -63392,41 +63393,41 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 ;(function (exports) {
-		var _require = require("../alt-app");
+	var _require = require("../alt-app");
 
-		var alt = _require.alt;
+	var alt = _require.alt;
 
-		var _require2 = require("parse");
+	var _require2 = require("parse");
 
-		var Parse = _require2.Parse;
+	var Parse = _require2.Parse;
 
-		var _require3 = require("../actions/UserActions");
+	var _require3 = require("../actions/UserActions");
 
-		var userActions = _require3.userActions;
+	var userActions = _require3.userActions;
 
-		var UserStore = (function () {
-				function UserStore() {
-						_classCallCheck(this, UserStore);
+	var UserStore = (function () {
+		function UserStore() {
+			_classCallCheck(this, UserStore);
 
-						this.user = null;
+			this.user = null;
 
-						this.bindListeners({
-								setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
-						});
+			this.bindListeners({
+				setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
+			});
+		}
+
+		_createClass(UserStore, {
+			setUser: {
+				value: function setUser(user) {
+					this.user = user;
 				}
+			}
+		});
 
-				_createClass(UserStore, {
-						setUser: {
-								value: function setUser(user) {
-										this.user = user;
-								}
-						}
-				});
+		return UserStore;
+	})();
 
-				return UserStore;
-		})();
-
-		exports.userStore = alt.createStore(UserStore);
+	exports.userStore = alt.createStore(UserStore);
 })(typeof module === "object" ? module.exports : window);
 
 },{"../actions/UserActions":245,"../alt-app":246,"parse":84}]},{},[247]);

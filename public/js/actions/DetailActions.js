@@ -4,13 +4,13 @@ var { alt } = require('../alt-app')
 var { DetailClient } = require('../ServerFlickrClient')
 
 class DetailActions {
-		getDetail(photoId, tags) {
-				DetailClient.requestPhoto({photo_id: photoId,}, tags)
-				.then((data) => {
-					console.log(data)
-					this.dispatch(data)
-				})
-		}
+	getDetail(photoId, tags) {
+		DetailClient.requestPhoto({photo_id: photoId,}, tags)
+		.then((data) => {
+			console.log(data)
+			this.dispatch(data)
+		})
+	}
 }
 
 
