@@ -15,9 +15,9 @@ function startServer() {
 
 	app.get('/photos', getPhotos)
 
-	app.get('/photo/:tags?', getDetail)
+	// app.get('/photo/:tags?', getDetail)
 
-	app.post('/:user/photo/:id/:tags?', putVote)
+	// app.post('/:user/photo/:id/:tags?', putVote)
 
 	app.listen(process.env.PORT || 3000, function() {
 		console.log('skylines w/ server')
