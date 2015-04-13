@@ -6,20 +6,20 @@ var { Header } = require('./Header')
 var { userActions } = require('../actions/UserActions')
 
 class AppView extends React.Component {
-		constructor() {
-				super()
-				this.state = {}
-				userActions.current()
-		}
+	constructor() {
+		super()
+		this.state = {}
+		userActions.current()
+	}
 
-		render() {
-				return (
-						<div className="app">
-								<Header />
-								<RouteHandler params={this.props.params} />
-						</div>
-				)
-		}
+	render() {
+		return (
+			<div className="app">
+				<Header />
+				<RouteHandler params={this.props.params} />
+			</div>
+		)
+	}
 }
 
 

@@ -17,20 +17,20 @@ var Route = Router.Route
 var Redirect = Router.Redirect
 
 var routes = (
-		<Route name="app" path="/" handler={AppView}>
-				<Route path="/gallery">
-						<Route name="gallerysearch" path="/gallery/:tags/page:page" handler={GalleryView} />
-						<Route name="gallerynosearch" path="/gallery/page:page" handler={GalleryView} />
-						<DefaultRoute handler={GalleryAddPage} />
-				</Route>
-				<Route name="photo" path="/photo/:id/:tags?" handler={DetailView} />
-				<Redirect from="details" to="photo" />
-				<Route name="login" path="/login" handler={LoginView} />
-				<Redirect from="signin" to="login" />
-				<Route name="register" path="/register" handler={RegisterView} />
-				<Route name="passemailsent" path="/passemailsent" handler={PassEmailView} />
-				<Redirect from="*" to="gallerynosearch" params={{page: 1}}/>
+	<Route name="app" path="/" handler={AppView}>
+		<Route path="/gallery">
+			<Route name="gallerysearch" path="/gallery/:tags/page:page" handler={GalleryView} />
+			<Route name="gallerynosearch" path="/gallery/page:page" handler={GalleryView} />
+			<DefaultRoute handler={GalleryAddPage} />
 		</Route>
+		<Route name="photo" path="/photo/:id/:tags?" handler={DetailView} />
+		<Redirect from="details" to="photo" />
+		<Route name="login" path="/login" handler={LoginView} />
+		<Redirect from="signin" to="login" />
+		<Route name="register" path="/register" handler={RegisterView} />
+		<Route name="passemailsent" path="/passemailsent" handler={PassEmailView} />
+		<Redirect from="*" to="gallerynosearch" params={{page: 1}}/>
+	</Route>
 )
 
 var router = Router.create(routes)

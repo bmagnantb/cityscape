@@ -1,73 +1,117 @@
 var request = require('request')
+var Promise = require('bluebird')
 var Parse = require('parse').Parse
-var weightVotes = require('./weightVotes')
-var ParseClass = require('./ParseClass')
+
+var weightVotes = require('./utils/weightVotes')
+var ParseClass = require('./utils/ParseClass')
+
+
+module.exports = vote
 
 
 function vote(req, res) {
-try {
-		var user = req.params.user
-		var photoId = req.params.id
-		var tags
-		req.params.tags ? tags = req.params.tags.split(',') : tags = []
 
-		if (user === 'undefined') {
-				res.send('user not logged in')
-				return
+		var request = getRequestInfo(req)
+
+		getPhoto(request)
+			.then(addVote)
+			.then(newWeightedVote)
+			.then(function(data) {
+				res.send(data.photo)
+			})
+			.then(savePhoto)
+			.done()
+}
+
+
+
+function getRequestInfo(req) {
+
+	var user = req.params.user
+	if (user === 'undefined') {
+		res.send('user not logged in')
+		return
+	}
+
+	var photoId = req.params.id
+	var tags = req.params.tags ? req.params.tags.split(',') : []
+	console.log(req.params)
+
+	return {user: user, photoId: photoId, tags: tags}
+}
+
+
+
+function getPhoto(request) {
+
+	var query = new Parse.Query('Photo')
+
+	query.equalTo('photo_id', request.photoId)
+
+	var promise = new Promise(function(resolve, reject) {
+		query.first({
+		 	success: function(result) {
+		 		resolve({result: result, request: request})
+		 	},
+		 	error: function(err) {
+		 		reject(err)
+		 	}
+		 })
+	})
+
+	return promise
+}
+
+
+
+function addVote(data) {
+
+	var photo = data.result
+
+	photo.total_votes++
+	photo.user_votes.push(user)
+
+	if (request.tags.length) {
+		for (var i = 0, arr = request.tags, imax = arr.length; i < imax; i++) {
+			Object.keys(photo.tag_votes).indexOf(arr[i]) !== -1
+				? photo.tag_votes[arr[i]]++
+				: photo.tag_votes[arr[i]] = 1
 		}
+	}
 
-		console.log(req.params)
-
-		var query = new Parse.Query('Photo')
-		query.equalTo('photo_id', photoId).first({
-				success: function(result) {
-						if (result) {
-								var data = result.toJSON()
-								if (data.user_votes.indexOf(user) === -1) {
-
-										var tag_votes = data.tag_votes
-
-										if (tags.length) {
-												for (var i = 0, arr = tags, imax = arr.length; i < imax; i++) {
-														Object.keys(tag_votes).indexOf(arr[i]) !== -1 ? tag_votes[arr[i]]++ : tag_votes[arr[i]] = 1
-												}
-										}
-
-										data.total_votes += 1
-										data.user_votes.push(user)
-										data.tag_votes = tag_votes
-
-										result.set(data)
-
-										data.weighted_votes = weightVotes(data, tags)
-										res.send(data)
-
-										result.save(null, {
-												error: function(results, err) {
-														console.log('parse save vote error')
-														console.log(err)
-														res.send(err)
-												}
-										})
-								} else {
-										console.log(user + 'already voted for'+result.get('photo_id'))
-										res.send('you have already voted for this photo')
-								}
-						} else {
-								console.log('photo_id not found on Parse')
-						}
-				},
-				error: function(err) {
-						console.log('parse find photo_id for vote error')
-						console.log(err)
-						res.send(err)
-				}
-		})
-}
-catch (err) {
-		console.log(err)
-		res.send(err)
-}
+	return data
 }
 
-module.exports = vote
+
+
+function newWeightedVote(data) {
+
+	var photo = data.result.toJSON()
+
+	photo.weighted_votes = weightVotes(photo, data.request.tags)
+	data.photo = photo
+
+	return data
+}
+
+
+
+function savePhoto(data) {
+
+	var savePhoto = data.result
+
+	savePhoto.save(null, {
+		error: handleError
+	})
+
+	return data
+}
+
+
+
+// dev -- handle error
+function handleError(err) {
+
+	console.log(err)
+}
+

@@ -5,17 +5,17 @@ var { Parse } = require('parse')
 var { userActions } = require('../actions/UserActions')
 
 class UserStore {
-		constructor() {
-				this.user = null
+	constructor() {
+		this.user = null
 
-				this.bindListeners({
-						setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
-				})
-		}
+		this.bindListeners({
+			setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
+		})
+	}
 
-		setUser(user) {
-				this.user = user
-		}
+	setUser(user) {
+		this.user = user
+	}
 }
 
 
