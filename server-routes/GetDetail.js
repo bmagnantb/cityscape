@@ -1,90 +1,107 @@
 var request = require('request')
 var Parse = require('parse').Parse
-var flickrApiKey = require('../flickrKey')
-var ParseClass = require('./ParseClass')
-var weightVotes = require('./weightVotes')
-var trimPhoto = require('./trimPhoto')
+
+var ParseClass = require('./utils/ParseClass')
+var weightVotes = require('./utils/weightVotes')
+var trimPhoto = require('./utils/trimPhoto')
+var flickrRequestUrl = require('./utils/flickrRequestUrl')
+
+
+module.exports = getDetail
+
 
 function getDetail(req, res) {
-try {
-	var url = 'https://api.flickr.com/services/rest?',
-		counter = 0
 
-	req.query.api_key = flickrApiKey
-
-	if (!req.query.photo_id) {
-		console.log('photo\'s id required')
-		res.send('photo\'s id required')
-		return
-	}
-
-	if (!req.params.tags) req.params.tags = []
-	else req.params.tags = req.params.tags.split(',')
-
-	for (var key in req.query) {
-		if (counter > 0) url += '&'
-		url += key + '=' + req.query[key]
-		counter++
-	}
+	var url = flickrRequestUrl(req.query)
 
 	request(url, function(err, resp, body) {
-		if (err) {
+
+		if (err != null) {
 			console.log(err)
 			res.send(err)
 			return
 		}
 
-		var data = JSON.parse(body)
+		var flickrResponse = trimPhoto(JSON.parse(body))
 
-		data = trimPhoto(data)
+		getDbMatch(flickrResponse, req.params)
+			.then(mergeDbData)
+			.then(calcWeightedVotes)
+			.then(function(data) {
+				res.send(data.flickr)
+				return data
+			})
+			.then(savePhoto)
+			.catch(handleError)
+	})
+}
 
-		var query = new Parse.Query('Photo')
 
-		query.equalTo('photo_id', data.photo_id)
-		.first({
+
+function getDbMatch(flickrResponse, reqParams) {
+
+	var query = new Parse.Query('Photo')
+
+	query.equalTo('photo_id', flickrResponse.photo_id)
+
+	var promise = new Promise(function(resolve, reject) {
+		query.first({
 			success: function(result) {
-				var savePhoto
-
-				if (result !== undefined) {
-					result.set(data)
-
-					data = result.toJSON()
-
-					data.hello = 'hello'
-
-					data.weighted_votes = weightVotes(data, req.params.tags)
-					res.send(data)
-
-					savePhoto = result
-				}
-
-				else {
-					data.total_votes = 0
-					data.user_votes = []
-					data.tag_votes = {}
-
-					savePhoto = new ParseClass.Photo(data)
-
-					data.weighted_votes = 0
-					res.send(data)
-				}
-
-				savePhoto.save({
-					error: function(err) {
-						console.log(err)
-					}
-				})
+				resolve({flickr: flickrResponse, parseDb: result, req: reqParams})
 			},
 			error: function(err) {
-				console.log(err)
+				reject(err)
 			}
 		})
 	})
-}
-catch (err) {
-	console.log(err)
-	res.send(err)
-}
+
+	return promise
 }
 
-module.exports = getDetail
+
+
+function mergeDbData(data) {
+
+	if (data.parseDb) {
+		data.parseDb.set(data.flickr)
+		data.flickr = data.parseDb.toJSON()
+	}
+	else {
+		data.flickr.total_votes = 0
+		data.flickr.user_votes = []
+		data.flickr.tag_votes = {}
+
+		data.parseDb = new ParseClass.Photo(data.flickr)
+	}
+
+	return data
+}
+
+
+
+function calcWeightedVotes(data) {
+
+	if (!data.req.tags) data.req.tags = []
+
+	data.flickr.weighted_votes = weightVotes(data.flickr, data.req.tags)
+
+	return data
+
+}
+
+
+
+function savePhoto(data) {
+
+	data.parseDb.save({
+		error: handleError
+	})
+
+	return data
+}
+
+
+
+function handleError(err) {
+	console.log(err)
+}

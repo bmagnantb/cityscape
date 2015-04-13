@@ -58,12 +58,8 @@ class DetailView extends React.Component {
 						<a href={this.state.detail.urls.url[0]._content} target="_blank"><h3>{this.state.detail.title}</h3></a>
 
 						{this.state.detail.owner
-							? <a href={this.state.detail._owner_url} target="_blank">this.state.detail.ownername
-								? <h4>{this.state.detail.ownername}</h4>
-								: null </a>
-							: this.state.detail.ownername
-								? <h4>{this.state.detail.ownername}</h4>
-								: null}
+							? <a href={this.state.detail._owner_url} target="_blank">{this.state.detail.ownername}</a>
+							: <h4>{this.state.detail.ownername}</h4>}
 
 						{this.state.detail.description ? <h6>{this.state.detail.description}</h6> : null}
 

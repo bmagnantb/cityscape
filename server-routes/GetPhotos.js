@@ -2,20 +2,27 @@ var request = require('request')
 var Promise = require('bluebird')
 var Parse = require('parse').Parse
 
-var flickrApiKey = require('../flickrKey')
-var weightVotes = require('./weightVotes')
-var ParseClass = require('./ParseClass')
-var trimPhoto = require('./trimPhoto')
+var weightVotes = require('./utils/weightVotes')
+var ParseClass = require('./utils/ParseClass')
+var trimPhoto = require('./utils/trimPhoto')
+var flickrRequestUrl = require('./utils/flickrRequestUrl')
 
 
+module.exports = photos
 
 
 // handle request
 function photos(req, res) {
 
-	var url = getRequestUrl(req.query)
+	var url = flickrRequestUrl(req.query, req.route)
 
 	request.get(url, function(err, resp, body) {
+
+		if (err != null) {
+			res.send(err)
+			console.log(err)
+			return
+		}
 
 		var flickrResponse = trimFlickrResponse(body, req.query)
 
@@ -27,53 +34,13 @@ function photos(req, res) {
 			.then(sortPhotos)
 			.then(truncatePhotos)
 			.then(function(data) {
-				console.log(Object.keys(data))
 				res.send({photos: data.aggregate.photos})
 				return data
 			})
-			.then(savePhotos).done()
-
+			.then(savePhotos)
+			.catch(handleError)
 	})
-
 }
-
-
-
-// parse client request info and call makeUrl
-function getRequestUrl(reqQuery) {
-	reqQuery.api_key = flickrApiKey
-
-	var sevenDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 7)) / 1000)
-
-	if (!reqQuery.min_upload_date) reqQuery.min_upload_date = sevenDaysAgo
-	if (!reqQuery.tags) reqQuery.tags = []
-	if (reqQuery.tags.indexOf('buildings') === -1) reqQuery.tags.unshift('buildings')
-	if (reqQuery.tags.indexOf('city') === -1) reqQuery.tags.unshift('city')
-
-	if (!reqQuery.extras) reqQuery.extras = []
-	if (reqQuery.extras.indexOf('tags') === -1) reqQuery.extras.push('tags')
-
-	console.log(reqQuery)
-
-	return makeUrl(reqQuery)
-}
-
-
-
-// build flickr request url
-function makeUrl(obj) {
-	var url = 'https://api.flickr.com/services/rest?'
-	var counter = 0
-
-	for (var key in obj) {
-		if (counter > 0) url += '&'
-		url+= key + '=' + obj[key]
-		counter++
-	}
-
-	return url
-}
-
 
 
 // get photos from Flickr
@@ -183,7 +150,7 @@ function getParseIds(parseDb) {
 
 function getDbVoted(data) {
 
-	var sevenDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 7)) / 1000)
+	var thirtyDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 30)) / 1000)
 
 	var aggregateData = data.aggregate.photos
 	var	photoIds = data.aggregate.photo_ids
@@ -192,10 +159,10 @@ function getDbVoted(data) {
 	// new query for Parse -- get rankings that fit flickr request query
 	var queryVotes = new Parse.Query('Photo')
 
-	if (aggregateData.tags.length) queryVoted.containsAll('tags', aggregateData.tags)
+	if (aggregateData.tags.length) queryVotes.containsAll('tags', aggregateData.tags)
 	queryVotes.notContainedIn('photo_ids', photoIds)
 		      .greaterThan('total_votes', 0)
-		      .greaterThan('date_uploaded', sevenDaysAgo)
+		      .greaterThan('date_uploaded', thirtyDaysAgo)
 		      .descending('total_votes')
 		      .addAscending('date_uploaded')
 		      .limit(500)
@@ -275,14 +242,11 @@ function savePhotos(data) {
 
 	var savePhotos = data.savePhotos
 
-	console.log(savePhotos.length)
+	Parse.Object.saveAll(savePhotos, {
+		error: handleError
+	})
 }
 
-
-
-// 				data.photos.photo = data.photos.photo.slice(0, 500)
-// 				console.log('sending')
-// 				res.send(data)
 
 // 				// save photos after response -- lots of processing time
 // 				for (var i = 0, arr = newPhotos, imax = arr.length; i < imax; i++) {
@@ -330,5 +294,3 @@ function savePhotos(data) {
 function handleError(err) {
 	console.log(err)
 }
-
-module.exports = photos
