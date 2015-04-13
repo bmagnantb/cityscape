@@ -4,7 +4,7 @@
   "description": "user-voted city skyline photo gallery",
   "main": "server.js",
   "engines": {
-  	"node": "0.12.0"
+    "node": "0.12.0"
   },
   "scripts": {
     "start": "node server.js & npm run watch",
@@ -19,11 +19,9 @@
   },
   "dependencies": {
     "bluebird": "^2.9.24",
-    "concat-stream": "^1.4.8",
     "express": "latest",
     "parse": "latest",
-    "request": "^2.53.0",
-    "through": "^2.3.7"
+    "request": "^2.53.0"
   },
   "devDependencies": {
     "alt": "latest",
