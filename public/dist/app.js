@@ -62072,18 +62072,12 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 								this.state.detail.owner ? React.createElement(
 									"a",
 									{ href: this.state.detail._owner_url, target: "_blank" },
-									"this.state.detail.ownername ? ",
-									React.createElement(
-										"h4",
-										null,
-										this.state.detail.ownername
-									),
-									": null "
-								) : this.state.detail.ownername ? React.createElement(
+									this.state.detail.ownername
+								) : React.createElement(
 									"h4",
 									null,
 									this.state.detail.ownername
-								) : null,
+								),
 								this.state.detail.description ? React.createElement(
 									"h6",
 									null,

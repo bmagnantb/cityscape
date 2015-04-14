@@ -16,6 +16,7 @@
     "postinstall": "npm run ignores"
   },
   "dependencies": {
+    "bluebird": "^2.9.24",
     "express": "latest",
     "mongodb": "^2.0.27",
     "parse": "latest",
