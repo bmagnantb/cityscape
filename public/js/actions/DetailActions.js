@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var { alt } = require('../alt-app')
-var { DetailClient } = require('../ServerFlickrClient')
+var { DetailClient } = require('../ServerClient')
 
 class DetailActions {
 	getDetail(photoId, tags) {

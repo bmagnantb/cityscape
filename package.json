@@ -26,7 +26,7 @@
   "devDependencies": {
     "alt": "latest",
     "autoprefixer": "^5.1.0",
-    "babel": "latest",
+    "babel": "^5.1.9",
     "babelify": "latest",
     "bourbon": "latest",
     "browserify": "latest",
@@ -35,6 +35,7 @@
     "es5-shim": "latest",
     "jest": "^0.1.39",
     "jquery": "latest",
+    "jsdom": "^4.4.0",
     "jshint": "latest",
     "lodash": "^3.6.0",
     "mocha": "latest",
@@ -43,6 +44,7 @@
     "node-sass": "^2.1.1",
     "parallelshell": "latest",
     "react": "latest",
+    "sinon": "^1.14.1",
     "uglifyify": "latest",
     "watch": "latest",
     "watchify": "^3.1.0"

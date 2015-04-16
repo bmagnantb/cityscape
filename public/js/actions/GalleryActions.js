@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var { alt } = require('../alt-app')
-var { GalleryClient } = require('../ServerFlickrClient')
+var { GalleryClient } = require('../ServerClient')
 
 class GalleryActions {
 	constructor() {

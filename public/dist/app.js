@@ -61692,7 +61692,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 	var alt = _require.alt;
 
-	var _require2 = require("../ServerFlickrClient");
+	var _require2 = require("../ServerClient");
 
 	var DetailClient = _require2.DetailClient;
 
@@ -61720,7 +61720,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 	exports.detailActions = alt.createActions(DetailActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../ServerFlickrClient":242,"../alt-app":246}],244:[function(require,module,exports){
+},{"../ServerClient":242,"../alt-app":246}],244:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -61732,7 +61732,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 	var alt = _require.alt;
 
-	var _require2 = require("../ServerFlickrClient");
+	var _require2 = require("../ServerClient");
 
 	var GalleryClient = _require2.GalleryClient;
 
@@ -61776,7 +61776,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 	exports.galleryActions = alt.createActions(GalleryActions);
 })(typeof module === "object" ? module.exports : window);
 
-},{"../ServerFlickrClient":242,"../alt-app":246}],245:[function(require,module,exports){
+},{"../ServerClient":242,"../alt-app":246}],245:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
