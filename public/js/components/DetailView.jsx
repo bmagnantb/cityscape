@@ -3,7 +3,7 @@
 var React = require('react')
 var { detailStore } = require('../stores/DetailStore')
 var { detailActions } = require('../actions/DetailActions')
-var { userStore } = require('../stores/userStore')
+var { userStore } = require('../stores/UserStore')
 var { galleryActions } = require('../actions/GalleryActions')
 
 class DetailView extends React.Component {
