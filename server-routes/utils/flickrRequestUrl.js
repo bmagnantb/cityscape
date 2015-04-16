@@ -1,4 +1,4 @@
-var flickrApiKey = require('../../flickrKey')
+var flickrApiKey = require('../../keys/flickrKey')
 
 
 module.exports = getRequestUrl
