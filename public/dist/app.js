@@ -54703,7 +54703,7 @@ var _createClass = (function () { function defineProperties(target, props) { for
 		function ServerClient(options) {
 			_classCallCheck(this, ServerClient);
 
-			this.options = _.merge(options, { format: 'json', nojsoncallback: 1 });
+			this.options = _.merge(options, { format: 'json', nojsoncallback: '1' });
 		}
 
 		_createClass(ServerClient, [{
@@ -54714,7 +54714,7 @@ var _createClass = (function () { function defineProperties(target, props) { for
 		}, {
 			key: 'requestPhoto',
 			value: function requestPhoto(settings, tags) {
-				tags = '/' + tags;
+				tags = tags ? '/' + tags : '';
 				return $.get('/photo' + tags, _.assign({}, this.options, settings));
 			}
 		}, {
@@ -55103,7 +55103,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 
 	var detailActions = _require2.detailActions;
 
-	var _require3 = require('../stores/userStore');
+	var _require3 = require('../stores/UserStore');
 
 	var userStore = _require3.userStore;
 
@@ -55319,7 +55319,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 	exports.DetailView = DetailView;
 })(typeof module === 'object' ? module.exports : window);
 
-},{"../actions/DetailActions":205,"../actions/GalleryActions":206,"../stores/DetailStore":220,"../stores/userStore":223,"react":202}],212:[function(require,module,exports){
+},{"../actions/DetailActions":205,"../actions/GalleryActions":206,"../stores/DetailStore":220,"../stores/UserStore":222,"react":202}],212:[function(require,module,exports){
 'use strict';
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
@@ -56103,7 +56103,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			{ path: '/gallery' },
 			React.createElement(Route, { name: 'gallerysearch', path: '/gallery/:tags/page:page', handler: GalleryView }),
 			React.createElement(Route, { name: 'gallerynosearch', path: '/gallery/page:page', handler: GalleryView }),
-			React.createElement(DefaultRoute, { handler: GalleryAddPage })
+			React.createElement(DefaultRoute, { name: 'gallerydefault', handler: GalleryAddPage })
 		),
 		React.createElement(Route, { name: 'photo', path: '/photo/:id/:tags?', handler: DetailView }),
 		React.createElement(Redirect, { from: 'details', to: 'photo' }),
@@ -56146,7 +56146,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 	})(React.Component);
 
 	GalleryAddPage.willTransitionTo = function (transition, params) {
-		if (params.tags) transition.redirect('/gallery/' + params.tags + '/page1');else transition.redirect('/gallery/page1');
+		if (params.tags) return transition.redirect('/gallery/' + params.tags + '/page1');else return transition.redirect('/gallery/page1');
 	};
 
 	exports.GalleryAddPage = GalleryAddPage;
@@ -56432,50 +56432,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 })(typeof module === 'object' ? module.exports : window);
 
 },{"../actions/GalleryActions":206,"../alt-app":208,"jquery":45,"react":202}],222:[function(require,module,exports){
-'use strict';
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-;(function (exports) {
-	var _require = require('../alt-app');
-
-	var alt = _require.alt;
-
-	var _require2 = require('parse');
-
-	var Parse = _require2.Parse;
-
-	var _require3 = require('../actions/UserActions');
-
-	var userActions = _require3.userActions;
-
-	var UserStore = (function () {
-		function UserStore() {
-			_classCallCheck(this, UserStore);
-
-			this.user = null;
-
-			this.bindListeners({
-				setUser: [userActions.current, userActions.login, userActions.logout, userActions.register]
-			});
-		}
-
-		_createClass(UserStore, [{
-			key: 'setUser',
-			value: function setUser(user) {
-				this.user = user;
-			}
-		}]);
-
-		return UserStore;
-	})();
-
-	exports.userStore = alt.createStore(UserStore);
-})(typeof module === 'object' ? module.exports : window);
-
-},{"../actions/UserActions":207,"../alt-app":208,"parse":47}],223:[function(require,module,exports){
 'use strict';
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
