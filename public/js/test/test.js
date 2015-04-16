@@ -7,15 +7,19 @@ NOT CURRENT FIX THIS
 **************************************/
 
 
-"use strict"
+'use strict'
 
 // make testing suite
 var Mocha = require('mocha')
 var Chai = require('chai')
+var sinon = require('sinon')
+var proxyquire = require('proxyquire')
+
 Chai.use(require('chai-things'))
 Chai.use(require('chai-as-promised'))
+Chai.use(require('sinon-chai'))
 
-var { assert, expect } = Chai
+var { expect } = Chai
 
 
 // function to create browser environment -- when window global is needed
@@ -32,484 +36,288 @@ var clientEnv = (callback) => {
 }
 
 
+// parse initialize breaks tests
+var parseStub = {}
+parseStub.Parse = function() {}
+
+
+
 
 // --------------- CLIENTS --------------------
 
-describe('ServerClient', () => {
+describe('ServerClient.js', () => {
 
-	var SC, sc
+	describe('ServerClient', () => {
 
-	before((done) => {
-		SC = require('../ServerClient').ServerClient
-		sc = new SC()
-		done()
-	})
+		var SC, sc, userStub
 
-	describe('#constructor', () => {
-		it('should take options as argument and set to instance options', () => {
-			expect(new SC({thingy: 'thing'})).to.have.property('options').with.property('thingy').that.equals('thing')
-		})
-	})
+		before(() => {
+			var jqueryStub = {
+				get: function() { return arguments },
+				post: function() { return arguments }
+			}
 
-	describe('#requestPhotos', () => {
-		it('should take settings as argument and call $.get with instance options and passed settings', () => {
-			expect(sc.requestPhotos({yes: 'duh'})).to
-		})
-	})
-})
+			userStub = function(username) {
+				return {
+					get: function(key) {
+						return username
+					}
+				}
+			}
 
-
-
-
-
-
-
-// ---------------- ROUTER -------------------
-
-describe('router', () => {
-
-		var router,
-		Redirect = Router.Redirect,
-		Route = Router.Route,
-		routerState,
-		routerHandler,
-		hash
-
-		before((done) => {
-				clientEnv(() => {
-						router = require('../Router').router
-						router.run(function(Handler, state) {
-								routerState = state
-								routerHandler = Handler
-						})
-						done()
-				})
-		})
-
-		describe('#run', () => {
-				it('should initialize router with path /', () => {
-						expect(routerState).to.have.property('path', '/')
-						expect(routerState).to.have.property('routes').that.is.instanceof(Array)
-						expect(routerState.routes[0]).to.have.property('handler').that.exists
-						expect(routerState.routes[0]).to.have.property('path', '/')
-						expect(routerState.routes[0]).to.have.property('defaultRoute').that.equals(routerState.routes[1])
-				})
-		})
-
-		describe('#routes', () => {
-				it('should have single parent route named "app"', () => {
-						expect(router.routes).to.be.instanceof(Array).with.length(1)
-						expect(router.routes[0]).to.have.property('name', 'app')
-				})
-
-				describe('app route', () => {
-						it('should have handler', () => {
-								expect(router.routes[0]).to.have.property('handler')
-						})
-
-						it('should have path "/"', () => {
-								expect(router.routes[0]).to.have.property('path', '/')
-						})
-
-						it('should have a default route', () => {
-								expect(router.routes[0]).to.have.property('defaultRoute')
-						})
-
-						it('should have multiple child routes', () => {
-								expect(router.routes[0]).to.have.property('childRoutes').that.is.instanceof(Array).with.length.above(1)
-						})
-				})
-		})
-})
-
-
-
-
-
-
-
-
-// ------------- ALT APP -------------------
-
-describe('alt', () => {
-		it('should be an instance of Alt', () => {
-				expect(alt).to.be.instanceof(Alt)
-		})
-})
-
-
-
-
-
-
-
-
-// ------------- STORES -------------------
-
-describe('galleryStore', () => {
-
-		var galleryStore, GalleryStore, actions
-
-		before((done) => {
-				clientEnv(() => {
-						actions = alt.generateActions('getPhotos', 'setTags')
-						GalleryStore = require('../stores/GalleryStore').GalleryStore
-						class GalleryStoreTest extends GalleryStore {
-								constructor() {
-										super()
-										this.bindListeners({
-												getPhotos: actions.getPhotos,
-												setTags: actions.setTags
-										})
-								}
-						}
-						galleryStore = alt.createStore(GalleryStoreTest)
-						done()
-				})
+			SC = proxyquire('../ServerClient', {jquery: jqueryStub}).ServerClient
+			sc = new SC({})
 		})
 
 		describe('#constructor', () => {
-				it('should create initial state', () => {
-						expect(galleryStore.getState()).to.be.an('object').and.have.property('photo').and.is.instanceof(Array).with.length(0)
-						expect(galleryStore.getState()).to.have.property('page', null)
-						expect(galleryStore.getState()).to.have.property('tags').and.is.instanceof(Array).with.length(0)
-						expect(galleryStore.getState()).to.have.property('extras').and.is.instanceof(Array).with.length(0)
-				})
+			it('should take options as argument and set to instance options', () => {
+				expect(new SC({thingy: 'thing'})).to.have.property('options').with.property('thingy').that.equals('thing')
+			})
 		})
 
-		describe('#getPhotos', () => {
-				it('should set any property on state from action.getPhotos data', () => {
-						actions.getPhotos({photo: 'photo'})
-						expect(galleryStore.getState()).to.have.property('photo', 'photo')
-						actions.getPhotos({photo: 'china', page: 5})
-						expect(galleryStore.getState()).to.have.property('photo', 'china')
-						expect(galleryStore.getState()).to.have.property('page', 5)
-						expect(galleryStore.getState()).to.not.have.property('isFromFlickr')
-						actions.getPhotos({photo: {color: 'red', size: '1024'}, page: 63, isFromFlickr: 'yes'})
-						expect(galleryStore.getState()).to.have.property('photo').that.is.instanceof(Object).and.has.property('color', 'red')
-						expect(galleryStore.getState()).to.have.property('page', 63)
-						expect(galleryStore.getState()).to.have.property('isFromFlickr', 'yes')
-				})
+		describe('#requestPhotos', () => {
+			it('should take settings obj as argument and request with that + instance options', () => {
+
+				var request = sc.requestPhotos()
+				var argsRequest = sc.requestPhotos({moreSettings: 'specificsearch'})
+
+				expect(request).to.have.length(2)
+				expect(request[0]).to.equal('/photos')
+				expect(request[1]).to.be.instanceof(Object).with.keys('format', 'nojsoncallback')
+				expect(argsRequest[1]).to.contain.key('moreSettings')
+			})
 		})
 
-		describe('#setTags', () => {
-				it('should add tags to state.tags from action.setTags array', () => {
-						actions.setTags(['china'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(1).and.contain('china')
-						actions.setTags(['kowloon', 'hong kong', 'guangzhou', 'sichuan'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(5).and.contain('china').and.contain('kowloon').and.contain('hong kong').and.contain('guangzhou').and.contain('sichuan')
-				})
+		describe('#requestPhoto', () => {
+			it('should take settings obj and comma-separated tags string as argument and request with that + instance options', () => {
 
-				it('should delete tags with "-" prefix from state.tags array', () => {
-						actions.setTags(['-hong kong'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(4).and.contain('china').and.contain('kowloon').and.contain('guangzhou').and.contain('sichuan')
-						actions.setTags(['-sichuan', '-china'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(2).and.contain('kowloon').and.contain('guangzhou')
-				})
+				var request = sc.requestPhoto()
+				var argsRequest = sc.requestPhoto({moreSettings: 'specificsearch'}, 'china,shanghai')
+
+				expect(request).to.have.length.within(2, 3)
+				expect(request[0]).to.equal('/photo')
+				expect(request[1]).to.be.instanceof(Object).with.keys('format', 'nojsoncallback')
+				expect(argsRequest[0]).to.contain('china,shanghai')
+			})
 		})
 
+		describe('#vote', () => {
+			it('should take a photo_id, user, and tags and post with that + instance options', () => {
+
+				var person1 = userStub('person1')
+				var person4 = userStub('person4')
+				var request = sc.vote(135033, person1)
+				var tagsRequest = sc.vote(150346, person4, 'china,shanghai')
+
+				expect(request).to.have.length(1)
+				expect(request[0]).to.contain('135033').and.contain('person1')
+				expect(tagsRequest[0]).to.contain('150346').and.contain('person4').and.contain('china,shanghai')
+			})
+		})
+	})
+
+	describe('GalleryClient', () => {
+
+		var SC, galleryClient
+
+		before(() => {
+			var file = require('../ServerClient')
+			SC = file.ServerClient
+			galleryClient = file.GalleryClient
+		})
+
+		it('should be instance of ServerClient', () => {
+			expect(galleryClient).to.be.instanceof(SC)
+		})
+
+		describe('options', () => {
+			it('should contain options for gallery view request', () => {
+				expect(galleryClient.options).to.be.instanceof(Object).and.deep.equal({
+					method: 'flickr.photos.search',
+					content_type: '1',
+					extras: [
+						'url_m',
+						'owner_name',
+						'date_upload'
+					],
+					per_page: '500',
+					sort: 'relevance',
+					tag_mode: 'all',
+					format: 'json',
+					nojsoncallback: '1'
+				})
+			})
+		})
+	})
+
+	describe('DetailClient', () => {
+
+		var SC, detailClient
+
+		before(() => {
+			var file = require('../ServerClient')
+			SC = file.ServerClient
+			detailClient = file.DetailClient
+		})
+
+		it('should be instance of ServerClient', () => {
+			expect(detailClient).to.be.instanceof(SC)
+		})
+
+		describe('options', () => {
+			it('should contain options for detail view request', () => {
+				expect(detailClient.options).to.be.instanceof(Object).and.deep.equal({
+					format: 'json',
+					nojsoncallback: '1',
+					method: 'flickr.photos.getInfo',
+					extras: [
+						'url_m'
+					]
+				})
+			})
+		})
+	})
 })
 
 
-describe('userStore', () => {
+describe('alt-app.js', () => {
 
-		var userStore, UserStore, actions
+	var Alt, alt
 
-		before((done) => {
-				clientEnv(() => {
-						actions = alt.generateActions('setUser')
-						UserStore = require('../stores/UserStore').UserStore
-						class UserStoreTest extends UserStore {
-								constructor() {
-										super()
-										this.bindListeners({
-												setUser: actions.setUser
-										})
-								}
-						}
-						userStore = alt.createStore(UserStoreTest)
-						done()
+	before(() => {
+		Alt = require('alt')
+		alt = require('../alt-app').alt
+	})
+
+	describe('alt', () => {
+		it('should be instance of Alt', () => {
+			expect(alt).to.be.instanceof(Alt)
+		})
+	})
+})
+
+
+describe('Router.jsx (routes)', () => {
+
+	var React, router
+
+	before(() => {
+		React = require('react')
+		router = require('../router/Router').router
+		console.log(router.namedRoutes.gallerydefault.path)
+	})
+
+	describe('named routes', () => {
+
+		var routes = {
+			app: {             path: '/',                        handler: 'AppView' },
+			gallerysearch: {   path: '/gallery/:tags/page:page', handler: 'GalleryView' },
+			gallerynosearch: { path: '/gallery/page:page',       handler: 'GalleryView' },
+			gallerydefault: {  path: '/gallery',                 handler: 'GalleryAddPage' },
+			photo: {           path: '/photo/:id/:tags?',        handler: 'DetailView' },
+			login: {           path: '/login',                   handler: 'LoginView' },
+			register: {        path: '/register',                handler: 'RegisterView' },
+			passemailsent: {   path: '/passemailsent',           handler: 'PassEmailView' }
+		}
+
+		for (var key in routes) {
+			describe(key+' route', () => {
+				it('should have path '+routes[key].path, () => {
+					expect(router.namedRoutes[key].path).to.equal(routes[key].path)
 				})
+
+				it ('should have a React handler named '+routes[key].handler, () => {
+					expect(Object.getPrototypeOf(router.namedRoutes[key].handler)).to.equal(React.Component)
+					expect(router.namedRoutes[key].handler.name).to.equal(routes[key].handler)
+				})
+			})
+		}
+
+	})
+})
+
+
+describe('defaultParams.js', () => {
+
+	describe('GalleryAddPage', () => {
+
+		var React, GalleryAddPage, transitionStub
+
+		before(() => {
+			React = require('react')
+			GalleryAddPage = require('../router/defaultParams').GalleryAddPage
+			transitionStub = { redirect: function(newHash) { return newHash } }
+		})
+
+		it('should be a React Component', () => {
+			expect(Object.getPrototypeOf(GalleryAddPage)).to.equal(React.Component)
+		})
+
+		describe('willTransitionTo', () => {
+			it('should add page 1 to router params w/o page', () => {
+				expect(GalleryAddPage.willTransitionTo(transitionStub, {})).to.equal('/gallery/page1')
+				expect(GalleryAddPage.willTransitionTo(transitionStub, {tags: 'germany'})).to.equal('/gallery/germany/page1')
+			})
+		})
+	})
+})
+
+
+describe('components', () => {
+
+	var React = require('react/addons')
+	var userActionsStub = {
+		userActions: {
+			current: function() {
+				return 'currentUser'
+			}
+		}
+	}
+
+	describe('AppView.jsx', () => {
+
+		var AppView, app_view
+
+		before(() => {
+			sinon.spy(userActionsStub.userActions, 'current')
+			AppView = proxyquire('../components/AppView', { '../actions/UserActions': userActionsStub }).AppView
+			app_view = new AppView()
+		})
+
+		after(() => {
+			userActionsStub.userActions.current.restore()
+		})
+
+		it('should be a React Component', () => {
+			expect(Object.getPrototypeOf(AppView)).to.equal(React.Component)
 		})
 
 		describe('#constructor', () => {
-				it('should set username to null', () => {
-						expect(userStore.getState()).to.be.an('object').and.have.property('user', null)
-				})
+			it('should initialize state to {}', () => {
+				expect(app_view.state).to.deep.equal({})
+			})
+
+			it('should call userActions.current to init user info', () => {
+				expect(userActionsStub.userActions.current.callCount).to.equal(1)
+			})
 		})
-
-		describe('#setUser', () => {
-				it('should set username to data from actions.setUser', () => {
-						actions.setUser('bmagnantb')
-						expect(userStore.getState().user).to.equal('bmagnantb')
-						actions.setUser('everyone')
-						expect(userStore.getState().user).to.equal('everyone')
-				})
-		})
-})
+	})
 
 
-describe('detailStore', () => {
+	describe('DetailView', () => {
 
-	var detailStore, DetailStore, actions
+		var DetailView, detail_view
 
-		before((done) => {
-				clientEnv(() => {
-						actions = alt.generateActions('getInfo', 'resetState')
-						DetailStore = require('../stores/DetailStore').DetailStore
-						class DetailStoreTest extends DetailStore {
-								constructor() {
-										super()
-										this.bindListeners({
-												getInfo: actions.getInfo,
-												resetState: actions.resetState
-										})
-								}
-						}
-						detailStore = alt.createStore(DetailStoreTest)
-						done()
-				})
+		before(() => {
+			sinon.spy(userActionsStub.userActions, 'current')
+			DetailView = require('../components/DetailView', { '../actions/UserActions': userActionsStub }).DetailView
+			detail_view = new DetailView()
 		})
 
 		describe('#constructor', () => {
-				it('should set initial state of this.photo = null, this.photoUrl = function() {return ""}', () => {
-						expect(detailStore.getState()).to.have.property('photo', null)
-						expect(detailStore.getState()).to.have.property('photoUrl').that.is.instanceof(Function)
-						expect(detailStore.getState().photoUrl()).to.equal('')
-				})
+			it('should init state to {}', () => {
+				expect(detail_view.state).to.deep.equal({})
+			})
 		})
-
-		describe('#getInfo', () => {
-				it('should set state.photo to data from actions.getInfo', () => {
-						actions.getInfo({title: 'shanghai skyline', owner: 'PRC', farm: 5, server: 766967})
-						expect(detailStore.getState()).to.have.property('photo').that.has.property('title', 'shanghai skyline')
-						expect(detailStore.getState().photo).to.have.property('owner', 'PRC')
-						expect(detailStore.getState().photo).to.have.property('farm', 5)
-						expect(detailStore.getState().photo).to.have.property('server', 766967)
-				})
-
-				it('should build url on state.photoUrl with data from actions.getInfo', () => {
-						expect(detailStore.getState().photoUrl('l')).to.contain('farm5').and.to.contain('766967')
-				})
-
-				it('should reset data completely when called', () => {
-						expect(detailStore.getState().photo).to.have.property('title', 'shanghai skyline')
-						expect(detailStore.getState().photo).to.have.property('owner', 'PRC')
-						expect(detailStore.getState().photo).to.have.property('farm', 5)
-						expect(detailStore.getState().photo).to.have.property('server', 766967)
-						actions.getInfo({title: 'guangzhou skyline', farm: 66})
-						expect(detailStore.getState().photo).to.have.property('title', 'guangzhou skyline')
-						expect(detailStore.getState().photo).to.have.property('farm', 66)
-						expect(detailStore.getState().photo).to.not.have.ownProperty('owner').and.to.not.have.ownProperty('server')
-						expect(detailStore.getState().photoUrl('l')).to.contain('farm66').and.to.not.contain('farm5').and.to.not.contain('766967')
-				})
-		})
-
-		describe('#resetState', () => {
-				it('should reset state.photo to null and state.photoUrl to function() {return ""}', () => {
-						expect(detailStore.getState().photo).to.not.equal(null)
-						expect(detailStore.getState().photoUrl()).to.not.equal('')
-						actions.resetState()
-						expect(detailStore.getState().photo).to.equal(null)
-						expect(detailStore.getState().photoUrl()).to.equal('')
-				})
-		})
+	})
 })
-
-
-
-
-
-
-// ------------------ ACTIONS -----------------
-
-// describe('GalleryActions', () => {
-
-// 		var galleryActions, GalleryActions
-
-// 		before((done) => {
-// 				clientEnv(() => {
-// 						GalleryActions = require('../actions/GalleryActions').GalleryActions
-// 						class GalleryActionsTest extends GalleryActions {
-// 								constructor() {
-// 										super()
-// 								}
-// 						}
-// 						galleryActions = alt.createActions(GalleryActionsTest)
-// 						done()
-// 				})
-// 		})
-// })
-
-
-
-
-
-
-
-// ------------------ COMPONENTS -----------------
-
-describe('AppView', () => {
-
-		var AppView, appView
-
-		before((done) => {
-				clientEnv(() => {
-						AppView = require('../components/AppView').AppView
-						appView = new AppView()
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(appView).to.be.instanceof(AppView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(appView).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('DetailView', () => {
-
-		var DetailView
-
-		before((done) => {
-				clientEnv(() => {
-						DetailView = require('../components/DetailView').DetailView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new DetailView()).to.be.instanceof(DetailView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new DetailView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('Footer', () => {
-
-		var Footer
-
-		before((done) => {
-				clientEnv(() => {
-						Footer = require('../components/Footer').Footer
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new Footer()).to.be.instanceof(Footer)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new Footer()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('GalleryView', () => {
-
-		var GalleryView
-
-		before((done) => {
-				clientEnv(() => {
-						GalleryView = require('../components/GalleryView').GalleryView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new GalleryView()).to.be.instanceof(GalleryView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new GalleryView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('Header', () => {
-
-		var Header
-
-		before((done) => {
-				clientEnv(() => {
-						Header = require('../components/Header').Header
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new Header()).to.be.instanceof(Header)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new Header()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('LoginView', () => {
-
-		var LoginView
-
-		before((done) => {
-				clientEnv(() => {
-						LoginView = require('../components/LoginView').LoginView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new LoginView()).to.be.instanceof(LoginView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new LoginView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('RegisterView', () => {
-
-		var RegisterView
-
-		before((done) => {
-				clientEnv(() => {
-						RegisterView = require('../components/RegisterView').RegisterView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new RegisterView()).to.be.instanceof(RegisterView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new RegisterView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('PassEmailView', () => {
-		it('should be a constructor', () => {
-				expect(new PassEmailView()).to.be.instanceof(PassEmailView)
-		})
-		it('should be instance of React Component', () => {
-				expect(new PassEmailView()).to.be.instanceof(React.Component)
-		})
-})
-
