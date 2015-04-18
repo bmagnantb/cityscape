@@ -3,7 +3,7 @@
 var React = require('react')
 var { detailStore } = require('../stores/DetailStore')
 var { detailActions } = require('../actions/DetailActions')
-var { userStore } = require('../stores/userStore')
+var { userStore } = require('../stores/UserStore')
 var { galleryActions } = require('../actions/GalleryActions')
 
 class DetailView extends React.Component {
@@ -28,22 +28,6 @@ class DetailView extends React.Component {
 	componentWillUnmount() {
 		detailStore.unlisten(this._onDetailChange)
 		userStore.unlisten(this._onUserChange)
-	}
-
-
-	_onDetailChange() {
-		var detail = this._detailInfo()
-		var voteAllowed = this._voteAllowed(detail, this.state.user)
-		var votesMarkup = this._votesMarkup(detail, voteAllowed)
-		this.setState({detail, voteAllowed, votesMarkup})
-	}
-
-
-	_onUserChange() {
-		var user = this._userInfo()
-		var voteAllowed = this._voteAllowed(this.state.detail, user)
-		var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed)
-		this.setState({user, voteAllowed, votesMarkup})
 	}
 
 
@@ -83,26 +67,42 @@ class DetailView extends React.Component {
 	}
 
 
+	_onDetailChange() {
+		var detail = this._detailInfo()
+		var voteAllowed = this._voteAllowed(detail, this.state.user)
+		var votesMarkup = this._votesMarkup(detail, voteAllowed)
+		this.setState({detail, voteAllowed, votesMarkup})
+	}
+
+
+	_onUserChange() {
+		var user = this._userInfo()
+		var voteAllowed = this._voteAllowed(this.state.detail, user)
+		var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed)
+		this.setState({user, voteAllowed, votesMarkup})
+	}
+
+
 	_vote() {
 		var tags = this.props.params.tags
 		galleryActions.vote(this.state.detail.photo_id, this.state.user, this.props.params.tags)
 	}
 
 
-	_detailInfo(user) {
+	_detailInfo() {
 		var detail = detailStore.getState()[this.props.params.id]
 		return detail
 	}
 
 
-	_userInfo(detail) {
+	_userInfo() {
 		var user = userStore.getState().user
 		return user
 	}
 
 	_voteAllowed(detail, user) {
 		if (user && detail) {
-			if (detail.user_votes && detail.user_votes.indexOf(user.get('username') === -1)) {
+			if (detail.user_votes && detail.user_votes.indexOf(user.get('username')) === -1) {
 				return <h6 className="upvote" onClick={this._vote.bind(this)}>(upvote)</h6>
 			}
 			return <h6 className="voted">(upvoted)</h6>
@@ -137,12 +137,6 @@ class DetailView extends React.Component {
 	}
 }
 
-
-DetailView.contextTypes = {
-	router: React.PropTypes.func.isRequired
-}
-
-
 var prevDetails = {}
 DetailView.willTransitionTo = function(transition, params) {
 
@@ -151,7 +145,7 @@ DetailView.willTransitionTo = function(transition, params) {
 	if (prevDetails[params.id] === undefined) {
 		detailActions.getDetail(params.id, params.tags)
 		prevDetails[params.id] = {}
-		if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',')
+		if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',').sort()
 		else prevDetails[params.id].tags = []
 	}
 

@@ -25,7 +25,7 @@ function photos(req, res) {
 			return
 		}
 
-		var flickrResponse = trimFlickrResponse(body, req.query)
+		var reqQuery = req.query
 
 		connectMongo(mongoUrl, flickrResponse, req)
 			.then(getDbMatches)
@@ -102,17 +102,17 @@ function getDbMatches(data) {
 
 
 // merge db response with flickr response
-function mergeDbData(data) {
+function mergeDbMatches(data) {
 
-	var aggregateData = data.aggregate.photos
+	var flickrData = data.flickr.photos
 	var parseDb = data.parseDb
-	var reqQuery = data.req.query
+	var reqQuery = data.reqQuery
 
 	var savePhotos = []
 	var parseIds = getParseIds(parseDb)
 
 	// photos for saving to db -- initialize votes info for photos not in db
-	for (var i = 0, arr = aggregateData.photo, imax = arr.length, counter = 0; i < imax; i++) {
+	for (var i = 0, arr = flickrData.photo, imax = arr.length, counter = 0; i < imax; i++) {
 		var parseMatchIndex = parseIds.indexOf(arr[i].photo_id)
 		var copy = {}
 
@@ -132,7 +132,9 @@ function mergeDbData(data) {
 		// update db entry with flickr data, add db entry to aggregate array
 		else {
 			for (var key in arr[i]) {
-				parseDb[parseMatchIndex].set(key, arr[i][key])
+				if (arr[i].hasOwnProperty(key)) {
+					parseDb[parseMatchIndex].set(key, arr[i][key])
+				}
 			}
 
 			arr[i] = parseDb[parseMatchIndex].toJSON()
@@ -140,10 +142,9 @@ function mergeDbData(data) {
 		}
 	}
 
-	delete data.parseDb
 	data.savePhotos = savePhotos
 
-	return data
+	return {flickr: data.flickr, savePhotos: savePhotos}
 }
 
 
@@ -160,19 +161,17 @@ function getParseIds(parseDb) {
 }
 
 
-function getDbVoted(data) {
+function getDbVoted(photo_ids, reqQuery) {
 
 	var thirtyDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 30)) / 1000)
 
-	var aggregateData = data.aggregate.photos
-	var	photoIds = data.aggregate.photo_ids
-	var reqQuery = data.req.query
+	var tags = reqQuery.tags.slice(2)
 
 	// new query for Parse -- get rankings that fit flickr request query
 	var queryVotes = new Parse.Query('Photo')
 
-	if (aggregateData.tags.length) queryVotes.containsAll('tags', aggregateData.tags)
-	queryVotes.notContainedIn('photo_ids', photoIds)
+	if (tags.length) queryVotes.containsAll('tags', tags)
+	queryVotes.notContainedIn('photo_ids', photo_ids)
 		      .greaterThan('total_votes', 0)
 		      .greaterThan('date_uploaded', thirtyDaysAgo)
 		      .descending('total_votes')
@@ -182,8 +181,7 @@ function getDbVoted(data) {
 	var promise = new Promise(function(resolve, reject) {
 		queryVotes.find({
 			success: function(result) {
-				data.votes = result
-				resolve(data)
+				resolve(result)
 			},
 			error: function(err) {
 				reject(err)
@@ -198,26 +196,25 @@ function getDbVoted(data) {
 
 function mergeVotes(data) {
 
-	if (data.votes.length) {
-		for (var i = 0, arr = data.votes, imax = arr.length; i < imax; i++) {
+	if (dbVotes.length) {
+		for (var i = 0, arr = dbVotes, imax = arr.length; i < imax; i++) {
 			arr[i] = arr[i].attributes
 		}
 
-		Array.prototype.push.apply(data.aggregate.photos.photo, data.votes)
+		Array.prototype.push.apply(dbMatches.flickr.photos.photo, dbVotes)
 	}
 
-	delete data.votes
-	return data
+	return dbMatches
 }
 
 
 
 function calcWeightedVotes(data) {
 
-	var aggregateData = data.aggregate.photos
+	var flickrData = data.flickr.photos
 
-	for (var i = 0, arr = aggregateData.photo, imax = arr.length; i < imax; i++) {
-		arr[i].weighted_votes = weightVotes(arr[i], aggregateData.tags)
+	for (var i = 0, arr = flickrData.photo, imax = arr.length; i < imax; i++) {
+		arr[i].weighted_votes = weightVotes(arr[i], flickrData.tags)
 	}
 
 	return data
@@ -227,9 +224,9 @@ function calcWeightedVotes(data) {
 
 function sortPhotos(data) {
 
-	var aggregateData = data.aggregate.photos
+	var flickrData = data.flickr.photos
 
-	aggregateData.photo.sort(function(a, b) {
+	flickrData.photo.sort(function(a, b) {
 		if (a.weighted_votes > b.weighted_votes) return -1
 		if (b.weighted_votes > a.weighted_votes) return 1
 		if (a.total_votes > b.total_votes) return -1
@@ -245,7 +242,7 @@ function sortPhotos(data) {
 
 
 function truncatePhotos(data) {
-	data.aggregate.photos.photo = data.aggregate.photos.photo.slice(0, 500)
+	data.flickr.photos.photo = data.flickr.photos.photo.slice(0, 500)
 	return data
 }
 

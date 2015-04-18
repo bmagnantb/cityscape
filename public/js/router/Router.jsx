@@ -21,7 +21,7 @@ var routes = (
 		<Route path="/gallery">
 			<Route name="gallerysearch" path="/gallery/:tags/page:page" handler={GalleryView} />
 			<Route name="gallerynosearch" path="/gallery/page:page" handler={GalleryView} />
-			<DefaultRoute handler={GalleryAddPage} />
+			<DefaultRoute name="gallerydefault" handler={GalleryAddPage} />
 		</Route>
 		<Route name="photo" path="/photo/:id/:tags?" handler={DetailView} />
 		<Redirect from="details" to="photo" />

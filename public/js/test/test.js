@@ -7,606 +7,549 @@ NOT CURRENT FIX THIS
 **************************************/
 
 
-"use strict"
+'use strict'
 
 // make testing suite
 var Mocha = require('mocha')
 var Chai = require('chai')
+var sinon = require('sinon')
+var proxyquire = require('proxyquire')
+var Promise = require('bluebird')
+
 Chai.use(require('chai-things'))
 Chai.use(require('chai-as-promised'))
+Chai.use(require('sinon-chai'))
 
-var { assert, expect } = Chai
+var { expect } = Chai
 
 
-// function to create browser environment -- when window is needed
+// function to create browser environment -- when window global is needed
 var jsdom = require('jsdom')
-var fs = require('fs')
-var clientEnv = (callback) => {
+var clientEnv = () => {
+
+	var promise = new Promise(function(resolve, reject) {
+
 		jsdom.env({
-				html: '<html><body></body></html>',
-				done(errs, window) {
-						global.window = window
-						global.getComputedStyle = window.getComputedStyle
-						callback()
-				}
+			html: '<html><body></body></html>',
+			done(err, window) {
+				if (err) reject()
+				global.window = window
+				global.getComputedStyle = window.getComputedStyle
+				resolve()
+			}
 		})
+	})
+
+	return promise
 }
 
-// require files that don't need browser environment
-var Alt = require('alt')
-var alt = require('../alt-app').alt
 
-var React = require('react')
-var Router = require('../react-router')
-
-var flickrMakeUrl = require('../FlickrMakeUrl').flickrMakeUrl
-
-var PassEmailView = require('../components/PassEmailView').PassEmailView
-var Footer = require('../components/Footer').Footer
+// stubs
+var parseStub = {}
+parseStub.Parse = function() {}
 
 
 
 // --------------- CLIENTS --------------------
 
-describe('FlickrMakeUrl', () => {
+describe('ServerClient.js', () => {
 
-		var noErrorUrl
+	describe('ServerClient', () => {
 
-		beforeEach((done) => {
-				noErrorUrl = flickrMakeUrl({method: 'hey', api_key: 'alksdgh'})
-				done()
-		})
+		var SC, sc, userStub
 
-		it('should always return function on first call', () => {
-				// call with 'options' as argument after first call returns options object
-				expect(flickrMakeUrl('options')).to.be.instanceof(Function)
-				// call with any object returns function on any number of calls
-				expect(flickrMakeUrl({})).to.be.instanceof(Function)
-				// non-object call after first call creates url
-				expect(flickrMakeUrl()).to.be.instanceof(Function)
-				expect(flickrMakeUrl(undefined)).to.be.instanceof(Function)
-				expect(flickrMakeUrl(0)).to.be.instanceof(Function)
-				expect(flickrMakeUrl('hey')).to.be.instanceof(Function)
-				expect(flickrMakeUrl([])).to.be.instanceof(Function)
-		})
+		before(() => {
+			var jqueryStub = {
+				get: function() { return arguments },
+				post: function() { return arguments }
+			}
 
-		it('should return "options" if given "options" as argument and no settings present', () => {
-				expect(flickrMakeUrl('options')()).to.equal('options')
-				expect(flickrMakeUrl()('options')).to.equal('options')
-		})
+			userStub = function(username) {
+				return {
+					get: function(key) {
+						return username
+					}
+				}
+			}
 
-		it('should return settings object if given "options" as argument after receiving settings', () => {
-				expect(noErrorUrl('options')).to.be.an('object').and.have.ownProperty('api_key').and.have.ownProperty('method')
-				// expect(noErrorUrl({things: 'some'})('options')).to.be.an('object').and.have.property('things')
-		})
-
-		it('should throw error if never given method or api_key', () => {
-				expect(flickrMakeUrl({method: 'hey'})).to.throw(Error)
-				expect(flickrMakeUrl({api_key: 'aklsdgh'})).to.throw(Error)
-				expect(noErrorUrl).to.not.throw(Error)
-		})
-
-		it('should return function when given arguments', () => {
-				expect(noErrorUrl).to.be.instanceof(Function)
-		})
-
-		it('should return url string when has method and api_key and given no arguments', () => {
-				expect(noErrorUrl()).to.be.a('string')
-		})
-
-		it('should add options when given as argument object', () => {
-				expect(noErrorUrl({funtimes: 'lots'})('options')).has.property('funtimes', 'lots')
-				expect(noErrorUrl({things: 'some', yeas: 'none'})('options')).has.ownProperty('things').and.has.property('yeas', 'none')
-		})
-
-		it('should include options in url', () => {
-				expect(noErrorUrl({funtimes: 'lots'})()).to.contain('funtimes').and.contain('lots')
-				expect(noErrorUrl({things: 'some', yeas: 'none'})()).to.contain('things').and.contain('some').and.contain('yeas').and.contain('none')
-		})
-
-		it('should create array on key if given tags or extras', () => {
-				expect(noErrorUrl({tags: 'stuff'})('options')).has.property('tags').is.instanceof(Array).with.length(1).and.contains('stuff')
-				expect(noErrorUrl({extras: 'all'})('options')).has.property('extras').is.instanceof(Array).with.length(1).and.contains('all')
-		})
-
-		it('should create tags/extras array, split string at spaces and turn into array', () => {
-				expect(noErrorUrl({tags: 'stuff china'})('options')).has.property('tags').is.instanceof(Array).with.length(2).and.contains('stuff').and.contains('china')
-				expect(noErrorUrl({extras: 'all none'})('options')).has.property('extras').is.instanceof(Array).with.length(2).and.contains('all').and.contains('none')
-		})
-
-		it('should create tags/extras array, use array if entered as such', () => {
-				expect(noErrorUrl({tags: ['stuff', 'china']})('options')).has.property('tags').is.instanceof(Array).with.length(2).and.contains('stuff').and.contains('china')
-				expect(noErrorUrl({extras: ['all', 'none']})('options')).has.property('extras').is.instanceof(Array).with.length(2).and.contains('all').and.contains('none')
-		})
-
-		it('should add additional tags/extras to existing array, space-separated', () => {
-				var existingArrays = noErrorUrl({tags: ['stuff', 'china'], extras: ['all', 'none']})
-				expect(existingArrays({tags: 'germany austria'})('options')).has.property('tags').is.instanceof(Array).with.length(4).and.contains('germany').and.contains('austria')
-				expect(existingArrays({extras: 'pedestrian diner'})('options')).has.property('extras').is.instanceof(Array).with.length(4).and.contains('pedestrian').and.contains('diner')
-		})
-
-		it('should default format=json with nojsoncallback=1 when returns url', () => {
-				expect(noErrorUrl()).to.contain('format=json').and.contain('nojsoncallback=1')
-		})
-})
-
-
-describe('FlickrClient', () => {
-
-		var FC, fc
-
-		beforeEach((done) => {
-				clientEnv(() => {
-						FC = require('../FlickrClient').FC
-						fc = new FC()
-						done()
-				})
+			SC = proxyquire('../ServerClient', {jquery: jqueryStub}).ServerClient
+			sc = new SC({})
 		})
 
 		describe('#constructor', () => {
-				it('should create instance of FlickrClient', () => {
-						expect(new FC()).to.be.instanceof(FC)
-						expect(fc).to.be.instanceof(FC)
-				})
-
-				it('should take url as argument and set on instance', () => {
-						expect(new FC('hello')).to.have.property('url', 'hello')
-				})
+			it('should take options as argument and set to instance options', () => {
+				expect(new SC({thingy: 'thing'})).to.have.property('options').with.property('thingy').that.equals('thing')
+			})
 		})
+
+		describe('#requestPhotos', () => {
+			it('should take settings obj as argument and request with that + instance options', () => {
+
+				var request = sc.requestPhotos()
+				var argsRequest = sc.requestPhotos({moreSettings: 'specificsearch'})
+
+				expect(request).to.have.length(2)
+				expect(request[0]).to.equal('/photos')
+				expect(request[1]).to.be.instanceof(Object).with.keys('format', 'nojsoncallback')
+				expect(argsRequest[1]).to.contain.key('moreSettings')
+			})
+		})
+
+		describe('#requestPhoto', () => {
+			it('should take settings obj and comma-separated tags string as argument and request with that + instance options', () => {
+
+				var request = sc.requestPhoto()
+				var argsRequest = sc.requestPhoto({moreSettings: 'specificsearch'}, 'china,shanghai')
+
+				expect(request).to.have.length.within(2, 3)
+				expect(request[0]).to.equal('/photo')
+				expect(request[1]).to.be.instanceof(Object).with.keys('format', 'nojsoncallback')
+				expect(argsRequest[0]).to.contain('china,shanghai')
+			})
+		})
+
+		describe('#vote', () => {
+			it('should take a photo_id, user, and tags and post with that + instance options', () => {
+
+				var person1 = userStub('person1')
+				var person4 = userStub('person4')
+				var request = sc.vote(135033, person1)
+				var tagsRequest = sc.vote(150346, person4, 'china,shanghai')
+
+				expect(request).to.have.length(1)
+				expect(request[0]).to.contain('135033').and.contain('person1')
+				expect(tagsRequest[0]).to.contain('150346').and.contain('person4').and.contain('china,shanghai')
+			})
+		})
+	})
+
+	describe('GalleryClient', () => {
+
+		var SC, galleryClient
+
+		before(() => {
+			var file = require('../ServerClient')
+			SC = file.ServerClient
+			galleryClient = file.GalleryClient
+		})
+
+		it('should be instance of ServerClient', () => {
+			expect(galleryClient).to.be.instanceof(SC)
+		})
+
+		describe('options', () => {
+			it('should contain options for gallery view request', () => {
+				expect(galleryClient.options).to.be.instanceof(Object).and.deep.equal({
+					method: 'flickr.photos.search',
+					content_type: '1',
+					extras: [
+						'url_m',
+						'owner_name',
+						'date_upload'
+					],
+					per_page: '500',
+					sort: 'relevance',
+					tag_mode: 'all',
+					format: 'json',
+					nojsoncallback: '1'
+				})
+			})
+		})
+	})
+
+	describe('DetailClient', () => {
+
+		var SC, detailClient
+
+		before(() => {
+			var file = require('../ServerClient')
+			SC = file.ServerClient
+			detailClient = file.DetailClient
+		})
+
+		it('should be instance of ServerClient', () => {
+			expect(detailClient).to.be.instanceof(SC)
+		})
+
+		describe('options', () => {
+			it('should contain options for detail view request', () => {
+				expect(detailClient.options).to.be.instanceof(Object).and.deep.equal({
+					format: 'json',
+					nojsoncallback: '1',
+					method: 'flickr.photos.getInfo',
+					extras: [
+						'url_m'
+					]
+				})
+			})
+		})
+	})
 })
 
 
+describe('alt-app.js', () => {
+
+	var Alt, alt
+
+	before(() => {
+		Alt = require('alt')
+		alt = require('../alt-app').alt
+	})
+
+	describe('alt', () => {
+		it('should be instance of Alt', () => {
+			expect(alt).to.be.instanceof(Alt)
+		})
+	})
+})
 
 
+describe('Router.jsx (routes)', () => {
+
+	var React, router
+
+	before(() => {
+		React = require('react')
+		router = require('../router/Router').router
+		console.log(router.namedRoutes.gallerydefault.path)
+	})
+
+	describe('named routes', () => {
+
+		var routes = {
+			app: {             path: '/',                        handler: 'AppView' },
+			gallerysearch: {   path: '/gallery/:tags/page:page', handler: 'GalleryView' },
+			gallerynosearch: { path: '/gallery/page:page',       handler: 'GalleryView' },
+			gallerydefault: {  path: '/gallery',                 handler: 'GalleryAddPage' },
+			photo: {           path: '/photo/:id/:tags?',        handler: 'DetailView' },
+			login: {           path: '/login',                   handler: 'LoginView' },
+			register: {        path: '/register',                handler: 'RegisterView' },
+			passemailsent: {   path: '/passemailsent',           handler: 'PassEmailView' }
+		}
+
+		for (var key in routes) {
+			describe(key+' route', () => {
+				it('should have path '+routes[key].path, () => {
+					expect(router.namedRoutes[key].path).to.equal(routes[key].path)
+				})
+
+				it ('should have a React handler named '+routes[key].handler, () => {
+					expect(Object.getPrototypeOf(router.namedRoutes[key].handler)).to.equal(React.Component)
+					expect(router.namedRoutes[key].handler.name).to.equal(routes[key].handler)
+				})
+			})
+		}
+
+	})
+})
 
 
+describe('defaultParams.js', () => {
 
-// ---------------- ROUTER -------------------
+	describe('GalleryAddPage', () => {
 
-describe('router', () => {
+		var React, GalleryAddPage, transitionStub
 
-		var router,
-		Redirect = Router.Redirect,
-		Route = Router.Route,
-		routerState,
-		routerHandler,
-		hash
+		before(() => {
+			React = require('react')
+			GalleryAddPage = require('../router/defaultParams').GalleryAddPage
+			transitionStub = { redirect: function(newHash) { return newHash } }
+		})
+
+		it('should be a React Component', () => {
+			expect(Object.getPrototypeOf(GalleryAddPage)).to.equal(React.Component)
+		})
+
+		describe('willTransitionTo', () => {
+			it('should add page 1 to router params w/o page', () => {
+				expect(GalleryAddPage.willTransitionTo(transitionStub, {})).to.equal('/gallery/page1')
+				expect(GalleryAddPage.willTransitionTo(transitionStub, {tags: 'germany'})).to.equal('/gallery/germany/page1')
+			})
+		})
+	})
+})
+
+
+describe('components', () => {
+
+	var React = require('react/addons')
+	var TestUtils = React.addons.TestUtils
+
+	var userActionsStub = {
+		userActions: {
+			current: function() {
+				return 'currentUser'
+			}
+		}
+	}
+
+	var userStoreStub = stubStore('userStore')
+	userStoreStub.userStore.user = {
+		get: function() {
+			return 'person4'
+		}
+	}
+
+	var galleryActionsStub = {
+		galleryActions: {
+			vote: function() {
+				return arguments
+			}
+		}
+	}
+
+	var galleryStoreStub = {}
+
+	describe('AppView.jsx', () => {
+
+		var AppView, mock, mockRender
 
 		before((done) => {
-				clientEnv(() => {
-						router = require('../Router').router
-						router.run(function(Handler, state) {
-								routerState = state
-								routerHandler = Handler
-						})
-						done()
-				})
+			sinon.spy(userActionsStub.userActions, 'current')
+			AppView = proxyquire('../components/AppView', { '../actions/UserActions': userActionsStub }).AppView
+			mock = TestUtils.createRenderer()
+			mock.render(<AppView />)
+			mockRender = mock.getRenderOutput()
+			done()
 		})
 
-		describe('#run', () => {
-				it('should initialize router with path /', () => {
-						expect(routerState).to.have.property('path', '/')
-						expect(routerState).to.have.property('routes').that.is.instanceof(Array)
-						expect(routerState.routes[0]).to.have.property('handler').that.exists
-						expect(routerState.routes[0]).to.have.property('path', '/')
-						expect(routerState.routes[0]).to.have.property('defaultRoute').that.equals(routerState.routes[1])
-				})
-		})
-
-		describe('#routes', () => {
-				it('should have single parent route named "app"', () => {
-						expect(router.routes).to.be.instanceof(Array).with.length(1)
-						expect(router.routes[0]).to.have.property('name', 'app')
-				})
-
-				describe('app route', () => {
-						it('should have handler', () => {
-								expect(router.routes[0]).to.have.property('handler')
-						})
-
-						it('should have path "/"', () => {
-								expect(router.routes[0]).to.have.property('path', '/')
-						})
-
-						it('should have a default route', () => {
-								expect(router.routes[0]).to.have.property('defaultRoute')
-						})
-
-						it('should have multiple child routes', () => {
-								expect(router.routes[0]).to.have.property('childRoutes').that.is.instanceof(Array).with.length.above(1)
-						})
-				})
-		})
-})
-
-
-
-
-
-
-
-
-// ------------- ALT APP -------------------
-
-describe('alt', () => {
-		it('should be an instance of Alt', () => {
-				expect(alt).to.be.instanceof(Alt)
-		})
-})
-
-
-
-
-
-
-
-
-// ------------- STORES -------------------
-
-describe('galleryStore', () => {
-
-		var galleryStore, GalleryStore, actions
-
-		before((done) => {
-				clientEnv(() => {
-						actions = alt.generateActions('getPhotos', 'setTags')
-						GalleryStore = require('../stores/GalleryStore').GalleryStore
-						class GalleryStoreTest extends GalleryStore {
-								constructor() {
-										super()
-										this.bindListeners({
-												getPhotos: actions.getPhotos,
-												setTags: actions.setTags
-										})
-								}
-						}
-						galleryStore = alt.createStore(GalleryStoreTest)
-						done()
-				})
+		after((done) => {
+			userActionsStub.userActions.current.restore()
+			done()
 		})
 
 		describe('#constructor', () => {
-				it('should create initial state', () => {
-						expect(galleryStore.getState()).to.be.an('object').and.have.property('photo').and.is.instanceof(Array).with.length(0)
-						expect(galleryStore.getState()).to.have.property('page', null)
-						expect(galleryStore.getState()).to.have.property('tags').and.is.instanceof(Array).with.length(0)
-						expect(galleryStore.getState()).to.have.property('extras').and.is.instanceof(Array).with.length(0)
-				})
+			it('should call userActions.current to init user info', () => {
+				expect(userActionsStub.userActions.current.callCount).to.equal(1)
+			})
 		})
 
-		describe('#getPhotos', () => {
-				it('should set any property on state from action.getPhotos data', () => {
-						actions.getPhotos({photo: 'photo'})
-						expect(galleryStore.getState()).to.have.property('photo', 'photo')
-						actions.getPhotos({photo: 'china', page: 5})
-						expect(galleryStore.getState()).to.have.property('photo', 'china')
-						expect(galleryStore.getState()).to.have.property('page', 5)
-						expect(galleryStore.getState()).to.not.have.property('isFromFlickr')
-						actions.getPhotos({photo: {color: 'red', size: '1024'}, page: 63, isFromFlickr: 'yes'})
-						expect(galleryStore.getState()).to.have.property('photo').that.is.instanceof(Object).and.has.property('color', 'red')
-						expect(galleryStore.getState()).to.have.property('page', 63)
-						expect(galleryStore.getState()).to.have.property('isFromFlickr', 'yes')
-				})
+		describe('#render', () => {
+			it('should render app div with 2 children: Header & RouteHandler', () => {
+			expect(mockRender).to.have.property('type', 'div')
+			expect(mockRender.props.className).to.equal('app')
+			expect(mockRender.props).to.have.property('children').with.length(2)
+			expect(mockRender.props.children[0].type.name).to.equal('Header')
+			expect(mockRender.props.children[1].type.name).to.equal('RouteHandler')
+			})
+		})
+	})
+
+
+	describe('DetailView', () => {
+
+		var DetailView, detail_view, mock, mockRender
+
+		var detailStoreStub = stubStore('detailStore')
+		detailStoreStub.detailStore['16879221559'] = getPhotoMock()
+
+		before(() => {
+			sinon.spy(detailStoreStub.detailStore, 'listen')
+			sinon.spy(detailStoreStub.detailStore, 'unlisten')
+			sinon.spy(galleryActionsStub.galleryActions, 'vote')
+			DetailView = proxyquire('../components/DetailView', {
+					'../stores/DetailStore': detailStoreStub,
+					'../stores/UserStore': userStoreStub,
+					'../actions/GalleryActions': galleryActionsStub
+				}).DetailView
+			// sinon.spy(detail_view, 'setState')
+			mock = TestUtils.createRenderer()
+			mock.render(<DetailView params={{id: '16879221559', tags: 'china'}} />)
+			mockRender = mock.getRenderOutput()
+			detail_view = mock._instance._instance
 		})
 
-		describe('#setTags', () => {
-				it('should add tags to state.tags from action.setTags array', () => {
-						actions.setTags(['china'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(1).and.contain('china')
-						actions.setTags(['kowloon', 'hong kong', 'guangzhou', 'sichuan'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(5).and.contain('china').and.contain('kowloon').and.contain('hong kong').and.contain('guangzhou').and.contain('sichuan')
-				})
-
-				it('should delete tags with "-" prefix from state.tags array', () => {
-						actions.setTags(['-hong kong'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(4).and.contain('china').and.contain('kowloon').and.contain('guangzhou').and.contain('sichuan')
-						actions.setTags(['-sichuan', '-china'])
-						expect(galleryStore.getState().tags).to.be.instanceof(Array).with.length(2).and.contain('kowloon').and.contain('guangzhou')
-				})
+		after(() => {
+			detailStoreStub.detailStore.listen.restore()
+			detailStoreStub.detailStore.unlisten.restore()
+			galleryActionsStub.galleryActions.vote.restore()
 		})
 
-})
-
-
-describe('userStore', () => {
-
-		var userStore, UserStore, actions
-
-		before((done) => {
-				clientEnv(() => {
-						actions = alt.generateActions('setUser')
-						UserStore = require('../stores/UserStore').UserStore
-						class UserStoreTest extends UserStore {
-								constructor() {
-										super()
-										this.bindListeners({
-												setUser: actions.setUser
-										})
-								}
-						}
-						userStore = alt.createStore(UserStoreTest)
-						done()
-				})
+		describe('#componentWillMount', () => {
+			it('should register listener for detailStore', () => {
+				expect(detailStoreStub.detailStore.listen.callCount).to.equal(1)
+			})
 		})
 
-		describe('#constructor', () => {
-				it('should set username to null', () => {
-						expect(userStore.getState()).to.be.an('object').and.have.property('user', null)
-				})
+		describe('#render', () => {
+			it('should render a main tag class photo-detail', () => {
+				expect(mockRender.type).to.equal('main')
+				expect(mockRender.props.className).to.equal('photo-detail')
+			})
 		})
 
-		describe('#setUser', () => {
-				it('should set username to data from actions.setUser', () => {
-						actions.setUser('bmagnantb')
-						expect(userStore.getState().user).to.equal('bmagnantb')
-						actions.setUser('everyone')
-						expect(userStore.getState().user).to.equal('everyone')
-				})
-		})
-})
-
-
-describe('detailStore', () => {
-
-	var detailStore, DetailStore, actions
-
-		before((done) => {
-				clientEnv(() => {
-						actions = alt.generateActions('getInfo', 'resetState')
-						DetailStore = require('../stores/DetailStore').DetailStore
-						class DetailStoreTest extends DetailStore {
-								constructor() {
-										super()
-										this.bindListeners({
-												getInfo: actions.getInfo,
-												resetState: actions.resetState
-										})
-								}
-						}
-						detailStore = alt.createStore(DetailStoreTest)
-						done()
-				})
+		describe('#_vote', () => {
+			it('should call galleryActions.vote with id, user, and tags', () => {
+				var voteNode = mockRender.props.children[1].props.children[0].props.children[0]
+				voteNode.props.onClick()
+				expect(galleryActionsStub.galleryActions.vote.callCount).to.equal(1)
+				expect(galleryActionsStub.galleryActions.vote.lastCall.args[0]).to.equal('16879221559')
+				expect(galleryActionsStub.galleryActions.vote.lastCall.args[1].get()).to.equal('person4')
+				expect(galleryActionsStub.galleryActions.vote.lastCall.args[2]).to.equal('china')
+			})
 		})
 
-		describe('#constructor', () => {
-				it('should set initial state of this.photo = null, this.photoUrl = function() {return ""}', () => {
-						expect(detailStore.getState()).to.have.property('photo', null)
-						expect(detailStore.getState()).to.have.property('photoUrl').that.is.instanceof(Function)
-						expect(detailStore.getState().photoUrl()).to.equal('')
-				})
+		describe('#_detailInfo', () => {
+			it('should get detail from detailStore', () => {
+				sinon.spy(detailStoreStub.detailStore, 'getState')
+				detail_view._detailInfo()
+				expect(detailStoreStub.detailStore.getState.callCount).to.equal(1)
+				detailStoreStub.detailStore.getState.restore()
+			})
 		})
 
-		describe('#getInfo', () => {
-				it('should set state.photo to data from actions.getInfo', () => {
-						actions.getInfo({title: 'shanghai skyline', owner: 'PRC', farm: 5, server: 766967})
-						expect(detailStore.getState()).to.have.property('photo').that.has.property('title', 'shanghai skyline')
-						expect(detailStore.getState().photo).to.have.property('owner', 'PRC')
-						expect(detailStore.getState().photo).to.have.property('farm', 5)
-						expect(detailStore.getState().photo).to.have.property('server', 766967)
-				})
-
-				it('should build url on state.photoUrl with data from actions.getInfo', () => {
-						expect(detailStore.getState().photoUrl('l')).to.contain('farm5').and.to.contain('766967')
-				})
-
-				it('should reset data completely when called', () => {
-						expect(detailStore.getState().photo).to.have.property('title', 'shanghai skyline')
-						expect(detailStore.getState().photo).to.have.property('owner', 'PRC')
-						expect(detailStore.getState().photo).to.have.property('farm', 5)
-						expect(detailStore.getState().photo).to.have.property('server', 766967)
-						actions.getInfo({title: 'guangzhou skyline', farm: 66})
-						expect(detailStore.getState().photo).to.have.property('title', 'guangzhou skyline')
-						expect(detailStore.getState().photo).to.have.property('farm', 66)
-						expect(detailStore.getState().photo).to.not.have.ownProperty('owner').and.to.not.have.ownProperty('server')
-						expect(detailStore.getState().photoUrl('l')).to.contain('farm66').and.to.not.contain('farm5').and.to.not.contain('766967')
-				})
+		describe('#_userInfo', () => {
+			it('should get user from userStore', () => {
+				sinon.spy(userStoreStub.userStore, 'getState')
+				detail_view._userInfo()
+				expect(userStoreStub.userStore.getState.callCount).to.equal(1)
+				userStoreStub.userStore.getState.restore()
+			})
 		})
 
-		describe('#resetState', () => {
-				it('should reset state.photo to null and state.photoUrl to function() {return ""}', () => {
-						expect(detailStore.getState().photo).to.not.equal(null)
-						expect(detailStore.getState().photoUrl()).to.not.equal('')
-						actions.resetState()
-						expect(detailStore.getState().photo).to.equal(null)
-						expect(detailStore.getState().photoUrl()).to.equal('')
-				})
+		describe('#_voteAllowed', () => {
+			it('should return false if not given user and detail', () => {
+				expect(detail_view._voteAllowed()).to.equal(false)
+				expect(detail_view._voteAllowed('detail')).to.equal(false)
+				expect(detail_view._voteAllowed(null, 'user')).to.equal(false)
+			})
+
+			it('should return h6 without click handler if user already voted', () => {
+				var user = { get: function() { return 'maplekurtz' } }
+				var html = detail_view._voteAllowed(detail_view.state.detail, user)
+				expect(html.type).to.equal('h6')
+				expect(html.props).to.not.have.key('onClick')
+			})
+
+			it('should return h6 with click handler if user not voted', () => {
+				var html = detail_view._voteAllowed(detail_view.state.detail, userStoreStub.userStore.user)
+				expect(html.props).to.include.key('onClick')
+			})
 		})
+
+		describe('#_votesMarkup', () => {
+			it('should return null if not given detail or if detail doesnt have weighted_votes or total_votes', () => {
+				expect(detail_view._votesMarkup()).to.equal(null)
+				expect(detail_view._votesMarkup({})).to.equal(null)
+				expect(detail_view._votesMarkup({some_votes: 5})).to.equal(null)
+			})
+
+			it('should return votes div if weighted_votes or total_votes exist on detail', () => {
+				var htmls = [
+					detail_view._votesMarkup({total_votes: 1}),
+					detail_view._votesMarkup({weighted_votes: 3})
+				]
+				htmls.forEach(function(html) {
+					expect(html.type).to.equal('div')
+					expect(html.props.className).to.equal('votes')
+				})
+			})
+
+			it('should return voteAllowed h6 if given as 2nd arg', () => {
+				var html = detail_view._votesMarkup(detail_view.state.detail, detail_view._voteAllowed(detail_view.state.detail, userStoreStub.userStore.user))
+				expect(html.props.children[0].type).to.equal('h6')
+				expect(html.props.children[0].props.className).to.equal('upvote')
+			})
+		})
+
+		describe('#componentWillUnmount', () => {
+			it('should unregister listener for detailStore', () => {
+				mock.unmount()
+				expect(detailStoreStub.detailStore.unlisten.callCount).to.equal(1)
+			})
+		})
+	})
 })
 
 
 
-
-
-
-// ------------------ ACTIONS -----------------
-
-// describe('GalleryActions', () => {
-
-// 		var galleryActions, GalleryActions
-
-// 		before((done) => {
-// 				clientEnv(() => {
-// 						GalleryActions = require('../actions/GalleryActions').GalleryActions
-// 						class GalleryActionsTest extends GalleryActions {
-// 								constructor() {
-// 										super()
-// 								}
-// 						}
-// 						galleryActions = alt.createActions(GalleryActionsTest)
-// 						done()
-// 				})
-// 		})
-// })
-
-
-
-
-
-
-
-// ------------------ COMPONENTS -----------------
-
-describe('AppView', () => {
-
-		var AppView, appView
-
-		before((done) => {
-				clientEnv(() => {
-						AppView = require('../components/AppView').AppView
-						appView = new AppView()
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(appView).to.be.instanceof(AppView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(appView).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('DetailView', () => {
-
-		var DetailView
-
-		before((done) => {
-				clientEnv(() => {
-						DetailView = require('../components/DetailView').DetailView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new DetailView()).to.be.instanceof(DetailView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new DetailView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('Footer', () => {
-
-		var Footer
-
-		before((done) => {
-				clientEnv(() => {
-						Footer = require('../components/Footer').Footer
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new Footer()).to.be.instanceof(Footer)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new Footer()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('GalleryView', () => {
-
-		var GalleryView
-
-		before((done) => {
-				clientEnv(() => {
-						GalleryView = require('../components/GalleryView').GalleryView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new GalleryView()).to.be.instanceof(GalleryView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new GalleryView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('Header', () => {
-
-		var Header
-
-		before((done) => {
-				clientEnv(() => {
-						Header = require('../components/Header').Header
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new Header()).to.be.instanceof(Header)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new Header()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('LoginView', () => {
-
-		var LoginView
-
-		before((done) => {
-				clientEnv(() => {
-						LoginView = require('../components/LoginView').LoginView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new LoginView()).to.be.instanceof(LoginView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new LoginView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('RegisterView', () => {
-
-		var RegisterView
-
-		before((done) => {
-				clientEnv(() => {
-						RegisterView = require('../components/RegisterView').RegisterView
-						done()
-				})
-		})
-
-		it('should be a constructor', () => {
-				expect(new RegisterView()).to.be.instanceof(RegisterView)
-		})
-
-		it('should be instance of React Component', () => {
-				expect(new RegisterView()).to.be.instanceof(React.Component)
-		})
-})
-
-
-
-describe('PassEmailView', () => {
-		it('should be a constructor', () => {
-				expect(new PassEmailView()).to.be.instanceof(PassEmailView)
-		})
-		it('should be instance of React Component', () => {
-				expect(new PassEmailView()).to.be.instanceof(React.Component)
-		})
-})
-
+function stubStore(name) {
+
+	var stub = {}
+
+	stub[name] = {
+		listen: function(cb) {},
+		unlisten: function(cb) {},
+		notState: ['listen', 'unlisten', 'notState', 'getState'],
+		getState: function() {
+			var state = {}
+			for (var key in this) {
+				if (this.notState.indexOf(key) === -1) {
+					state[key] = this[key]
+				}
+			}
+			return state
+		}
+	}
+
+	return stub
+}
+
+
+
+function getPhotoMock() {
+
+	return {
+		_owner_url: "https://www.flickr.com/people/113365131@N02",
+		date_uploaded: 1428406916,
+		dates: {
+			lastupdate: "1429111420",
+			posted: "1428406916",
+			taken: "2015-04-07 19:12:38",
+			takengranularity: 0,
+			takenunknown: "1"
+		},
+		description: {
+			_content: "Canon AE-1↵FD 50mm f/1.8↵Kodak Ektar 100↵Double Exposure ↵Hong Kong↵↵This shot is unedited. I took this double exposure as an experiment to see if I could &quot;make&quot; my own Revolog Kolor film. It's pretty easy to do; I chose red because I've been considering getting some redscale film because it's incredibly cheap. I'll definitely be taking more of these. "
+		},
+		farm: 9,
+		height_m: "331",
+		location: {
+			accuracy: "16",
+			context: "0",
+			country: {
+				_content: "Hong Kong",
+				place_id: "4Jji9AVTVrLRrBR9Zg",
+				woeid: "24865698"
+			},
+			latitude: "22.287994",
+			longitude: "114.137767",
+			neighbourhood: {
+				_content: "Kennedy Town",
+				place_id: "CM7rYadTVr3sbUPLMA",
+				woeid: "24702912"
+			},
+			place_id: "CM7rYadTVr3sbUPLMA",
+			region: {
+				_content: "Central and Western",
+				place_id: "_0bX7CNTVr1qai3swg",
+				woeid: "24703128"
+			},
+			woeid: "24702912"
+		},
+		owner: "113365131@N02",
+		ownername: "Hayden_Williams",
+		photo_id: "16879221559",
+		secret: "c802fa303c",
+		server: "8751",
+		tag_votes: {
+			china: 1
+		},
+		tags: ["china", "road", "street", "city", "red", "people", "urban", "streets", "film", "analog", "canon", "vintage", "buildings", "hongkong", "asia", "traffic", "kodak", "doubleexposure", "grain", "hipster", "streetphotography", "retro", "multipleexposure", "fd50mmf18", "analogue", "grainy", "canonae1", "kolor", "redscale", "kodakektar", "revolog", "ektar100", "revologkolor"],
+		title: "Velvet Pulse",
+		total_votes: 2,
+		url_m: "https://farm9.staticflickr.com/8751/16879221559_c802fa303c.jpg",
+		urls: {
+			url: [{
+				Object_content: "https://www.flickr.com/photos/haydilliams/16879221559/",
+				type: "photopage"
+			}]
+		},
+		user_votes: ["kurtzmaple", "maplekurtz"],
+		weighted_votes: 2,
+		width_m: "500",
+		_photoUrl: function(size) {
+			return `https://farm${this.farm}.staticflickr.com/${this.server}/${this.photo_id}_${this.secret}_${size}.${this.originalformat ? this.originalformat : 'jpg'}`
+		}
+	}
+}

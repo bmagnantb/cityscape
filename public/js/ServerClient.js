@@ -5,7 +5,7 @@ var _ = require('lodash')
 
 class ServerClient {
 	constructor(options) {
-		this.options = _.merge(options, {format: 'json', nojsoncallback: 1})
+		this.options = _.merge(options, {format: 'json', nojsoncallback: '1'})
 	}
 
 	requestPhotos(settings) {
@@ -13,7 +13,7 @@ class ServerClient {
 	}
 
 	requestPhoto(settings, tags) {
-		tags = `/${tags}`
+		tags = tags ? `/${tags}` : ''
 		return $.get(`/photo${tags}`, _.assign({}, this.options, settings))
 	}
 
