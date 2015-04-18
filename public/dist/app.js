@@ -55140,22 +55140,6 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 				userStore.unlisten(this._onUserChange);
 			}
 		}, {
-			key: '_onDetailChange',
-			value: function _onDetailChange() {
-				var detail = this._detailInfo();
-				var voteAllowed = this._voteAllowed(detail, this.state.user);
-				var votesMarkup = this._votesMarkup(detail, voteAllowed);
-				this.setState({ detail: detail, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
-			}
-		}, {
-			key: '_onUserChange',
-			value: function _onUserChange() {
-				var user = this._userInfo();
-				var voteAllowed = this._voteAllowed(this.state.detail, user);
-				var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed);
-				this.setState({ user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
-			}
-		}, {
 			key: 'render',
 			value: function render() {
 				if (this.state.detail) {
@@ -55217,6 +55201,22 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 				}
 			}
 		}, {
+			key: '_onDetailChange',
+			value: function _onDetailChange() {
+				var detail = this._detailInfo();
+				var voteAllowed = this._voteAllowed(detail, this.state.user);
+				var votesMarkup = this._votesMarkup(detail, voteAllowed);
+				this.setState({ detail: detail, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
+			}
+		}, {
+			key: '_onUserChange',
+			value: function _onUserChange() {
+				var user = this._userInfo();
+				var voteAllowed = this._voteAllowed(this.state.detail, user);
+				var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed);
+				this.setState({ user: user, voteAllowed: voteAllowed, votesMarkup: votesMarkup });
+			}
+		}, {
 			key: '_vote',
 			value: function _vote() {
 				var tags = this.props.params.tags;
@@ -55224,13 +55224,13 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			}
 		}, {
 			key: '_detailInfo',
-			value: function _detailInfo(user) {
+			value: function _detailInfo() {
 				var detail = detailStore.getState()[this.props.params.id];
 				return detail;
 			}
 		}, {
 			key: '_userInfo',
-			value: function _userInfo(detail) {
+			value: function _userInfo() {
 				var user = userStore.getState().user;
 				return user;
 			}
@@ -55238,7 +55238,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			key: '_voteAllowed',
 			value: function _voteAllowed(detail, user) {
 				if (user && detail) {
-					if (detail.user_votes && detail.user_votes.indexOf(user.get('username') === -1)) {
+					if (detail.user_votes && detail.user_votes.indexOf(user.get('username')) === -1) {
 						return React.createElement(
 							'h6',
 							{ className: 'upvote', onClick: this._vote.bind(this) },
@@ -55297,10 +55297,6 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 		return DetailView;
 	})(React.Component);
 
-	DetailView.contextTypes = {
-		router: React.PropTypes.func.isRequired
-	};
-
 	var prevDetails = {};
 	DetailView.willTransitionTo = function (transition, params) {
 
@@ -55309,7 +55305,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 		if (prevDetails[params.id] === undefined) {
 			detailActions.getDetail(params.id, params.tags);
 			prevDetails[params.id] = {};
-			if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',');else prevDetails[params.id].tags = [];
+			if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',').sort();else prevDetails[params.id].tags = [];
 		} else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(',').sort()) === -1) {
 			detailActions.getDetail(params.id, params.tags);
 			prevDetails[params.id].tags.push(params.tags.split(',').sort());
