@@ -1,5 +1,6 @@
 var request = require('request')
 var Promise = require('bluebird')
+var _ = require('lodash')
 var MongoClient = require('mongodb').MongoClient
 
 var weightVotes = require('./utils/weightVotes')
@@ -26,21 +27,25 @@ function photos(req, res) {
 		}
 
 		var reqQuery = req.query
+		var flickrResponse = trimFlickrResponse(body, reqQuery)
 
-		connectMongo(mongoUrl, flickrResponse, req)
-			.then(getDbMatches)
-			// .then(mergeDbData)
-			// .then(getDbVoted)
-			// .then(mergeVotes)
-			// .then(calcWeightedVotes)
-			// .then(sortPhotos)
-			// .then(truncatePhotos)
-			// .then(function(data) {
-			// 	res.send({photos: data.aggregate.photos})
-			// 	return data
-			// })
-			// .then(savePhotos)
-			// .catch(handleError)
+		var mongo = connectMongo(mongoUrl, flickrResponse, req)
+
+		var getDbMatches = mongo.then(getDbMatches)
+			.then(mergeDbData)
+
+		var getDbVoted = mongo.then(getDbVoted)
+
+		Promise.join(getDbMatches, getDbVoted, mergeVotes)
+			.then(calcWeightedVotes)
+			.then(sortPhotos)
+			.then(truncatePhotos)
+			.then(function(data) {
+				res.send({photos: data.aggregate.photos})
+				return data.flickr
+			})
+			.then(savePhotos)
+			.catch(handleError)
 	})
 }
 
@@ -73,7 +78,7 @@ function connectMongo(url, flickrResponse, req) {
 			if (err != null) {
 				reject(err)
 			}
-			resolve({mongo: db, aggregate: flickrResponse, req: req})
+			resolve({mongo: db, flickr: flickrResponse, req: req})
 		})
 	})
 
@@ -86,105 +91,20 @@ function connectMongo(url, flickrResponse, req) {
 function getDbMatches(data) {
 
 	var mongoPhotos = data.mongo.collection('photos')
-	console.log(data.mongo)
-	console.log('-----------------collection----------------\n', mongoPhotos)
-
-	mongoPhotos.find().toArray(function(err, docs) {
-		console.log(arguments)
-	})
-		// {photo_id: { $in: data.aggregate.photo_ids}})
-
-
-	data.mongo.close()
-
-}
-
-
-
-// merge db response with flickr response
-function mergeDbMatches(data) {
-
-	var flickrData = data.flickr.photos
-	var parseDb = data.parseDb
-	var reqQuery = data.reqQuery
-
-	var savePhotos = []
-	var parseIds = getParseIds(parseDb)
-
-	// photos for saving to db -- initialize votes info for photos not in db
-	for (var i = 0, arr = flickrData.photo, imax = arr.length, counter = 0; i < imax; i++) {
-		var parseMatchIndex = parseIds.indexOf(arr[i].photo_id)
-		var copy = {}
-
-		if (parseMatchIndex === -1) {
-			arr[i].user_votes = []
-			arr[i].total_votes = 0
-			arr[i].tag_votes = {}
-
-			for (var key in arr[i]) {
-				if (arr[i].hasOwnProperty(key)) {
-					copy[key] = arr[i][key]
-				}
-			}
-			savePhotos.push(copy)
-		}
-
-		// update db entry with flickr data, add db entry to aggregate array
-		else {
-			for (var key in arr[i]) {
-				if (arr[i].hasOwnProperty(key)) {
-					parseDb[parseMatchIndex].set(key, arr[i][key])
-				}
-			}
-
-			arr[i] = parseDb[parseMatchIndex].toJSON()
-			savePhotos.push(parseDb[parseMatchIndex])
-		}
-	}
-
-	data.savePhotos = savePhotos
-
-	return {flickr: data.flickr, savePhotos: savePhotos}
-}
-
-
-
-function getParseIds(parseDb) {
-
-	var ids = []
-
-	for (var i = 0, arr = parseDb, imax = arr.length; i < imax; i++) {
-		ids.push(arr[i].attributes.photo_id)
-	}
-
-	return ids
-}
-
-
-function getDbVoted(photo_ids, reqQuery) {
-
-	var thirtyDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 30)) / 1000)
-
-	var tags = reqQuery.tags.slice(2)
-
-	// new query for Parse -- get rankings that fit flickr request query
-	var queryVotes = new Parse.Query('Photo')
-
-	if (tags.length) queryVotes.containsAll('tags', tags)
-	queryVotes.notContainedIn('photo_ids', photo_ids)
-		      .greaterThan('total_votes', 0)
-		      .greaterThan('date_uploaded', thirtyDaysAgo)
-		      .descending('total_votes')
-		      .addAscending('date_uploaded')
-		      .limit(500)
 
 	var promise = new Promise(function(resolve, reject) {
-		queryVotes.find({
-			success: function(result) {
-				resolve(result)
-			},
-			error: function(err) {
-				reject(err)
+		mongoPhotos.find({
+			photo_id: {$in: data.flickr.photo_ids}
+		})
+		.toArray(function(err, docs) {
+			if (err != null) {
+				console.log(err)
+				promise.reject(err)
+			}
+			else {
+				console.log('------------docs------------\n', docs)
+				data.mongo = docs
+				promise.resolve(data)
 			}
 		})
 	})
@@ -194,15 +114,84 @@ function getDbVoted(photo_ids, reqQuery) {
 
 
 
-function mergeVotes(data) {
+// merge db response with flickr response
+function mergeDbData(data) {
 
-	if (dbVotes.length) {
-		for (var i = 0, arr = dbVotes, imax = arr.length; i < imax; i++) {
-			arr[i] = arr[i].attributes
+	var flickrData = data.flickr.photos
+	var mongoDb = data.mongo
+
+	var mongoIds = getMongoIds(mongoDb)
+
+	// photos for saving to db -- initialize votes info for photos not in db
+	for (var i = 0, arr = flickrData.photo, imax = arr.length, counter = 0; i < imax; i++) {
+
+		var mongoMatchIndex = mongoIds.indexOf(arr[i].photo_id)
+
+		if (mongoMatchIndex === -1) {
+			arr[i].user_votes = []
+			arr[i].total_votes = 0
+			arr[i].tag_votes = {}
 		}
-
-		Array.prototype.push.apply(dbMatches.flickr.photos.photo, dbVotes)
+		else {
+			_.merge(arr[i], mongoDb[mongoMatchIndex])
+		}
 	}
+
+	return {flickr: data.flickr}
+}
+
+
+
+function getMongoIds(mongoDb) {
+
+	var ids = []
+
+	for (var i = 0, arr = mongoDb, imax = arr.length; i < imax; i++) {
+		ids.push(arr[i].photo_id)
+	}
+
+	return ids
+}
+
+
+function getDbVoted(data) {
+
+	var mongoPhotos = data.mongo.collection('photos')
+
+	var thirtyDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 30)) / 1000)
+	var tags = data.req.tags.slice(2)
+
+	var promise = new Promise(function(resolve, reject) {
+
+		// add limit 500 & check tags syntax -- need all tags matched
+		mongoPhotos.find({
+			tags: {$all: tags},
+			total_votes: {$gt: 0},
+			date_uploaded: {$gt: thirtyDaysAgo},
+			photo_ids: {$nin: data.flickr.photo_ids}
+		})
+		.toArray(function(err, docs) {
+			if (err != null) promise.reject(err)
+			else {
+				docs.sort(function(a, b) {
+					if (a.total_votes > b.total_votes) return -1
+					if (a.total_votes < b.total_votes) return 1
+					if (a.date_uploaded > b.date_uploaded) return -1
+					if (a.date_uploaded < b.date_uploaded) return 1
+				})
+				promise.resolve(docs)
+			}
+		})
+	})
+
+	return promise
+}
+
+
+
+function mergeVotes(dbMatches, dbVotes) {
+
+	if (dbVotes.length) Array.prototype.push.apply(dbMatches.flickr.photos.photo, dbVotes)
 
 	return dbMatches
 }
@@ -211,10 +200,10 @@ function mergeVotes(data) {
 
 function calcWeightedVotes(data) {
 
-	var flickrData = data.flickr.photos
+	data.aggregate = _.assign({}, data.flickr)
 
-	for (var i = 0, arr = flickrData.photo, imax = arr.length; i < imax; i++) {
-		arr[i].weighted_votes = weightVotes(arr[i], flickrData.tags)
+	for (var i = 0, arr = data.aggregate.photos.photo, imax = arr.length; i < imax; i++) {
+		arr[i].weighted_votes = weightVotes(arr[i], data.flickr.photos.tags)
 	}
 
 	return data
@@ -224,9 +213,7 @@ function calcWeightedVotes(data) {
 
 function sortPhotos(data) {
 
-	var flickrData = data.flickr.photos
-
-	flickrData.photo.sort(function(a, b) {
+	data.aggregate.photos.photo.sort(function(a, b) {
 		if (a.weighted_votes > b.weighted_votes) return -1
 		if (b.weighted_votes > a.weighted_votes) return 1
 		if (a.total_votes > b.total_votes) return -1
@@ -242,7 +229,7 @@ function sortPhotos(data) {
 
 
 function truncatePhotos(data) {
-	data.flickr.photos.photo = data.flickr.photos.photo.slice(0, 500)
+	data.aggregate.photos.photo = data.aggregate.photos.photo.slice(0, 500)
 	return data
 }
 
@@ -250,11 +237,7 @@ function truncatePhotos(data) {
 
 function savePhotos(data) {
 
-	var savePhotos = data.savePhotos
-
-	Parse.Object.saveAll(savePhotos, {
-		error: handleError
-	})
+	// data.
 }
 
 
