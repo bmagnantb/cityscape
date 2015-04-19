@@ -11,9 +11,9 @@ module.exports = vote
 
 function vote(req, res) {
 
-		var request = getRequestInfo(req)
+		var requestResult = getRequestInfo(req)
 
-		getPhoto(request)
+		getPhoto(requestResult)
 			.then(addVote)
 			.then(newWeightedVote)
 			.then(function(data) {
