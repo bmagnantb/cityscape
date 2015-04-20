@@ -102,7 +102,7 @@ class DetailView extends React.Component {
 
 	_voteAllowed(detail, user) {
 		if (user && detail) {
-			if (detail.user_votes && detail.user_votes.indexOf(user.get('username') === -1)) {
+			if (detail.user_votes && detail.user_votes.indexOf(user.get('username')) === -1) {
 				return <h6 className="upvote" onClick={this._vote.bind(this)}>(upvote)</h6>
 			}
 			return <h6 className="voted">(upvoted)</h6>
@@ -112,6 +112,8 @@ class DetailView extends React.Component {
 
 	_votesMarkup(detail, voteAllowed) {
 		if (detail) {
+
+			console.log(detail.weighted_votes)
 
 			if (detail.weighted_votes != null && this.props.params.tags.length) {
 				return (

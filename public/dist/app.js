@@ -55238,7 +55238,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			key: '_voteAllowed',
 			value: function _voteAllowed(detail, user) {
 				if (user && detail) {
-					if (detail.user_votes && detail.user_votes.indexOf(user.get('username') === -1)) {
+					if (detail.user_votes && detail.user_votes.indexOf(user.get('username')) === -1) {
 						return React.createElement(
 							'h6',
 							{ className: 'upvote', onClick: this._vote.bind(this) },
@@ -55257,6 +55257,8 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			key: '_votesMarkup',
 			value: function _votesMarkup(detail, voteAllowed) {
 				if (detail) {
+
+					console.log(detail.weighted_votes);
 
 					if (detail.weighted_votes != null && this.props.params.tags.length) {
 						return React.createElement(
@@ -55374,9 +55376,6 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 		_createClass(GalleryView, [{
 			key: 'componentWillMount',
 			value: function componentWillMount() {
-				this.state = galleryStore.getState();
-				userActions.current();
-
 				userStore.listen(this.onUserChange.bind(this));
 				galleryStore.listen(this.onGalleryChange.bind(this));
 			}
@@ -55513,6 +55512,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			value: function _getCurrentPhotos() {
 				var _this = this;
 
+				console.log(this.state.user);
 				var currentPhotos = this.state.paginate.currentPhotos.map(function (photo) {
 					return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.photo_id });
 				});

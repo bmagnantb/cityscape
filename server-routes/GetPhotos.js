@@ -108,19 +108,13 @@ function mergeDbMatches(data) {
 	// photos for saving to db -- initialize votes info for photos not in db
 	for (var i = 0, arr = flickrData.photo, imax = arr.length, counter = 0; i < imax; i++) {
 		var parseMatchIndex = parseIds.indexOf(arr[i].photo_id)
-		var copy = {}
 
 		if (parseMatchIndex === -1) {
 			arr[i].user_votes = []
 			arr[i].total_votes = 0
 			arr[i].tag_votes = {}
 
-			for (var key in arr[i]) {
-				if (arr[i].hasOwnProperty(key)) {
-					copy[key] = arr[i][key]
-				}
-			}
-			savePhotos.push(copy)
+			savePhotos.push(new ParseClass.Photo(arr[i]))
 		}
 
 		// update db entry with flickr data, add db entry to aggregate array
