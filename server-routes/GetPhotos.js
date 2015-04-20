@@ -108,19 +108,13 @@ function mergeDbMatches(data) {
 	// photos for saving to db -- initialize votes info for photos not in db
 	for (var i = 0, arr = flickrData.photo, imax = arr.length, counter = 0; i < imax; i++) {
 		var parseMatchIndex = parseIds.indexOf(arr[i].photo_id)
-		var copy = {}
 
 		if (parseMatchIndex === -1) {
 			arr[i].user_votes = []
 			arr[i].total_votes = 0
 			arr[i].tag_votes = {}
 
-			for (var key in arr[i]) {
-				if (arr[i].hasOwnProperty(key)) {
-					copy[key] = arr[i][key]
-				}
-			}
-			savePhotos.push(copy)
+			savePhotos.push(new ParseClass.Photo(arr[i]))
 		}
 
 		// update db entry with flickr data, add db entry to aggregate array
@@ -249,48 +243,6 @@ function savePhotos(data) {
 		error: handleError
 	})
 }
-
-
-// 				// save photos after response -- lots of processing time
-// 				for (var i = 0, arr = newPhotos, imax = arr.length; i < imax; i++) {
-// 					arr[i] = new ParseClass.Photo(arr[i])
-// 				}
-
-// 				Parse.Object.saveAll(newPhotos, {
-// 					error: function(err) {
-// 						console.log(err)
-// 					}
-// 				})
-
-// 				Parse.Object.saveAll(savePhotos, {
-// 					error: function(err) {
-// 						console.log(err)
-// 					}
-// 				})
-// 			},
-// 		error: function(err) {
-// 			console.log('sending, error getting votes')
-// 			console.log(err)
-// 			res.send(data)
-
-// 			// save photos after response -- lots of processing time
-// 			for (var i = 0, arr = savePhotos, imax = arr.length; i < imax; i++) {
-// 				arr[i] = new ParseClass.Photo(arr[i])
-// 			}
-// 			Parse.Object.saveAll(newPhotos, {
-// 				error: function(err) {
-// 						console.log(err)
-// 				}
-// 			})
-
-// 			Parse.Object.saveAll(savePhotos, {
-// 				error: function(err) {
-// 					console.log(err)
-// 				}
-// 			})
-// 		}
-// 	})
-// }
 
 
 // dev -- handle errors

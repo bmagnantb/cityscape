@@ -28,6 +28,7 @@ function getDetail(req, res) {
 			.then(mergeDbData)
 			.then(calcWeightedVotes)
 			.then(function(data) {
+				console.log(data.flickr)
 				res.send(data.flickr)
 				return data
 			})
@@ -82,6 +83,7 @@ function mergeDbData(data) {
 function calcWeightedVotes(data) {
 
 	if (!data.req.tags) data.req.tags = []
+	else data.req.tags = data.req.tags.split(',')
 
 	data.flickr.weighted_votes = weightVotes(data.flickr, data.req.tags)
 

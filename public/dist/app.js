@@ -55258,6 +55258,8 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			value: function _votesMarkup(detail, voteAllowed) {
 				if (detail) {
 
+					console.log(detail.weighted_votes);
+
 					if (detail.weighted_votes != null && this.props.params.tags.length) {
 						return React.createElement(
 							'div',
@@ -55370,9 +55372,6 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 		_createClass(GalleryView, [{
 			key: 'componentWillMount',
 			value: function componentWillMount() {
-				this.state = galleryStore.getState();
-				userActions.current();
-
 				userStore.listen(this.onUserChange.bind(this));
 				galleryStore.listen(this.onGalleryChange.bind(this));
 			}
@@ -55509,6 +55508,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 			value: function _getCurrentPhotos() {
 				var _this = this;
 
+				console.log(this.state.user);
 				var currentPhotos = this.state.paginate.currentPhotos.map(function (photo) {
 					return React.createElement(Photo, { tags: _this.state.tags, photo: photo, user: _this.state.user, key: photo.photo_id });
 				});

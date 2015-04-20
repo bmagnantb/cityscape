@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "user-voted city skyline photo gallery",
   "main": "server.js",
+  "engines": {
+    "node": "0.12.0"
+  },
   "scripts": {
     "start": "node server.js & npm run watch",
     "watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",

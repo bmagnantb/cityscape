@@ -11,13 +11,17 @@ module.exports = vote
 
 function vote(req, res) {
 
-		var request = getRequestInfo(req)
+		console.log(req.params)
 
-		getPhoto(request)
+		var requestResult = getRequestInfo(req)
+
+		getPhoto(requestResult)
 			.then(addVote)
 			.then(newWeightedVote)
 			.then(function(data) {
+				console.log(data.photo)
 				res.send(data.photo)
+				return data
 			})
 			.then(savePhoto)
 			.done()
@@ -33,9 +37,10 @@ function getRequestInfo(req) {
 		return
 	}
 
+	console.log(req.params)
+
 	var photoId = req.params.id
 	var tags = req.params.tags ? req.params.tags.split(',') : []
-	console.log(req.params)
 
 	return {user: user, photoId: photoId, tags: tags}
 }
@@ -68,17 +73,18 @@ function addVote(data) {
 
 	var photo = data.result
 
-	photo.total_votes++
-	photo.user_votes.push(user)
+	photo.set('total_votes', photo.get('total_votes') + 1)
+	photo.attributes.user_votes.push(data.request.user)
 
-	if (request.tags.length) {
-		for (var i = 0, arr = request.tags, imax = arr.length; i < imax; i++) {
-			Object.keys(photo.tag_votes).indexOf(arr[i]) !== -1
-				? photo.tag_votes[arr[i]]++
-				: photo.tag_votes[arr[i]] = 1
+	if (data.request.tags.length) {
+		for (var i = 0, arr = data.request.tags, imax = arr.length; i < imax; i++) {
+			Object.keys(photo.attributes.tag_votes).indexOf(arr[i]) !== -1
+				? photo.attributes.tag_votes[arr[i]]++
+				: photo.attributes.tag_votes[arr[i]] = 1
 		}
 	}
 
+	data.photo = photo.toJSON()
 	return data
 }
 
@@ -86,10 +92,7 @@ function addVote(data) {
 
 function newWeightedVote(data) {
 
-	var photo = data.result.toJSON()
-
-	photo.weighted_votes = weightVotes(photo, data.request.tags)
-	data.photo = photo
+	data.photo.weighted_votes = weightVotes(data.photo, data.request.tags)
 
 	return data
 }
@@ -98,9 +101,7 @@ function newWeightedVote(data) {
 
 function savePhoto(data) {
 
-	var savePhoto = data.result
-
-	savePhoto.save(null, {
+	data.result.save(null, {
 		error: handleError
 	})
 
