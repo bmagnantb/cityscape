@@ -1,9 +1,9 @@
 var request = require('request')
 var Promise = require('bluebird')
-var Parse = require('parse').Parse
+var _ = require('lodash')
 
+var connectMongo = require('./utils/connectMongo')
 var weightVotes = require('./utils/weightVotes')
-var ParseClass = require('./utils/ParseClass')
 
 
 module.exports = vote
@@ -11,20 +11,18 @@ module.exports = vote
 
 function vote(req, res) {
 
-		console.log(req.params)
+	var request = getRequestInfo(req)
 
-		var requestResult = getRequestInfo(req)
-
-		getPhoto(requestResult)
-			.then(addVote)
-			.then(newWeightedVote)
-			.then(function(data) {
-				console.log(data.photo)
-				res.send(data.photo)
-				return data
-			})
-			.then(savePhoto)
-			.done()
+	connectMongo(request)
+		.then(getPhoto)
+		.then(addVote)
+		.then(newWeightedVote)
+		.then(function(data) {
+			res.send(data.match)
+			return data
+		})
+		.then(savePhoto)
+		.done()
 }
 
 
@@ -37,8 +35,6 @@ function getRequestInfo(req) {
 		return
 	}
 
-	console.log(req.params)
-
 	var photoId = req.params.id
 	var tags = req.params.tags ? req.params.tags.split(',') : []
 
@@ -47,21 +43,20 @@ function getRequestInfo(req) {
 
 
 
-function getPhoto(request) {
+function getPhoto(data) {
 
-	var query = new Parse.Query('Photo')
-
-	query.equalTo('photo_id', request.photoId)
+	var mongoPhotos = data.mongo.collection('photos')
 
 	var promise = new Promise(function(resolve, reject) {
-		query.first({
-		 	success: function(result) {
-		 		resolve({result: result, request: request})
-		 	},
-		 	error: function(err) {
-		 		reject(err)
-		 	}
-		 })
+		mongoPhotos.findOne(
+		{ photo_id: data.req.photoId },
+		function(err, doc) {
+			if (err != null) reject(err)
+			else {
+				data.match = doc
+				resolve(data)
+			}
+		})
 	})
 
 	return promise
@@ -71,20 +66,19 @@ function getPhoto(request) {
 
 function addVote(data) {
 
-	var photo = data.result
+	data.match.total_votes++
+	data.match.user_votes.push(data.req.user)
 
-	photo.set('total_votes', photo.get('total_votes') + 1)
-	photo.attributes.user_votes.push(data.request.user)
-
-	if (data.request.tags.length) {
-		for (var i = 0, arr = data.request.tags, imax = arr.length; i < imax; i++) {
-			Object.keys(photo.attributes.tag_votes).indexOf(arr[i]) !== -1
-				? photo.attributes.tag_votes[arr[i]]++
-				: photo.attributes.tag_votes[arr[i]] = 1
+	if (data.req.tags.length) {
+		for (var i = 0, arr = data.req.tags, imax = arr.length; i < imax; i++) {
+			Object.keys(data.match.tag_votes).indexOf(arr[i]) !== -1
+				? data.match.tag_votes[arr[i]]++
+				: data.match.tag_votes[arr[i]] = 1
 		}
 	}
 
-	data.photo = photo.toJSON()
+	data.save = _.assign({}, data.match)
+
 	return data
 }
 
@@ -92,7 +86,7 @@ function addVote(data) {
 
 function newWeightedVote(data) {
 
-	data.photo.weighted_votes = weightVotes(data.photo, data.request.tags)
+	data.match.weighted_votes = weightVotes(data.match, data.req.tags)
 
 	return data
 }
@@ -101,9 +95,12 @@ function newWeightedVote(data) {
 
 function savePhoto(data) {
 
-	data.result.save(null, {
-		error: handleError
-	})
+	var mongoPhotos = data.mongo.collection('photos')
+
+	mongoPhotos.update(
+		{ photo_id: data.save.photo_id },
+		{ $set: data.save }
+	)
 
 	return data
 }
@@ -112,7 +109,6 @@ function savePhoto(data) {
 
 // dev -- handle error
 function handleError(err) {
-
 	console.log(err)
 }
 

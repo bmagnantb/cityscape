@@ -22,6 +22,8 @@ class GalleryView extends React.Component {
 
 
 	componentWillMount() {
+		this.setState(galleryStore.getState())
+
 		userStore.listen(this.onUserChange.bind(this))
 		galleryStore.listen(this.onGalleryChange.bind(this))
 	}
@@ -125,7 +127,6 @@ class GalleryView extends React.Component {
 
 	_getCurrentPhotos() {
 
-		console.log(this.state.user)
 		var currentPhotos = this.state.paginate.currentPhotos.map((photo) => {
 			return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.photo_id} />
 		})

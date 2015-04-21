@@ -92,7 +92,6 @@ class GalleryStore {
 
 	_dataToState(data, routerParams) {
 		// create owner url
-		console.log(data)
 		data.photo.forEach((val) => {
 			if (val.owner) val._owner_url = `https://www.flickr.com/people/${val.owner}`
 		})
@@ -180,11 +179,6 @@ class GalleryStore {
 		var startPhotoIndex = (pagesIntoCurrentRequest - 1) * pageConst.photosPerPage
 
 		// get those pics
-		console.log(this.requests[this.searchId][this.requestPage].photo)
-		console.log(this.requests[this.searchId][this.requestPage].photo.slice(
-			startPhotoIndex,
-			startPhotoIndex + pageConst.photosPerPage
-		))
 		return this.requests[this.searchId][this.requestPage].photo.slice(
 			startPhotoIndex,
 			startPhotoIndex + pageConst.photosPerPage

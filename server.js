@@ -2,14 +2,11 @@
 
 function startServer() {
 	var express = require('express')
-	var Parse = require('parse').Parse
 	var app = express()
 	var getPhotos = require('./server-routes/GetPhotos')
 	var getDetail = require('./server-routes/GetDetail')
 	var putVote = require('./server-routes/PutVote')
 
-
-	Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
 
 	app.use(express.static(__dirname + '/public'))
 

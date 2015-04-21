@@ -113,8 +113,6 @@ class DetailView extends React.Component {
 	_votesMarkup(detail, voteAllowed) {
 		if (detail) {
 
-			console.log(detail.weighted_votes)
-
 			if (detail.weighted_votes != null && this.props.params.tags.length) {
 				return (
 					<div className="votes">

@@ -5,5 +5,4 @@ node_modules
 modules_other
 bower_components
 data
-flickrKey.js
-
+keys

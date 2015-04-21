@@ -1,9 +1,9 @@
 var request = require('request')
 var Promise = require('bluebird')
-var Parse = require('parse').Parse
+var _ = require('lodash')
 
+var connectMongo = require('./utils/connectMongo')
 var weightVotes = require('./utils/weightVotes')
-var ParseClass = require('./utils/ParseClass')
 var trimPhoto = require('./utils/trimPhoto')
 var flickrRequestUrl = require('./utils/flickrRequestUrl')
 
@@ -14,9 +14,9 @@ module.exports = photos
 // handle request
 function photos(req, res) {
 
-	var url = flickrRequestUrl(req.query, req.route)
+	var flickrUrl = flickrRequestUrl(req.query, req.route)
 
-	request.get(url, function(err, resp, body) {
+	request.get(flickrUrl, function(err, resp, body) {
 
 		if (err != null) {
 			res.send(err)
@@ -24,19 +24,16 @@ function photos(req, res) {
 			return
 		}
 
-		var reqQuery = req.query
+		var flickrResponse = trimFlickrResponse(body, req.query)
 
-		var flickrResponse = trimFlickrResponse(body, reqQuery)
+		var mongo = connectMongo(req, flickrResponse)
 
-		var dbMatches = getDbMatches(flickrResponse, reqQuery)
-			.then(mergeDbMatches)
-			.catch(handleError)
+		var dbMatches = mongo.then(getDbMatches)
+			.then(mergeDbData)
 
+		var dbVoted = mongo.then(getDbVoted)
 
-		var dbVotes = getDbVoted(flickrResponse.photo_ids, reqQuery)
-			.catch(handleError)
-
-		Promise.join(dbMatches, dbVotes, mergeVotes)
+		Promise.join(dbMatches, dbVoted, mergeVotes)
 			.then(calcWeightedVotes)
 			.then(sortPhotos)
 			.then(truncatePhotos)
@@ -45,6 +42,7 @@ function photos(req, res) {
 				return data
 			})
 			.then(savePhotos)
+			.catch(handleError)
 	})
 }
 
@@ -52,7 +50,6 @@ function photos(req, res) {
 // get photos from Flickr
 function trimFlickrResponse(data, reqQuery) {
 
-	var photos
 	var photo_ids = []
 	data = JSON.parse(data)
 
@@ -69,23 +66,20 @@ function trimFlickrResponse(data, reqQuery) {
 }
 
 
-
 // query for photos from db that match photos from flickr request
-function getDbMatches(flickrResponse, reqQuery) {
+function getDbMatches(data) {
 
-	var query = new Parse.Query('Photo')
-
-	query.containedIn('photo_id', flickrResponse.photo_ids)
-			 .select('photo_id', 'tag_votes', 'user_votes', 'total_votes')
-			 .limit(500)
+	var mongoPhotos = data.mongo.collection('photos')
 
 	var promise = new Promise(function(resolve, reject) {
-		query.find({
-			success: function(result) {
-				resolve({parseDb: result, flickr: flickrResponse, reqQuery: reqQuery})
-			},
-			error: function(err) {
-				reject(err)
+		mongoPhotos.find({
+			photo_id: {$in: data.flickr.photo_ids}
+		})
+		.toArray(function(err, docs) {
+			if (err != null) reject(err)
+			else {
+				data.mongoData = docs
+				resolve(data)
 			}
 		})
 	})
@@ -96,83 +90,81 @@ function getDbMatches(flickrResponse, reqQuery) {
 
 
 // merge db response with flickr response
-function mergeDbMatches(data) {
+function mergeDbData(data) {
 
 	var flickrData = data.flickr.photos
-	var parseDb = data.parseDb
-	var reqQuery = data.reqQuery
+	var mongoDb = data.mongoData
 
-	var savePhotos = []
-	var parseIds = getParseIds(parseDb)
+	var mongoIds = getMongoIds(mongoDb)
+
+	var mongoUpdateKeys = Object.keys(flickrData.photo[0])
+	var newPhotos = []
+	var updatePhotos = []
 
 	// photos for saving to db -- initialize votes info for photos not in db
 	for (var i = 0, arr = flickrData.photo, imax = arr.length, counter = 0; i < imax; i++) {
-		var parseMatchIndex = parseIds.indexOf(arr[i].photo_id)
 
-		if (parseMatchIndex === -1) {
+		var mongoMatchIndex = mongoIds.indexOf(arr[i].photo_id)
+
+		if (mongoMatchIndex === -1) {
 			arr[i].user_votes = []
 			arr[i].total_votes = 0
 			arr[i].tag_votes = {}
 
-			savePhotos.push(new ParseClass.Photo(arr[i]))
+			newPhotos.push(_.assign({}, arr[i]))
 		}
 
-		// update db entry with flickr data, add db entry to aggregate array
 		else {
-			for (var key in arr[i]) {
-				if (arr[i].hasOwnProperty(key)) {
-					parseDb[parseMatchIndex].set(key, arr[i][key])
-				}
-			}
-
-			arr[i] = parseDb[parseMatchIndex].toJSON()
-			savePhotos.push(parseDb[parseMatchIndex])
+			updatePhotos.push(_.assign({}, arr[i]))
+			_.merge(arr[i], mongoDb[mongoMatchIndex])
 		}
 	}
 
-	data.savePhotos = savePhotos
-
-	return {flickr: data.flickr, savePhotos: savePhotos}
+	return {flickr: data.flickr, updatePhotos: updatePhotos, newPhotos: newPhotos, mongo: data.mongo}
 }
 
 
 
-function getParseIds(parseDb) {
+function getMongoIds(mongoDb) {
 
 	var ids = []
 
-	for (var i = 0, arr = parseDb, imax = arr.length; i < imax; i++) {
-		ids.push(arr[i].attributes.photo_id)
+	for (var i = 0, arr = mongoDb, imax = arr.length; i < imax; i++) {
+		ids.push(arr[i].photo_id)
 	}
 
 	return ids
 }
 
 
-function getDbVoted(photo_ids, reqQuery) {
+function getDbVoted(data) {
+
+	var mongoPhotos = data.mongo.collection('photos')
 
 	var thirtyDaysAgo = Math.round((new Date() - (1000 * 60 * 60 * 24 * 30)) / 1000)
-
-	var tags = reqQuery.tags.slice(2)
-
-	// new query for Parse -- get rankings that fit flickr request query
-	var queryVotes = new Parse.Query('Photo')
-
-	if (tags.length) queryVotes.containsAll('tags', tags)
-	queryVotes.notContainedIn('photo_ids', photo_ids)
-		      .greaterThan('total_votes', 0)
-		      .greaterThan('date_uploaded', thirtyDaysAgo)
-		      .descending('total_votes')
-		      .addAscending('date_uploaded')
-		      .limit(500)
+	var tags = data.req.query.tags.slice(2)
 
 	var promise = new Promise(function(resolve, reject) {
-		queryVotes.find({
-			success: function(result) {
-				resolve(result)
-			},
-			error: function(err) {
-				reject(err)
+
+		// add limit 500 & check tags syntax -- need all tags matched
+		mongoPhotos.find({
+			tags: {$all: tags},
+			total_votes: {$gt: 0},
+			date_uploaded: {$gt: thirtyDaysAgo},
+			photo_ids: {$nin: data.flickr.photo_ids}
+		})
+		.sort({total_votes: -1, date_uploaded: 1})
+		.limit(500)
+		.toArray(function(err, docs) {
+			if (err != null) reject(err)
+			else {
+				docs.sort(function(a, b) {
+					if (a.total_votes > b.total_votes) return -1
+					if (a.total_votes < b.total_votes) return 1
+					if (a.date_uploaded > b.date_uploaded) return -1
+					if (a.date_uploaded < b.date_uploaded) return 1
+				})
+				resolve(docs)
 			}
 		})
 	})
@@ -181,27 +173,20 @@ function getDbVoted(photo_ids, reqQuery) {
 }
 
 
-function mergeVotes(dbMatches, dbVotes) {
 
-	if (dbVotes.length) {
-		for (var i = 0, arr = dbVotes, imax = arr.length; i < imax; i++) {
-			arr[i] = arr[i].attributes
-		}
+function mergeVotes(flickrAndMatches, dbVoted) {
 
-		Array.prototype.push.apply(dbMatches.flickr.photos.photo, dbVotes)
-	}
+	if (dbVoted.length) Array.prototype.push.apply(flickrAndMatches.flickr.photos.photo, dbVoted)
 
-	return dbMatches
+	return flickrAndMatches
 }
 
 
 
 function calcWeightedVotes(data) {
 
-	var flickrData = data.flickr.photos
-
-	for (var i = 0, arr = flickrData.photo, imax = arr.length; i < imax; i++) {
-		arr[i].weighted_votes = weightVotes(arr[i], flickrData.tags)
+	for (var i = 0, arr = data.flickr.photos.photo, imax = arr.length; i < imax; i++) {
+		arr[i].weighted_votes = weightVotes(arr[i], data.flickr.photos.tags)
 	}
 
 	return data
@@ -211,9 +196,7 @@ function calcWeightedVotes(data) {
 
 function sortPhotos(data) {
 
-	var flickrData = data.flickr.photos
-
-	flickrData.photo.sort(function(a, b) {
+	data.flickr.photos.photo.sort(function(a, b) {
 		if (a.weighted_votes > b.weighted_votes) return -1
 		if (b.weighted_votes > a.weighted_votes) return 1
 		if (a.total_votes > b.total_votes) return -1
@@ -237,11 +220,37 @@ function truncatePhotos(data) {
 
 function savePhotos(data) {
 
-	var savePhotos = data.savePhotos
+	var counter
+	var mongoPhotos = data.mongo.collection('photos')
 
-	Parse.Object.saveAll(savePhotos, {
-		error: handleError
+	var photosUpdated = new Promise(function(resolve, reject) {
+
+		for (var i = 0, arr = data.updatePhotos, imax = arr.length; i < imax; i++) {
+			mongoPhotos.updateOne(
+				{ photo_id: arr[i].photo_id },
+				{ $set: arr[i] },
+				function(err) {
+					if (err != null) handleError(err)
+					if (counter === imax - 1) resolve()
+				}
+			)
+			counter++
+		}
 	})
+
+	var newPhotosAdded = new Promise(function(resolve, reject) {
+		if (data.newPhotos.length) {
+			mongoPhotos.insertMany(
+				data.newPhotos,
+				resolve
+			)
+		}
+		else {
+			resolve()
+		}
+	})
+
+	Promise.join(photosUpdated, newPhotosAdded, data.mongo.close)
 }
 
 

@@ -7,7 +7,7 @@
     "node": "0.12.0"
   },
   "scripts": {
-    "start": "node server.js & npm run watch",
+    "start": "MONGO_URL='mongodb://localhost:27017/cityscape' node server.js & npm run watch",
     "watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",
     "watch:css": "watch 'npm run build:css' ./public/scss/",
     "watchify:js": "watchify ./public/js/app.js --extension=.jsx -t babelify -o ./public/dist/app.js -v",
@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "bluebird": "^2.9.24",
+    "mongodb": "^2.0.27",
     "express": "^4.12.3",
-    "parse": "^1.4.2",
     "request": "^2.53.0"
   },
   "devDependencies": {
@@ -39,6 +39,7 @@
     "mocha": "^2.2.4",
     "node-sass": "^2.1.1",
     "parallelshell": "^1.1.1",
+    "parse": "^1.4.2",
     "proxyquire": "^1.4.0",
     "react": "^0.13.1",
     "sinon": "^1.14.1",
