@@ -54778,8 +54778,7 @@ var _createClass = (function () { function defineProperties(target, props) { for
 				var _this = this;
 
 				DetailClient.requestPhoto({ photo_id: photoId }, tags).then(function (data) {
-					console.log(data);
-					_this.dispatch(data);
+					return _this.dispatch(data);
 				});
 			}
 		}]);
@@ -54870,9 +54869,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 			key: 'current',
 			value: function current() {
 				var user = Parse.User.current();
-				if (user && !user.emailVerified) {
-					user.fetch();
-				}
 				this.dispatch(user);
 			}
 		}, {
@@ -55370,8 +55366,7 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== 'fun
 		_createClass(GalleryView, [{
 			key: 'componentWillMount',
 			value: function componentWillMount() {
-				this.state = galleryStore.getState();
-				userActions.current();
+				this.setState(galleryStore.getState());
 
 				userStore.listen(this.onUserChange.bind(this));
 				galleryStore.listen(this.onGalleryChange.bind(this));
@@ -56190,7 +56185,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 		}, {
 			key: 'vote',
 			value: function vote(data) {
-				console.log(data);
 				var photo = this[data.photo_id];
 				photo.total_votes = data.total_votes;
 				photo.user_votes = data.user_votes;
@@ -56321,7 +56315,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 			key: '_dataToState',
 			value: function _dataToState(data, routerParams) {
 				// create owner url
-				console.log(data);
 				data.photo.forEach(function (val) {
 					if (val.owner) val._owner_url = 'https://www.flickr.com/people/' + val.owner;
 				});
@@ -56406,8 +56399,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 				var startPhotoIndex = (pagesIntoCurrentRequest - 1) * pageConst.photosPerPage;
 
 				// get those pics
-				console.log(this.requests[this.searchId][this.requestPage].photo);
-				console.log(this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage));
 				return this.requests[this.searchId][this.requestPage].photo.slice(startPhotoIndex, startPhotoIndex + pageConst.photosPerPage);
 			}
 		}, {

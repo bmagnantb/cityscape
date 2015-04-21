@@ -21,7 +21,6 @@ class DetailStore {
 	}
 
 	vote(data) {
-		console.log(data)
 		var photo = this[data.photo_id]
 		photo.total_votes = data.total_votes
 		photo.user_votes = data.user_votes

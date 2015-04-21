@@ -22,8 +22,7 @@ class GalleryView extends React.Component {
 
 
 	componentWillMount() {
-		this.state = galleryStore.getState()
-		userActions.current()
+		this.setState(galleryStore.getState())
 
 		userStore.listen(this.onUserChange.bind(this))
 		galleryStore.listen(this.onGalleryChange.bind(this))

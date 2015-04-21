@@ -1,7 +1,8 @@
 var request = require('request')
 var Promise = require('bluebird')
-var Parse = require('parse').Parse
+var _ = require('lodash')
 
+var connectMongo = require('./utils/connectMongo')
 var weightVotes = require('./utils/weightVotes')
 var ParseClass = require('./utils/ParseClass')
 
@@ -11,16 +12,18 @@ module.exports = vote
 
 function vote(req, res) {
 
-		var request = getRequestInfo(req)
+	var request = getRequestInfo(req)
 
-		getPhoto(request)
-			.then(addVote)
-			.then(newWeightedVote)
-			.then(function(data) {
-				res.send(data.photo)
-			})
-			.then(savePhoto)
-			.done()
+	connectMongo(request)
+		.then(getPhoto)
+		.then(addVote)
+		.then(newWeightedVote)
+		.then(function(data) {
+			res.send(data.match)
+			return data
+		})
+		.then(savePhoto)
+		.done()
 }
 
 
@@ -42,21 +45,20 @@ function getRequestInfo(req) {
 
 
 
-function getPhoto(request) {
+function getPhoto(data) {
 
-	var query = new Parse.Query('Photo')
-
-	query.equalTo('photo_id', request.photoId)
+	var mongoPhotos = data.mongo.collection('photos')
 
 	var promise = new Promise(function(resolve, reject) {
-		query.first({
-		 	success: function(result) {
-		 		resolve({result: result, request: request})
-		 	},
-		 	error: function(err) {
-		 		reject(err)
-		 	}
-		 })
+		mongoPhotos.findOne(
+		{ photo_id: data.req.photoId },
+		function(err, doc) {
+			if (err != null) reject(err)
+			else {
+				data.match = doc
+				resolve(data)
+			}
+		})
 	})
 
 	return promise
@@ -66,18 +68,18 @@ function getPhoto(request) {
 
 function addVote(data) {
 
-	var photo = data.result
+	data.match.total_votes++
+	data.match.user_votes.push(data.req.user)
 
-	photo.total_votes++
-	photo.user_votes.push(user)
-
-	if (request.tags.length) {
-		for (var i = 0, arr = request.tags, imax = arr.length; i < imax; i++) {
-			Object.keys(photo.tag_votes).indexOf(arr[i]) !== -1
-				? photo.tag_votes[arr[i]]++
-				: photo.tag_votes[arr[i]] = 1
+	if (data.req.tags.length) {
+		for (var i = 0, arr = data.req.tags, imax = arr.length; i < imax; i++) {
+			Object.keys(data.match.tag_votes).indexOf(arr[i]) !== -1
+				? data.match.tag_votes[arr[i]]++
+				: data.match.tag_votes[arr[i]] = 1
 		}
 	}
+
+	data.save = _.assign({}, data.match)
 
 	return data
 }
@@ -86,10 +88,7 @@ function addVote(data) {
 
 function newWeightedVote(data) {
 
-	var photo = data.result.toJSON()
-
-	photo.weighted_votes = weightVotes(photo, data.request.tags)
-	data.photo = photo
+	data.match.weighted_votes = weightVotes(data.match, data.req.tags)
 
 	return data
 }
@@ -98,11 +97,12 @@ function newWeightedVote(data) {
 
 function savePhoto(data) {
 
-	var savePhoto = data.result
+	var mongoPhotos = data.mongo.collection('photos')
 
-	savePhoto.save(null, {
-		error: handleError
-	})
+	mongoPhotos.update(
+		{ photo_id: data.save.photo_id },
+		{ $set: data.save }
+	)
 
 	return data
 }
@@ -111,7 +111,6 @@ function savePhoto(data) {
 
 // dev -- handle error
 function handleError(err) {
-
 	console.log(err)
 }
 

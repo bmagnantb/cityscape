@@ -1,4 +1,4 @@
-var flickrApiKey = require('../../keys/flickrKey')
+var flickrApiKey = process.env.FLICKR_KEY || require('../../keys/flickrKey')
 
 
 module.exports = getRequestUrl

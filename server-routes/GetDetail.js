@@ -1,7 +1,8 @@
 var request = require('request')
-var Parse = require('parse').Parse
+var Promise = require('bluebird')
+var _ = require('lodash')
 
-var ParseClass = require('./utils/ParseClass')
+var connectMongo = require('./utils/connectMongo')
 var weightVotes = require('./utils/weightVotes')
 var trimPhoto = require('./utils/trimPhoto')
 var flickrRequestUrl = require('./utils/flickrRequestUrl')
@@ -24,7 +25,8 @@ function getDetail(req, res) {
 
 		var flickrResponse = trimPhoto(JSON.parse(body))
 
-		getDbMatch(flickrResponse, req.params)
+		connectMongo(req.params, flickrResponse)
+			.then(getDbMatch)
 			.then(mergeDbData)
 			.then(calcWeightedVotes)
 			.then(function(data) {
@@ -38,19 +40,21 @@ function getDetail(req, res) {
 
 
 
-function getDbMatch(flickrResponse, reqParams) {
+function getDbMatch(data) {
 
-	var query = new Parse.Query('Photo')
+	var mongoPhotos = data.mongo.collection('photos')
 
-	query.equalTo('photo_id', flickrResponse.photo_id)
 
 	var promise = new Promise(function(resolve, reject) {
-		query.first({
-			success: function(result) {
-				resolve({flickr: flickrResponse, parseDb: result, req: reqParams})
-			},
-			error: function(err) {
-				reject(err)
+
+		mongoPhotos.findOne(
+			{ photo_id: data.flickr.photo_id },
+			function(err, doc) {
+				if (err != null) reject(err)
+				else {
+					console.log(doc)
+					data.match = doc
+					resolve(data)
 			}
 		})
 	})
@@ -62,17 +66,18 @@ function getDbMatch(flickrResponse, reqParams) {
 
 function mergeDbData(data) {
 
-	if (data.parseDb) {
-		data.parseDb.set(data.flickr)
-		data.flickr = data.parseDb.toJSON()
+	if (data.match) {
+		data.flickr.total_votes = data.match.total_votes
+		data.flickr.user_votes = data.match.user_votes
+		data.flickr.tag_votes = data.match.tag_votes
 	}
 	else {
 		data.flickr.total_votes = 0
 		data.flickr.user_votes = []
 		data.flickr.tag_votes = {}
-
-		data.parseDb = new ParseClass.Photo(data.flickr)
 	}
+
+	data.match = _.assign({}, data.flickr)
 
 	return data
 }
@@ -93,9 +98,13 @@ function calcWeightedVotes(data) {
 
 function savePhoto(data) {
 
-	data.parseDb.save({
-		error: handleError
-	})
+	var mongoPhotos = data.mongo.collection('photos')
+
+	mongoPhotos.update(
+		{ photo_id: data.match.photo_id },
+		{ $set: data.match },
+		{ upsert: true }
+	)
 
 	return data
 }
