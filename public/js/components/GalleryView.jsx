@@ -1,53 +1,39 @@
 ;(function(exports) {
 
+var _ = require('lodash')
 var React = require('react')
+
 var { galleryActions } = require('../actions/GalleryActions')
 var { galleryStore } = require('../stores/GalleryStore')
 var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
 var { Link } = require('../../../modules_other/react-router')
 var { Photo } = require('./Photo')
-var _ = require('lodash')
 
 
 
 class GalleryView extends React.Component {
 
-	constructor() {
-		super()
-		this.state = galleryStore.getState()
-		this.state.user = userStore.getState().user
-	}
-
-
-
 	componentWillMount() {
 		this.setState(galleryStore.getState())
+		this.setState(userStore.getState())
 
 		userStore.listen(this.onUserChange.bind(this))
 		galleryStore.listen(this.onGalleryChange.bind(this))
 	}
-
-
 
 	componentWillUnmount() {
 		userStore.unlisten(this.onUserChange)
 		galleryStore.unlisten(this.onGalleryChange)
 	}
 
-
-
 	onGalleryChange() {
 		this.setState(galleryStore.getState())
 	}
 
-
-
 	onUserChange() {
 		this.setState(userStore.getState())
 	}
-
-
 
 	render() {
 		var tags = this._getTags()
@@ -90,8 +76,6 @@ class GalleryView extends React.Component {
 		)
 	}
 
-
-
 	_search(e) {
 		e.preventDefault()
 		var addedTags = React.findDOMNode(this.refs.search).value.split(' ')
@@ -104,8 +88,6 @@ class GalleryView extends React.Component {
 		}
 	}
 
-
-
 	_removeTag(e) {
 		var tag = e.target.parentNode.id.slice(3)
 		var tags = this.state.tags
@@ -117,13 +99,9 @@ class GalleryView extends React.Component {
 		this.setState({isLoading: true})
 	}
 
-
-
 	_changePage() {
 		this.setState({isLoading: true})
 	}
-
-
 
 	_getCurrentPhotos() {
 
@@ -135,7 +113,6 @@ class GalleryView extends React.Component {
 
 		return currentPhotos
 	}
-
 
 	_getTags() {
 		var tags
@@ -167,6 +144,7 @@ GalleryView.contextTypes = {
 
 var prevParams = [{}]
 GalleryView.willTransitionTo = function(transition, params) {
+	console.log('transition')
 
 	// make tags array, sort so same tags entered in different order appear same
 	if (params.tags) params.tags = params.tags.split(',').sort()

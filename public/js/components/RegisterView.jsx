@@ -7,11 +7,9 @@ var { userStore } = require('../stores/UserStore')
 
 class RegisterView extends React.Component {
 
-	constructor() {
-		super()
-		this.state = userStore.getState()
+	componentWillMount() {
+		this.setState(userStore.getState())
 	}
-
 
 	render() {
 		return (
@@ -28,7 +26,6 @@ class RegisterView extends React.Component {
 			</main>
 		)
 	}
-
 
 	register(e) {
 		e.preventDefault()

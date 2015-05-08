@@ -7,9 +7,9 @@ var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
 
 class LoginView extends React.Component {
-	constructor() {
-		super()
-		this.state = userStore.getState()
+
+	componentWillMount() {
+		this.setState(userStore.getState())
 	}
 
 	render() {

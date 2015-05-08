@@ -6,9 +6,8 @@ var { Header } = require('./Header')
 var { userActions } = require('../actions/UserActions')
 
 class AppView extends React.Component {
-	constructor() {
-		super()
-		this.state = {}
+
+	componentWillMount() {
 		userActions.current()
 	}
 

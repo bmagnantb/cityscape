@@ -6,12 +6,9 @@ var { userStore } = require('../stores/UserStore')
 var { userActions } = require('../actions/UserActions')
 
 class Header extends React.Component {
-	constructor() {
-		super()
-		this.state = userStore.getState()
-	}
 
 	componentWillMount() {
+		this.setState(userStore.getState())
 		userStore.listen(this.onUserChange.bind(this))
 	}
 

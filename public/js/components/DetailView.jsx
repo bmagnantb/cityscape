@@ -8,28 +8,21 @@ var { galleryActions } = require('../actions/GalleryActions')
 
 class DetailView extends React.Component {
 
-	constructor() {
-		super()
-		this.state = {}
-	}
-
 	componentWillMount() {
-		detailStore.listen(this._onDetailChange.bind(this))
-		userStore.listen(this._onUserChange.bind(this))
-
 		var detail = this._detailInfo()
 		var user = this._userInfo()
 		var voteAllowed = this._voteAllowed(detail, user)
 		var votesMarkup = this._votesMarkup(detail, voteAllowed)
 		this.setState({detail, user, voteAllowed, votesMarkup})
-	}
 
+		detailStore.listen(this._onDetailChange.bind(this))
+		userStore.listen(this._onUserChange.bind(this))
+	}
 
 	componentWillUnmount() {
 		detailStore.unlisten(this._onDetailChange)
 		userStore.unlisten(this._onUserChange)
 	}
-
 
 	render() {
 		if (this.state.detail) {
@@ -66,14 +59,12 @@ class DetailView extends React.Component {
 		}
 	}
 
-
 	_onDetailChange() {
 		var detail = this._detailInfo()
 		var voteAllowed = this._voteAllowed(detail, this.state.user)
 		var votesMarkup = this._votesMarkup(detail, voteAllowed)
 		this.setState({detail, voteAllowed, votesMarkup})
 	}
-
 
 	_onUserChange() {
 		var user = this._userInfo()
@@ -82,18 +73,15 @@ class DetailView extends React.Component {
 		this.setState({user, voteAllowed, votesMarkup})
 	}
 
-
 	_vote() {
 		var tags = this.props.params.tags
 		galleryActions.vote(this.state.detail.photo_id, this.state.user, this.props.params.tags)
 	}
 
-
 	_detailInfo() {
 		var detail = detailStore.getState()[this.props.params.id]
 		return detail
 	}
-
 
 	_userInfo() {
 		var user = userStore.getState().user
@@ -135,6 +123,11 @@ class DetailView extends React.Component {
 
 		return null
 	}
+}
+
+
+DetailView.contextTypes = {
+	router: React.PropTypes.func.isRequired
 }
 
 var prevDetails = {}
