@@ -144,7 +144,6 @@ GalleryView.contextTypes = {
 
 var prevParams = [{}]
 GalleryView.willTransitionTo = function(transition, params) {
-	console.log('transition')
 
 	// make tags array, sort so same tags entered in different order appear same
 	if (params.tags) params.tags = params.tags.split(',').sort()

@@ -13,7 +13,7 @@
     "watchify:js": "watchify ./public/js/app.js --extension=.jsx -t babelify -o ./public/dist/app.js -v",
     "build:css": "node-sass ./public/scss/style.scss ./public/dist/style.css; autoprefixer ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
     "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'bower_components' >> .gitignore; echo 'modules_other' >> .gitignore; echo 'flickrKey.js' >> .gitignore",
-    "test": "mocha --compilers js:babel/register ./public/js/test/test.js",
+    "test": "mocha --compilers js:babel/register ./public/js/test/*.js",
     "env": "env",
     "postinstall": "npm run ignores"
   },
