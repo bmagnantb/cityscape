@@ -7,22 +7,28 @@
     "node": "0.12.0"
   },
   "scripts": {
-    "start": "MONGO_URL='mongodb://localhost:27017/cityscape' node server.js & npm run watch",
-    "watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",
-    "watch:css": "watch 'npm run build:css' ./public/scss/",
-    "watchify:js": "watchify ./public/js/app.js --extension=.jsx -t babelify -o ./public/dist/app.js -v",
-    "build:css": "node-sass ./public/scss/style.scss ./public/dist/style.css; autoprefixer ./public/dist/style.css; csso ./public/dist/style.css ./public/dist/style.min.css; echo '------sassy------'",
-    "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'bower_components' >> .gitignore; echo 'modules_other' >> .gitignore; echo 'flickrKey.js' >> .gitignore",
-    "test": "mocha --compilers js:babel/register ./public/js/test/test.js",
+    "start": "MONGO_URL='mongodb://localhost:27017/cityscape' API_URL='http://localhost:3000/api' node server.js & npm run watch",
+    "watch": "parallelshell 'npm run watch:css'",
+    "js": "'npm run watchify:js'",
+    "watch:css": "watch 'npm run build:css' ./src/scss/",
+    "watchify:js": "watchify ./src/js/client/app.js --extension=.jsx -t babelify -o ./build/app.js -v",
+    "build:css": "node-sass ./src/scss/style.scss ./build/style.css; autoprefixer ./build/style.css; csso ./build/style.css ./build/style.min.css; echo '------sassy------'",
+    "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'modules_other' >> .gitignore; echo 'flickrKey.js' >> .gitignore",
+    "test": "mocha --compilers js:babel/register ./src/js/test/test.js",
     "env": "env",
     "postinstall": "npm run ignores"
   },
   "dependencies": {
+    "babel": "^5.4.3",
     "bluebird": "^2.9.24",
+    "engine-lodash": "^0.6.3",
     "express": "^4.12.3",
     "lodash": "^3.7.0",
+    "lodash-express": "0.0.2",
     "mongodb": "^2.0.27",
-    "request": "^2.53.0"
+    "request": "^2.55.0",
+    "superagent": "^1.2.0",
+    "superagent-bluebird-promise": "^2.0.2"
   },
   "devDependencies": {
     "alt": "^0.15.5",
@@ -42,6 +48,7 @@
     "parse": "^1.4.2",
     "proxyquire": "^1.4.0",
     "react": "^0.13.1",
+    "react-router": "^0.13.3",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.7.0",
     "uglifyify": "^3.0.1",
