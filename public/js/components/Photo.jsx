@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var React = require('react')
-var { Link } = require('../../../modules_other/react-router')
+var { Link } = require('react-router')
 var { galleryActions } = require('../actions/GalleryActions')
 
 class Photo extends React.Component {

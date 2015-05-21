@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var React = require('react')
-var { RouteHandler } = require('../../../modules_other/react-router')
+var { RouteHandler } = require('react-router')
 var { Header } = require('./Header')
 var { userActions } = require('../actions/UserActions')
 

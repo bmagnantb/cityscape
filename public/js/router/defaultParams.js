@@ -1,7 +1,7 @@
 ;(function(exports) {
 
 var React = require('react')
-var Router = require('../../../modules_other/react-router')
+var Router = require('react-router')
 
 
 

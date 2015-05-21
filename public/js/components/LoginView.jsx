@@ -2,7 +2,7 @@
 
 var React = require('react')
 var Parse = require('Parse')
-var { Link } = require('../../../modules_other/react-router')
+var { Link } = require('react-router')
 var { userActions } = require('../actions/UserActions')
 var { userStore } = require('../stores/UserStore')
 
