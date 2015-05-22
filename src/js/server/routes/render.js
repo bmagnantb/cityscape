@@ -27,15 +27,14 @@ export default function render(req, res) {
 		var HandlerWithContext = giveAltContext(Handler, alt)
 
 		var html = React.renderToString(<HandlerWithContext params={state.params} />)
-		engine.renderFile(
+		/*engine.renderFile(
 			__dirname + '/../index.html',
-			{content: html, alt: alt.takeSnapshot()},
+			{content: html, alt: ''},
 			(err, str) => {
 				if (err) console.log('error', err.toString())
-				// var iso = new Iso()
-				// iso.add(str, alt.takeSnapshot())
 				res.send(str)
 			}
-		)
+		)*/
+		res.send('asdf')
 	})
 }

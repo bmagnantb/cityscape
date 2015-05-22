@@ -14,6 +14,7 @@ export default class GalleryView extends React.Component {
 	}
 
 	componentWillMount() {
+		console.log('component will mount')
 		var galleryStoreState = this._galleryStore.getState()
 		this.setState(galleryStoreState)
 		this._galleryStore.listen(this._onGalleryChange.bind(this))

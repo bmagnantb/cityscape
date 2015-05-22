@@ -10,8 +10,6 @@ import flickrRequestUrl from '../utils/flickrRequestUrl'
 // handle request
 export default function photos(req, res) {
 
-	console.log(req.path)
-
 	var flickrUrl = flickrRequestUrl(req.query, req.route)
 
 	request.get(flickrUrl, function(err, resp, body) {

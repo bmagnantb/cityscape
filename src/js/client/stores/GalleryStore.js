@@ -54,7 +54,7 @@ class GalleryStore {
 			this.isLoading = false
 		}
 		else {
-			galleryActions.getPhotos(params)
+			this.actions.getPhotos(params)
 		}
 	}
 
