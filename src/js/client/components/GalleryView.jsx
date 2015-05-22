@@ -1,50 +1,63 @@
 import _ from 'lodash'
 import React from 'react'
 
-import galleryActions from '../actions/GalleryActions'
-import galleryStore from '../stores/GalleryStore'
-import userActions from '../actions/UserActions'
-import userStore from '../stores/UserStore'
 import { Link } from 'react-router'
 import Photo from './Photo'
 
 export default class GalleryView extends React.Component {
 
-	componentWillMount() {
-		this.setState(galleryStore.getState())
-		this.setState(userStore.getState())
+	constructor(props, context) {
+		super(props, context)
 
-		userStore.listen(this.onUserChange.bind(this))
-		galleryStore.listen(this.onGalleryChange.bind(this))
+		this._galleryActions = context.alt.getActions('gallery')
+		this._galleryStore = context.alt.getStore('gallery')
+	}
+
+	componentWillMount() {
+		var galleryStoreState = this._galleryStore.getState()
+		this.setState(galleryStoreState)
+		this._galleryStore.listen(this._onGalleryChange.bind(this))
+
+		this._shouldStoreFetch(galleryStoreState)
 	}
 
 	componentWillUnmount() {
-		userStore.unlisten(this.onUserChange)
-		galleryStore.unlisten(this.onGalleryChange)
+		this._galleryStore.unlisten(this._onGalleryChange)
 	}
 
-	onGalleryChange() {
-		this.setState(galleryStore.getState())
+	_onGalleryChange() {
+		this.setState(this._galleryStore.getState())
 	}
 
-	onUserChange() {
-		this.setState(userStore.getState())
+	_shouldStoreFetch(store) {
+
+		var params = this.context.router.getCurrentParams()
+
+		// check if exact request has happened
+		var prevParamsMatch = store.requestParams.filter(function(val) {
+			return _.isEqual(val, params)
+		})
+
+		// cached load
+		if (prevParamsMatch.length) {
+			this._galleryActions.cachedLoad(params)
+		}
+
+		// page change?
+		else if (params.tags !== undefined && params.tags === prevParams[0].tags) {
+			this._galleryActions.changePage(params)
+		}
+
+		// request -- new set of tags
+		else {
+			this._galleryActions.getPhotos(params)
+		}
 	}
 
 	render() {
 		var tags = this._getTags()
 
-		if (this.state.isLoading) {
-			return (
-				<main className="gallery loading">
-					<form onSubmit={this._search.bind(this)}>
-						<input type="search" ref="search" />
-					</form>
-					{tags}
-					<h2>Loading<span>.</span><span>.</span><span>.</span></h2>
-				</main>
-			)
-		}
+		if (this.state.isLoading) return this._loadingMarkup()
 
 		var photos = this._getCurrentPhotos()
 
@@ -74,13 +87,13 @@ export default class GalleryView extends React.Component {
 
 	_search(e) {
 		e.preventDefault()
-		var addedTags = React.findDOMNode(this.refs.search).value.split(' ')
+		var newTags = React.findDOMNode(this.refs.search).value.split(' ')
 		if (addedTags.length) {
-			Array.prototype.push.apply(this.state.tags, addedTags)
+			newTags = this._sortTags(this.state.tags.concat(newTags))
 
-			this.context.router.transitionTo('gallerysearch', {tags: this.state.tags, page: 1})
+			this.context.router.transitionTo('gallerysearch', {tags: newTags, page: 1})
 			React.findDOMNode(this.refs.search).value = ''
-			this.setState({isLoading: true})
+			this.setState({isLoading: true, tags: newTags})
 		}
 	}
 
@@ -88,11 +101,16 @@ export default class GalleryView extends React.Component {
 		var tag = e.target.parentNode.id.slice(3)
 		var tags = this.state.tags
 		tags.splice(tags.indexOf(tag), 1)
+		tags = this._sortTags(tags)
 
 		if (tags.length) this.context.router.transitionTo('gallerysearch', {tags: tags, page: 1})
 		else this.context.router.transitionTo('gallerynosearch', {page: 1})
 
 		this.setState({isLoading: true})
+	}
+
+	_sortTags(tags) {
+		return tags.split(',').sort()
 	}
 
 	_changePage() {
@@ -102,7 +120,7 @@ export default class GalleryView extends React.Component {
 	_getCurrentPhotos() {
 
 		var currentPhotos = this.state.paginate.currentPhotos.map((photo) => {
-			return <Photo tags={this.state.tags} photo={photo} user={this.state.user} key={photo.photo_id} />
+			return <Photo tags={this.state.tags} photo={photo} user={this.props.user} key={photo.photo_id} />
 		})
 
 		if (!currentPhotos.length && !this.state.isLoading) return <h2>No results</h2>
@@ -130,53 +148,24 @@ export default class GalleryView extends React.Component {
 
 		return tags
 	}
+
+	_loadingMarkup() {
+		var tags = this._getTags()
+
+		return (
+			<main className="gallery loading">
+				<form onSubmit={this._search.bind(this)}>
+					<input type="search" ref="search" />
+				</form>
+				{tags}
+				<h2>Loading<span>.</span><span>.</span><span>.</span></h2>
+			</main>
+		)
+	}
 }
 
 
 GalleryView.contextTypes = {
-	router: React.PropTypes.func.isRequired
-}
-
-
-var prevParams = [{}]
-GalleryView.willTransitionTo = function(transition, params) {
-	console.log(prevParams)
-	console.log(params)
-
-	// make tags array, sort so same tags entered in different order appear same
-	if (params.tags) params.tags = params.tags.split(',').sort()
-
-	// copy params -- request and prevParams shouldn't reference same obj
-	var paramsCopy = _.assign({}, params)
-
-	// check if exact request has happened
-	var prevParamsMatch = prevParams.filter(function(val) {
-		return _.isEqual(val, params)
-	})
-
-	// cached load
-	if (prevParamsMatch.length) {
-		galleryActions.cachedLoad(paramsCopy)
-	}
-
-	// pagination -- store figures out if request needed or from current request
-	else if (params.tags !== undefined && params.tags === prevParams[0].tags) {
-
-		// change the page
-		if (params.page !== prevParams[0].page) {
-			galleryActions.changePage(paramsCopy)
-		}
-
-		// no change, do nothing -- component state should remain identical
-		else return
-	}
-
-	// request -- new params combo
-	else {
-		galleryActions.getPhotos(paramsCopy)
-	}
-
-	// save params for checking if request has been made before
-	prevParams.unshift(params)
-	console.log(prevParams)
+	router: React.PropTypes.func.isRequired,
+	alt: React.PropTypes.object.isRequired
 }

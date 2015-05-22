@@ -9,6 +9,9 @@ import flickrRequestUrl from '../utils/flickrRequestUrl'
 
 // handle request
 export default function photos(req, res) {
+
+	console.log(req.path)
+
 	var flickrUrl = flickrRequestUrl(req.query, req.route)
 
 	request.get(flickrUrl, function(err, resp, body) {
@@ -17,8 +20,6 @@ export default function photos(req, res) {
 			console.log(err)
 			return
 		}
-
-		console.log(body)
 
 		var flickrResponse = trimFlickrResponse(body, req.query)
 		var mongo = connectMongo(req, flickrResponse)

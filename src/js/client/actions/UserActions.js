@@ -1,4 +1,3 @@
-import alt from '../alt-app'
 import { Parse } from 'parse'
 
 class UserActions {
@@ -51,4 +50,4 @@ class UserActions {
 	}
 }
 
-export default alt.createActions(UserActions)
+export default { actions: UserActions, name: 'user' }

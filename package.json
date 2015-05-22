@@ -7,9 +7,8 @@
     "node": "0.12.0"
   },
   "scripts": {
-    "start": "MONGO_URL='mongodb://localhost:27017/cityscape' API_URL='http://localhost:3000/api' node server.js & npm run watch",
-    "watch": "parallelshell 'npm run watch:css'",
-    "js": "'npm run watchify:js'",
+    "start": "MONGO_URL='mongodb://localhost:27017/cityscape' SERVER_URL='http://localhost:3000' node server.js & npm run watch",
+    "watch": "parallelshell 'npm run watch:css' 'npm run watchify:js'",
     "watch:css": "watch 'npm run build:css' ./src/scss/",
     "watchify:js": "watchify ./src/js/client/app.js --extension=.jsx -t babelify -o ./build/app.js -v",
     "build:css": "node-sass ./src/scss/style.scss ./build/style.css; autoprefixer ./build/style.css; csso ./build/style.css ./build/style.min.css; echo '------sassy------'",
@@ -23,12 +22,12 @@
     "bluebird": "^2.9.24",
     "engine-lodash": "^0.6.3",
     "express": "^4.12.3",
+    "iso": "^4.1.0",
     "lodash": "^3.7.0",
-    "lodash-express": "0.0.2",
     "mongodb": "^2.0.27",
+    "piping": "^0.1.8",
     "request": "^2.55.0",
-    "superagent": "^1.2.0",
-    "superagent-bluebird-promise": "^2.0.2"
+    "superbird": "^1.0.3"
   },
   "devDependencies": {
     "alt": "^0.15.5",

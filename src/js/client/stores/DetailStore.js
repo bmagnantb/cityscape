@@ -1,12 +1,8 @@
-import alt from '../alt-app'
-import detailActions from '../actions/DetailActions'
-import galleryActions from '../actions/GalleryActions'
-
 class DetailStore {
-	constructor() {
+	constructor(alt) {
 		this.bindListeners({
-			getInfo: detailActions.getDetail,
-			vote: galleryActions.vote
+			getInfo: this.alt.getActions('detail').getDetail,
+			vote: this.alt.getActions('gallery').vote
 		})
 	}
 
@@ -27,4 +23,4 @@ class DetailStore {
 	}
 }
 
-export default alt.createStore(DetailStore)
+export default { store: DetailStore, name: 'detail' }

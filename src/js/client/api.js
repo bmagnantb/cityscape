@@ -1,7 +1,7 @@
-import request from 'superagent-bluebird-promise'
+import request from 'superbird'
 import _ from 'lodash'
 
-var API_URL = process.env.API_URL
+var API_URL = process.env.SERVER_URL + '/api'
 
 export default class ServerApi {
 	constructor(options) {
@@ -9,18 +9,18 @@ export default class ServerApi {
 	}
 
 	requestPhotos(settings) {
-		return request.get(`${API_URL}/photos`, _.assign({}, this.options, settings))
+		return request.get(`${API_URL}/photos`).query(_.assign({}, this.options, settings)).end()
 	}
 
 	requestPhoto(settings, tags) {
 		tags = tags ? `/${tags}` : ''
-		return request.get(`${API_URL}/photo${tags}`, _.assign({}, this.options, settings))
+		return request.get(`${API_URL}/photo${tags}`).query(_.assign({}, this.options, settings)).end()
 	}
 
 	vote(photoId, user, tags) {
 		var username
 		user ? username = user.get('username') : username = undefined
-		return request.post(`${API_URL}/${username}/photo/${photoId}/${tags}`)
+		return request.post(`${API_URL}/${username}/photo/${photoId}/${tags}`).end()
 	}
 }
 

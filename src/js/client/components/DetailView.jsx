@@ -1,94 +1,84 @@
 import React from 'react'
-import detailStore from '../stores/DetailStore'
-import detailActions from '../actions/DetailActions'
-import userStore from '../stores/UserStore'
-import galleryActions from '../actions/GalleryActions'
+import _ from 'lodash'
 
 export default class DetailView extends React.Component {
 
-	componentWillMount() {
-		var detail = this._detailInfo()
-		var user = this._userInfo()
-		var voteAllowed = this._voteAllowed(detail, user)
-		var votesMarkup = this._votesMarkup(detail, voteAllowed)
-		this.setState({detail, user, voteAllowed, votesMarkup})
+	constructor() {
+		super()
+	}
 
-		detailStore.listen(this._onDetailChange.bind(this))
-		userStore.listen(this._onUserChange.bind(this))
+	componentWillMount() {
+		this._detailStore = this.context.alt.getStore('detail')
+
+		this._detailStore.listen(this._onDetailChange.bind(this))
+		this.setState(this._detailStore.getState()[this.props.params.id])
 	}
 
 	componentWillUnmount() {
-		detailStore.unlisten(this._onDetailChange)
-		userStore.unlisten(this._onUserChange)
-	}
-
-	render() {
-		if (this.state.detail) {
-			return (
-				<main className="photo-detail">
-					<img src={this.state.detail._photoUrl('b')} />
-					<div className="info">
-						{this.state.votesMarkup}
-
-						<a href={this.state.detail.urls.url[0]._content} target="_blank"><h3>{this.state.detail.title}</h3></a>
-
-						{this.state.detail.owner
-							? <a href={this.state.detail._owner_url} target="_blank">{this.state.detail.ownername}</a>
-							: <h4>{this.state.detail.ownername}</h4>}
-
-						{this.state.detail.description ? <h6>{this.state.detail.description}</h6> : null}
-
-						{this.state.detail.location && this.state.detail.location.locality
-							? <h6>{this.state.detail.location.locality._content}</h6>
-							: null}
-
-						{this.state.detail.location && this.state.detail.location.country
-							? <h6>{this.state.detail.location.country._content}</h6>
-							: null}
-
-						<h6>Taken {this.state.detail.dates && this.state.detail.dates.taken
-							? <span>{this.state.detail.dates.taken.slice(0, 10).replace(/-/g, '.')}</span>
-							: null}</h6>
-					</div>
-				</main>
-			)
-		} else {
-			return <span></span>
-		}
+		this._detailStore.unlisten(this._onDetailChange)
 	}
 
 	_onDetailChange() {
-		var detail = this._detailInfo()
-		var voteAllowed = this._voteAllowed(detail, this.state.user)
-		var votesMarkup = this._votesMarkup(detail, voteAllowed)
-		this.setState({detail, voteAllowed, votesMarkup})
+		this.setState(this._detailStore.getState()[this.props.params.id])
 	}
 
-	_onUserChange() {
-		var user = this._userInfo()
-		var voteAllowed = this._voteAllowed(this.state.detail, user)
-		var votesMarkup = this._votesMarkup(this.state.detail, voteAllowed)
-		this.setState({user, voteAllowed, votesMarkup})
+	_shouldStoreFetch() {
+
+		params.tags = typeof params.tags === 'string' && params.tags.length ? params.tags : ''
+
+		if (prevDetails[params.id] === undefined) {
+			detailActions.getDetail(params.id, params.tags)
+			prevDetails[params.id] = {}
+			if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',').sort()
+			else prevDetails[params.id].tags = []
+		}
+
+		else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(',').sort()) === -1) {
+			detailActions.getDetail(params.id, params.tags)
+			prevDetails[params.id].tags.push(params.tags.split(',').sort())
+		}
+	}
+
+	render() {
+		if (_.isEmpty(this.state)) return <span></span>
+		console.log(this.state)
+		return (
+			<main className="photo-detail">
+				<img src={this.state._photoUrl('b')} />
+				<div className="info">
+					{this._votesMarkup()}
+
+					<a href={this.state.urls.url[0]._content} target="_blank"><h3>{this.state.title}</h3></a>
+
+					{this.state.owner
+						? <a href={this.state._owner_url} target="_blank">{this.state.ownername}</a>
+						: <h4>{this.state.ownername}</h4>}
+
+					{this.state.description ? <h6>{this.state.description}</h6> : null}
+
+					{this.state.location && this.state.location.locality
+						? <h6>{this.state.location.locality._content}</h6>
+						: null}
+
+					{this.state.location && this.state.location.country
+						? <h6>{this.state.location.country._content}</h6>
+						: null}
+
+					<h6>Taken {this.state.dates && this.state.dates.taken
+						? <span>{this.state.dates.taken.slice(0, 10).replace(/-/g, '.')}</span>
+						: null}</h6>
+				</div>
+			</main>
+		)
 	}
 
 	_vote() {
-		var tags = this.props.params.tags
-		galleryActions.vote(this.state.detail.photo_id, this.state.user, this.props.params.tags)
+		galleryActions.vote(this.state.photo_id, this.props.user, this.props.params.tags)
 	}
 
-	_detailInfo() {
-		var detail = detailStore.getState()[this.props.params.id]
-		return detail
-	}
-
-	_userInfo() {
-		var user = userStore.getState().user
-		return user
-	}
-
-	_voteAllowed(detail, user) {
-		if (user && detail) {
-			if (detail.user_votes && detail.user_votes.indexOf(user.get('username')) === -1) {
+	_voteAllowed() {
+		if (this.props.user && this.state) {
+			if (this.state.user_votes && this.state.user_votes.indexOf(this.props.user.get('username')) === -1) {
 				return <h6 className="upvote" onClick={this._vote.bind(this)}>(upvote)</h6>
 			}
 			return <h6 className="voted">(upvoted)</h6>
@@ -96,24 +86,24 @@ export default class DetailView extends React.Component {
 		return false
 	}
 
-	_votesMarkup(detail, voteAllowed) {
-		if (detail) {
+	_votesMarkup() {
+		var voteAllowed = this._voteAllowed()
 
-			if (detail.weighted_votes != null && this.props.params.tags.length) {
+		if (this.state) {
+			if (this.state.weighted_votes != null && this.props.params.tags.length) {
 				return (
 					<div className="votes">
 						{voteAllowed ? voteAllowed : null}
-						<h6>(search-weighted) {detail.weighted_votes}</h6>
-						<h6>(total) {detail.total_votes}</h6>
+						<h6>(search-weighted) {this.state.weighted_votes}</h6>
+						<h6>(total) {this.state.total_votes}</h6>
 					</div>
 				)
 			}
-
-			else if (detail.total_votes != null) {
+			else if (this.state.total_votes != null) {
 				return (
 					<div className="votes">
 						{voteAllowed ? voteAllowed : null}
-						<h6>{detail.total_votes}</h6>
+						<h6>{this.state.total_votes}</h6>
 					</div>
 				)
 			}
@@ -125,23 +115,6 @@ export default class DetailView extends React.Component {
 
 
 DetailView.contextTypes = {
-	router: React.PropTypes.func.isRequired
-}
-
-var prevDetails = {}
-DetailView.willTransitionTo = function(transition, params) {
-
-	params.tags = typeof params.tags === 'string' && params.tags.length ? params.tags : ''
-
-	if (prevDetails[params.id] === undefined) {
-		detailActions.getDetail(params.id, params.tags)
-		prevDetails[params.id] = {}
-		if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',').sort()
-		else prevDetails[params.id].tags = []
-	}
-
-	else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(',').sort()) === -1) {
-		detailActions.getDetail(params.id, params.tags)
-		prevDetails[params.id].tags.push(params.tags.split(',').sort())
-	}
+	router: React.PropTypes.func.isRequired,
+	alt: React.PropTypes.object.isRequired
 }

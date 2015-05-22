@@ -3,6 +3,8 @@ import Router from 'react-router'
 import engine from 'engine-lodash'
 
 import routes from '../../client/router/Routes'
+import AltApp from '../../client/alt-app'
+import giveAltContext from '../../client/giveAltContext'
 
 export default function render(req, res) {
 	var router = Router.create({
@@ -18,17 +20,22 @@ export default function render(req, res) {
 		}
 	})
 
+
 	router.run((Handler, state) => {
-		console.log('router running')
-		var { params } = state
-		// var html = React.renderToString(<Handler params={params} />)
-		// engine.renderFile(
-		// 	__dirname + '/../index.html',
-		// 	{content: html},
-		// 	(err, str) => {
-		// 		if (err) res.send(err)
-		// 		res.send(str)
-		// 	}
-		// )
+		var alt = new AltApp()
+		alt.dispatcher.register(console.log.bind(console))
+		var HandlerWithContext = giveAltContext(Handler, alt)
+
+		var html = React.renderToString(<HandlerWithContext params={state.params} />)
+		engine.renderFile(
+			__dirname + '/../index.html',
+			{content: html, alt: alt.takeSnapshot()},
+			(err, str) => {
+				if (err) console.log('error', err.toString())
+				// var iso = new Iso()
+				// iso.add(str, alt.takeSnapshot())
+				res.send(str)
+			}
+		)
 	})
 }

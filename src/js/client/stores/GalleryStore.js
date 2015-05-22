@@ -1,11 +1,10 @@
 import React from 'react'
 
-import alt from '../alt-app'
-import galleryActions from '../actions/GalleryActions'
-
 class GalleryStore {
 
 	constructor() {
+		this.actions = this.alt.getActions('gallery')
+		this.requestParams = [{}]
 		this.requests = {}
 		this.isLoading = <h2>Loading...</h2>
 		this.tags = []
@@ -29,17 +28,20 @@ class GalleryStore {
 		}
 
 		this.bindListeners({
-			getPhotos: galleryActions.getPhotos,
-			changePage: galleryActions.changePage,
-			vote: galleryActions.vote,
-			cachedLoad: galleryActions.cachedLoad
+			getPhotos: this.actions.getPhotos,
+			changePage: this.actions.changePage,
+			vote: this.actions.vote,
+			cachedLoad: this.actions.cachedLoad
 		})
 	}
 
 
-	getPhotos(resp) {
-		var { params, data } = resp
-		this._dataToState(data, params)
+	getPhotos(action) {
+		action.request.then((res) => {
+			var data = res.body.photos
+			this.requestParams.push(action.routerParams)
+			this._dataToState(data, action.params)
+		})
 	}
 
 
@@ -191,4 +193,4 @@ class GalleryStore {
 	}
 }
 
-export default alt.createStore(GalleryStore)
+export default { store: GalleryStore, name: 'gallery' }

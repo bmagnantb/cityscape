@@ -1,44 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router'
-import userStore from '../stores/UserStore'
-import userActions from '../actions/UserActions'
 
 export default class Header extends React.Component {
 
-	componentWillMount() {
-		this.setState(userStore.getState())
-		userStore.listen(this.onUserChange.bind(this))
-	}
-
-	componentWillUnmount() {
-		userStore.unlisten(this.onUserChange)
-	}
-
-	onUserChange() {
-		this.setState(userStore.getState())
-	}
-
 	render() {
-		var userinfo
-		if (this.state.user) {
-			userinfo = (
-				<div className="user">
-					<h6 className="username">{this.state.user.get('username')}</h6>
-					<h6 className="logout" onClick={this._logout.bind(this)}>(logout)</h6>
-				</div>
-			)
-		} else {
-			userinfo = (
-				<div className="user">
-					<h6>
-						<Link to="login">(login)</Link>
-					</h6>
-					<h6>
-						<Link to="register">(register)</Link>
-					</h6>
-				</div>
-			)
-		}
+		var userinfo = this._getUserMarkup()
 
 		return (
 			<header>
@@ -50,5 +16,25 @@ export default class Header extends React.Component {
 
 	_logout() {
 		userActions.logout()
+	}
+
+	_getUserMarkup() {
+		return this.props.user
+			? (
+				<div className="user">
+					<h6 className="username">{this.props.user.get('username')}</h6>
+					<h6 className="logout" onClick={this._logout.bind(this)}>(logout)</h6>
+				</div>
+			)
+			: (
+				<div className="user">
+					<h6>
+						<Link to="login">(login)</Link>
+					</h6>
+					<h6>
+						<Link to="register">(register)</Link>
+					</h6>
+				</div>
+			)
 	}
 }

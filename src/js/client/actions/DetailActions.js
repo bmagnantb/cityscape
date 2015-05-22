@@ -1,4 +1,3 @@
-import alt from '../alt-app'
 import DetailApi from '../api'
 
 class DetailActions {
@@ -8,4 +7,4 @@ class DetailActions {
 	}
 }
 
-export default alt.createActions(DetailActions)
+export default { actions: DetailActions, name: 'detail' }

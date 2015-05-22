@@ -1,4 +1,5 @@
-import alt from '../alt-app'
+import _ from 'lodash'
+
 import { GalleryApi } from '../api'
 
 class GalleryActions {
@@ -7,16 +8,13 @@ class GalleryActions {
 	}
 
 	getPhotos(params) {
-
+		var routerParams = _.assign({}, params)
 		if (params.page) {
 			params.page = Math.floor((params.page - 1) / 25) + 1
 		}
-		GalleryApi.requestPhotos(params)
-		.then((data) => {
-			data = data.photos
-			var obj = { params, data }
-			this.dispatch(obj)
-		})
+		var request = GalleryApi.requestPhotos(params)
+
+		this.dispatch({ request, params, routerParams })
 	}
 
 	vote(photoId, user, tags) {
@@ -25,4 +23,4 @@ class GalleryActions {
 	}
 }
 
-export default alt.createActions(GalleryActions)
+export default { actions: GalleryActions, name: 'gallery' }
