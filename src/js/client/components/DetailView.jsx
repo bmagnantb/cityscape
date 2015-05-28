@@ -1,17 +1,30 @@
 import React from 'react'
 import _ from 'lodash'
 
-export default class DetailView extends React.Component {
+import AutobindComponent from './AutobindComponent'
 
-	constructor() {
+export default class DetailView extends AutobindComponent {
+
+	constructor(props, context) {
 		super()
+
+		this._detailStore = context.alt.getStore('detail')
+		this._detailActions = context.alt.getActions('detail')
+		this._galleryActions = context.alt.getActions('gallery')
+		this._routerParams = context.router.getCurrentParams()
+
+		this.state = this._detailStore.getState()[this._routerParams.id]
+
+		this._bind('_onDetailChange', '_vote')
 	}
 
 	componentWillMount() {
-		this._detailStore = this.context.alt.getStore('detail')
+		this._shouldStoreFetch(this._detailStore.getState())
+	}
 
-		this._detailStore.listen(this._onDetailChange.bind(this))
-		this.setState(this._detailStore.getState()[this.props.params.id])
+	componentDidMount() {
+		// this.setState(this._detailStore.getState()[this._routerParams.id])
+		this._detailStore.listen(this._onDetailChange)
 	}
 
 	componentWillUnmount() {
@@ -19,32 +32,34 @@ export default class DetailView extends React.Component {
 	}
 
 	_onDetailChange() {
-		this.setState(this._detailStore.getState()[this.props.params.id])
+		this.setState(this._detailStore.getState()[this._routerParams.id])
 	}
 
-	_shouldStoreFetch() {
+	_shouldStoreFetch(store) {
 
-		params.tags = typeof params.tags === 'string' && params.tags.length ? params.tags : ''
+		var params = this._routerParams
 
-		if (prevDetails[params.id] === undefined) {
-			detailActions.getDetail(params.id, params.tags)
-			prevDetails[params.id] = {}
-			if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',').sort()
-			else prevDetails[params.id].tags = []
+		if (!params.tags) params.tags = ''
+		console.log('router params tags', params.tags)
+
+		if (store[params.id] === undefined) {
+			console.log('fetching')
+			this._detailActions.getDetail(params.id, params.tags)
+			// if (params.tags.length) prevDetails[params.id].tags = params.tags.split(',').sort()
+			// else prevDetails[params.id].tags = []
 		}
 
-		else if (prevDetails[params.id] != null && prevDetails[params.id].tags.indexOf(params.tags.split(',').sort()) === -1) {
-			detailActions.getDetail(params.id, params.tags)
-			prevDetails[params.id].tags.push(params.tags.split(',').sort())
-		}
+		// else if (prevDetails[params.id] != null && store[params.id].tags.indexOf(params.tags.split(',').sort()) === -1) {
+		// 	this._detailActions.getDetail(params.id, params.tags)
+		// 	// prevDetails[params.id].tags.push(params.tags.split(',').sort())
+		// }
 	}
 
 	render() {
 		if (_.isEmpty(this.state)) return <span></span>
-		console.log(this.state)
 		return (
 			<main className="photo-detail">
-				<img src={this.state._photoUrl('b')} />
+				<img src={this.state._photoUrl.b} />
 				<div className="info">
 					{this._votesMarkup()}
 
@@ -73,13 +88,13 @@ export default class DetailView extends React.Component {
 	}
 
 	_vote() {
-		galleryActions.vote(this.state.photo_id, this.props.user, this.props.params.tags)
+		this._galleryActions.vote(this.state.photo_id, this.props.user, this._routerParams.tags)
 	}
 
 	_voteAllowed() {
 		if (this.props.user && this.state) {
 			if (this.state.user_votes && this.state.user_votes.indexOf(this.props.user.get('username')) === -1) {
-				return <h6 className="upvote" onClick={this._vote.bind(this)}>(upvote)</h6>
+				return <h6 className="upvote" onClick={this._vote}>(upvote)</h6>
 			}
 			return <h6 className="voted">(upvoted)</h6>
 		}
@@ -90,7 +105,7 @@ export default class DetailView extends React.Component {
 		var voteAllowed = this._voteAllowed()
 
 		if (this.state) {
-			if (this.state.weighted_votes != null && this.props.params.tags.length) {
+			if (this.state.weighted_votes != null && this._routerParams.tags.length) {
 				return (
 					<div className="votes">
 						{voteAllowed ? voteAllowed : null}

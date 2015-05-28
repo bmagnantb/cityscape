@@ -1,8 +1,17 @@
 import React from 'react'
 import { Link } from 'react-router'
-import galleryActions from '../actions/GalleryActions'
 
-export default class Photo extends React.Component {
+import AutobindComponent from './AutobindComponent'
+
+export default class Photo extends AutobindComponent {
+
+	constructor(props, context) {
+		super()
+
+		this._galleryActions = context.alt.getActions('gallery')
+
+		this._bind('_vote')
+	}
 
 	render() {
 		var photoHeight = `${this.props.photo.height_m}px`
@@ -18,7 +27,7 @@ export default class Photo extends React.Component {
 					<div className="votes">
 						{this.props.user && this.props.photo.user_votes
 							? this.props.photo.user_votes.indexOf(this.props.user.get('username')) === -1
-								? <h6 className="upvote" ref="vote" onClick={this._vote.bind(this)}>(upvote)</h6>
+								? <h6 className="upvote" ref="vote" onClick={this._vote}>(upvote)</h6>
 								: <h6 className="voted">(upvoted)</h6>
 							: null}
 
@@ -41,6 +50,10 @@ export default class Photo extends React.Component {
 	}
 
 	_vote() {
-		galleryActions.vote(this.props.photo.photo_id, this.props.user, this.props.tags)
+		this._galleryActions.vote(this.props.photo.photo_id, this.props.user, this.props.tags)
 	}
+}
+
+Photo.contextTypes = {
+	alt: React.PropTypes.object.isRequired
 }

@@ -1,10 +1,12 @@
 import React from 'react'
 
+import DataEventEmitter from '../../server/utils/DataEventEmitter'
+
 class GalleryStore {
 
 	constructor() {
 		this.actions = this.alt.getActions('gallery')
-		this.requestParams = [{}]
+		this.requestParams = []
 		this.requests = {}
 		this.isLoading = <h2>Loading...</h2>
 		this.tags = []
@@ -12,11 +14,9 @@ class GalleryStore {
 		// browser-side pagination
 		this.paginate = {
 			constants: {
-			photosPerPage: 20,
-			photosPerRequest: 500,
-			pagesPerRequest: () => {
-				return this.paginate.constants.photosPerRequest / this.paginate.constants.photosPerPage
-				}
+				photosPerPage: 20,
+				photosPerRequest: 500,
+				pagesPerRequest: 25
 			},
 			totalPages: null,
 			currentPage: 1,
@@ -41,12 +41,13 @@ class GalleryStore {
 			var data = res.body.photos
 			this.requestParams.push(action.routerParams)
 			this._dataToState(data, action.params)
+			DataEventEmitter.emit('storeData')
 		})
 	}
 
 
 	changePage(routerParams) {
-		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1
+		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest) + 1
 
 		// if requestPage is cached
 		if (this.requests[this.searchId][this.requestPage]) {
@@ -80,14 +81,13 @@ class GalleryStore {
 		this.searchId = routerParams.tags.join('')
 
 		// current params
-		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest()) + 1
+		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest) + 1
 		this.requestPages = this.requests[this.searchId][this.requestPage].requestPages
 		this.tags = this.requests[this.searchId][this.requestPage].tags.slice()
 
 		this._paginate(routerParams.page)
 		this.isLoading = false
 	}
-
 
 
 	_dataToState(data, routerParams) {
@@ -151,7 +151,7 @@ class GalleryStore {
 			}).length - 1
 		}
 
-		var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest()
+		var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest
 
 		// last request possibly not 500 results
 		var lastRequestIndex = this.requests[this.searchId].length - 1
@@ -172,7 +172,7 @@ class GalleryStore {
 
 		// more maths
 		var numPrevRequests = this.requestPage - 1
-		var browserPagesInPrevRequests = numPrevRequests * pageConst.pagesPerRequest()
+		var browserPagesInPrevRequests = numPrevRequests * pageConst.pagesPerRequest
 		var pagesIntoCurrentRequest = routerPage - browserPagesInPrevRequests
 
 		// adjust to 0 index

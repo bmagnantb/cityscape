@@ -1,25 +1,29 @@
 import _ from 'lodash'
 import React from 'react'
-
 import { Link } from 'react-router'
+
+import AutobindComponent from './AutobindComponent'
 import Photo from './Photo'
 
-export default class GalleryView extends React.Component {
+export default class GalleryView extends AutobindComponent {
 
 	constructor(props, context) {
 		super(props, context)
 
 		this._galleryActions = context.alt.getActions('gallery')
 		this._galleryStore = context.alt.getStore('gallery')
+
+		this.state = this._galleryStore.getState()
+
+		this._bind('_onGalleryChange', '_search', '_changePage', '_removeTag')
 	}
 
 	componentWillMount() {
-		console.log('component will mount')
-		var galleryStoreState = this._galleryStore.getState()
-		this.setState(galleryStoreState)
-		this._galleryStore.listen(this._onGalleryChange.bind(this))
+		this._shouldStoreFetch(this._galleryStore.getState())
+	}
 
-		this._shouldStoreFetch(galleryStoreState)
+	componentDidMount() {
+		this._galleryStore.listen(this._onGalleryChange)
 	}
 
 	componentWillUnmount() {
@@ -33,24 +37,29 @@ export default class GalleryView extends React.Component {
 	_shouldStoreFetch(store) {
 
 		var params = this.context.router.getCurrentParams()
+		var prevParams = store.requestParams
 
 		// check if exact request has happened
-		var prevParamsMatch = store.requestParams.filter(function(val) {
+		var prevParamsMatch = prevParams.filter(function(val) {
+			console.log(val, params)
 			return _.isEqual(val, params)
 		})
 
 		// cached load
 		if (prevParamsMatch.length) {
+			console.log('prevParams match')
 			this._galleryActions.cachedLoad(params)
 		}
 
 		// page change?
 		else if (params.tags !== undefined && params.tags === prevParams[0].tags) {
+			console.log('page change')
 			this._galleryActions.changePage(params)
 		}
 
 		// request -- new set of tags
 		else {
+			console.log('gimme new data')
 			this._galleryActions.getPhotos(params)
 		}
 	}
@@ -64,7 +73,7 @@ export default class GalleryView extends React.Component {
 
 		return (
 			<main className="gallery">
-				<form onSubmit={this._search.bind(this)}>
+				<form onSubmit={this._search}>
 					<input type="search" ref="search" />
 				</form>
 				{tags}
@@ -73,13 +82,13 @@ export default class GalleryView extends React.Component {
 				</div>
 				<div className="pages">
 					{this.state.paginate.prevPageExists
-						? <Link to={this.state.paginate.prevPageRoute} onClick={this._changePage.bind(this)}><h6 className="prev">Prev</h6></Link>
+						? <Link to={this.state.paginate.prevPageRoute} onClick={this._changePage}><h6 className="prev">Prev</h6></Link>
 						: <h6></h6>}
 
 					<h6 className="current">{this.state.paginate.currentPage}</h6>
 
 					{this.state.paginate.nextPageExists
-						? <Link to={this.state.paginate.nextPageRoute} onClick={this._changePage.bind(this)}><h6 className="next">Next</h6></Link>
+						? <Link to={this.state.paginate.nextPageRoute} onClick={this._changePage}><h6 className="next">Next</h6></Link>
 						: <h6></h6>}
 				</div>
 			</main>
@@ -140,7 +149,7 @@ export default class GalleryView extends React.Component {
 						return (
 							<span className="tag" key={tag} id={id}>
 								<span>{tag}</span>
-								<span className="x" onClick={this._removeTag.bind(this)}>x</span>
+								<span className="x" onClick={this._removeTag}>x</span>
 							</span>
 						)
 					})}
@@ -155,7 +164,7 @@ export default class GalleryView extends React.Component {
 
 		return (
 			<main className="gallery loading">
-				<form onSubmit={this._search.bind(this)}>
+				<form onSubmit={this._search}>
 					<input type="search" ref="search" />
 				</form>
 				{tags}

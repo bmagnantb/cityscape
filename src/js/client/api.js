@@ -1,7 +1,7 @@
 import request from 'superbird'
 import _ from 'lodash'
 
-var API_URL = process.env.SERVER_URL + '/api'
+var API_URL = process.env.SERVER_URL ? process.env.SERVER_URL + '/api' : '/api'
 
 export default class ServerApi {
 	constructor(options) {
@@ -9,6 +9,8 @@ export default class ServerApi {
 	}
 
 	requestPhotos(settings) {
+		console.log('options', this.options)
+		console.log('settings', settings)
 		return request.get(`${API_URL}/photos`).query(_.assign({}, this.options, settings)).end()
 	}
 

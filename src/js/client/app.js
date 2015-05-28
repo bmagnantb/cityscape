@@ -4,9 +4,10 @@
 import { Parse } from 'parse'
 import React from 'react'
 import Promise from 'bluebird'
+import Iso from 'iso'
 
 import router from './router/router'
-import Alt from './alt-app'
+import AltApp from './alt-app'
 import giveAltContext from './giveAltContext'
 
 window.onload = app
@@ -16,16 +17,17 @@ function app() {
 
 	Parse.initialize("KvA0dcipEXZtL4Xp3EAaggQ9bTHdfxeyHPqVUEhk", "vpaBfdBJ7ys88nUIdIlVkDPmK3pR0V2EwRXBgpWm")
 
-	var alt = new Alt()
+	var alt = new AltApp()
 
-	alt.bootstrap(document.querySelector('#alt').attributes[1].textContent)
+	Iso.bootstrap((state, meta, node) => {
 
-	console.log(alt)
+		alt.bootstrap(state)
 
-	router.run(function(Handler, state) {
-		var { params } = state
+		router.run(function(Handler, state) {
+			var { params } = state
 
-		var HandlerWithContext = giveAltContext(Handler, alt)
-		React.render(<HandlerWithContext params={params} />, document.querySelector('#container'))
+			var HandlerWithContext = giveAltContext(Handler, alt)
+			React.render(<HandlerWithContext params={params} />, document.querySelector('#container'))
+		})
 	})
 }

@@ -1,7 +1,17 @@
 import React from 'react'
 import { Link } from 'react-router'
 
-export default class Header extends React.Component {
+import AutobindComponent from './AutobindComponent'
+
+class Header extends AutobindComponent {
+
+	constructor(props, context) {
+		super(props, context)
+
+		this._userActions = context.alt.getActions('user')
+
+		this._bind('_logout')
+	}
 
 	render() {
 		var userinfo = this._getUserMarkup()
@@ -15,7 +25,7 @@ export default class Header extends React.Component {
 	}
 
 	_logout() {
-		userActions.logout()
+		this._userActions.logout()
 	}
 
 	_getUserMarkup() {
@@ -23,7 +33,7 @@ export default class Header extends React.Component {
 			? (
 				<div className="user">
 					<h6 className="username">{this.props.user.get('username')}</h6>
-					<h6 className="logout" onClick={this._logout.bind(this)}>(logout)</h6>
+					<h6 className="logout" onClick={this._logout}>(logout)</h6>
 				</div>
 			)
 			: (
@@ -38,3 +48,9 @@ export default class Header extends React.Component {
 			)
 	}
 }
+
+Header.contextTypes = {
+	alt: React.PropTypes.object.isRequired
+}
+
+export default Header

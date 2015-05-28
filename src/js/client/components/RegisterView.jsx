@@ -1,19 +1,28 @@
 import React from 'react'
 import { Link } from 'react-router'
-import userActions from '../actions/UserActions'
-import userStore from '../stores/UserStore'
 
-export default class RegisterView extends React.Component {
+import AutobindComponent from './AutobindComponent'
 
-	componentWillMount() {
-		this.setState(userStore.getState())
+export default class RegisterView extends AutobindComponent {
+
+	constructor(props, context) {
+		super()
+
+		this._userStore = context.alt.getStore('user')
+		this._userActions = contex.alt.getActions('user')
+
+		this._bind('_register')
+	}
+
+	componentDidMount() {
+		this.setState(this._userStore.getState())
 	}
 
 	render() {
 		return (
 			<main className="register">
 				<h4>Register</h4>
-				<form onSubmit={this.register.bind(this)}>
+				<form onSubmit={this._register}>
 					<input type="text" ref="username" placeholder="username" />
 					<input type="email" ref="email" placeholder="email" />
 					<input type="password" ref="pass" placeholder="password" />
@@ -25,14 +34,14 @@ export default class RegisterView extends React.Component {
 		)
 	}
 
-	register(e) {
+	_register(e) {
 		e.preventDefault()
 		var username = React.findDOMNode(this.refs.username).value
 		var email = React.findDOMNode(this.refs.email).value
 		var pass = React.findDOMNode(this.refs.pass).value
 		var pass2 = React.findDOMNode(this.refs.pass2).value
 		if (pass === pass2) {
-			userActions.register(username, pass, email, this.context.router)
+			this._userActions.register(username, pass, email, this.context.router)
 		} else {
 			console.log('passwords must match)')
 		}
@@ -40,5 +49,6 @@ export default class RegisterView extends React.Component {
 }
 
 RegisterView.contextTypes = {
-	router: React.PropTypes.func.isRequired
+	router: React.PropTypes.func.isRequired,
+	alt: React.PropTypes.object.isRequired
 }

@@ -8,6 +8,9 @@ import trimPhoto from '../utils/trimPhoto'
 import flickrRequestUrl from '../utils/flickrRequestUrl'
 
 export default function getDetail(req, res) {
+
+	console.log(req.path)
+
 	var url = flickrRequestUrl(req.query)
 
 	request(url, function(err, resp, body) {

@@ -7,7 +7,6 @@ import LoginView from '../components/LoginView'
 import RegisterView from '../components/RegisterView'
 import DetailView from '../components/DetailView'
 import PassEmailView from '../components/PassEmailView'
-// import GalleryAddPage from './defaultParams'
 
 export default (
 	<Route path="/" handler={AppView}>

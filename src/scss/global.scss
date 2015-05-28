@@ -180,9 +180,6 @@ header, main, footer {
 		33% {
 				opacity: 1;
 		}
-		// 25% {
-		// 		opacity: 1;
-		// }
 		100% {
 				opacity: 1;
 		}
@@ -210,9 +207,6 @@ header, main, footer {
 		66% {
 				opacity: 0;
 		}
-		// 88% {
-		// 		opacity: 1;
-		// }
 		100% {
 				opacity: 1;
 		}
@@ -226,6 +220,7 @@ html {
 body {
 		min-height: 100%;
 		position: relative;
+		transition: opacity .3s ease;
 }
 
 #container {

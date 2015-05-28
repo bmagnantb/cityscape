@@ -8,7 +8,9 @@ class GalleryActions {
 	}
 
 	getPhotos(params) {
-		var routerParams = _.assign({}, params)
+		console.log('requesting photos')
+		params = _.clone(params)
+		var routerParams = _.clone(params)
 		if (params.page) {
 			params.page = Math.floor((params.page - 1) / 25) + 1
 		}

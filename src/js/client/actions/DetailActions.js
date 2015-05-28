@@ -1,9 +1,10 @@
-import DetailApi from '../api'
+import { DetailApi } from '../api'
 
 class DetailActions {
 	getDetail(photoId, tags) {
-		DetailApi.requestPhoto({photo_id: photoId,}, tags)
-		.then((data) => this.dispatch(data))
+		var request = DetailApi.requestPhoto({photo_id: photoId,}, tags)
+		console.log('action fired')
+		this.dispatch({request})
 	}
 }
 

@@ -16,6 +16,7 @@ function photosQuery(reqQuery) {
 	if (!reqQuery.tags) reqQuery.tags = []
 	if (reqQuery.tags.indexOf('buildings') === -1) reqQuery.tags.unshift('buildings')
 	if (reqQuery.tags.indexOf('city') === -1) reqQuery.tags.unshift('city')
+	console.log(reqQuery.extras)
 	if (!reqQuery.extras) reqQuery.extras = []
 	if (reqQuery.extras.indexOf('tags') === -1) reqQuery.extras.push('tags')
 
