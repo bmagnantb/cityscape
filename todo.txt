@@ -1,5 +1,6 @@
+finish isomorphizing
+	- initiate requests on route change when component hierarchy is identical -- componentWillUpdate doesn't work
+
 TESTING
 
 fix pagination
-
-finish mongoizing
