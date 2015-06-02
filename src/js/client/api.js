@@ -1,7 +1,7 @@
 import request from 'superbird'
 import _ from 'lodash'
 
-var API_URL = 'http://localhost:3000/api'
+var API_URL = process.env.SERVER_URL ? process.env.SERVER_URL + '/api' : '/api'
 
 export default class ServerApi {
 	constructor(options) {
