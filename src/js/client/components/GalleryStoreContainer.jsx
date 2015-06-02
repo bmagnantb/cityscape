@@ -3,6 +3,8 @@ import _ from 'lodash'
 
 import AutobindComponent from './AutobindComponent'
 
+var willTransitionToCallback
+
 export default function injectGalleryStore(Component) {
 
 	class GalleryStoreContainer extends AutobindComponent {
@@ -18,7 +20,7 @@ export default function injectGalleryStore(Component) {
 		}
 
 		componentWillMount() {
-			this._shouldStoreFetch()
+			this._shouldStoreFetch(this.props.params)
 		}
 
 		componentDidMount() {
@@ -29,6 +31,10 @@ export default function injectGalleryStore(Component) {
 			this._store.unlisten(this._onStoreChange)
 		}
 
+		componentWillReceiveProps(nextProps) {
+			this._shouldStoreFetch(nextProps.params)
+		}
+
 		render() {
 			return <Component storeData={this.state} actions={this._actions} {...this.props} />
 		}
@@ -37,11 +43,8 @@ export default function injectGalleryStore(Component) {
 			this.setState(this._store.getState())
 		}
 
-		_shouldStoreFetch() {
-				var params = this.context.router.getCurrentParams()
-			console.log(params)
+		_shouldStoreFetch(params) {
 			var prevParams = this.state.requestParams
-			console.log(prevParams)
 
 			// check if exact request has happened
 			var prevParamsMatch = prevParams.filter(function(val) {
@@ -50,7 +53,6 @@ export default function injectGalleryStore(Component) {
 
 			// cached load
 			if (prevParamsMatch.length) {
-				console.log('prevParams match')
 				this._actions.cachedLoad(params)
 			}
 
@@ -62,7 +64,6 @@ export default function injectGalleryStore(Component) {
 
 			// request -- new set of tags
 			else {
-				console.log('gimme new data')
 				this._actions.getPhotos(params)
 			}
 		}

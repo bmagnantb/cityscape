@@ -19,11 +19,19 @@ export default function injectDetailStore(Component) {
 		}
 
 		componentWillMount() {
-			this._shouldStoreFetch()
+			this._shouldStoreFetch(this.props.params)
 		}
 
 		componentDidMount() {
 			this._store.listen(this._onStoreChange)
+		}
+
+		componentWillUnmount() {
+			this._store.unlisten(this._onStoreChange)
+		}
+
+		componentWillReceiveProps(nextProps) {
+			this._shouldStoreFetch(nextProps)
 		}
 
 		render() {
@@ -34,9 +42,7 @@ export default function injectDetailStore(Component) {
 			this.setState(this._store.getState()[this._routerParams.id])
 		}
 
-		_shouldStoreFetch() {
-			var params = this._routerParams
-
+		_shouldStoreFetch(params) {
 			if (!params.tags) params.tags = ''
 
 			if (this._store.getState()[params.id] === undefined) {

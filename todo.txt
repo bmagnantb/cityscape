@@ -1,5 +1,5 @@
 finish isomorphizing
-	- initiate requests on route change when component hierarchy is identical -- componentWillUpdate doesn't work
+	- catch hand typed url changes if app is initialized, prevent request to server and continue as SPA
 
 TESTING
 

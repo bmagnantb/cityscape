@@ -27,7 +27,7 @@ function app() {
 		Router.run(routes, Router.HistoryLocation, function(Handler, state) {
 			var { params } = state
 
-			React.render(<AltContext alt={alt} childComponent={Handler} childComponentProps={params} />, document.querySelector('#container'))
+			React.render(<AltContext alt={alt} childComponent={Handler} />, document.querySelector('#container'))
 		})
 	})
 }
