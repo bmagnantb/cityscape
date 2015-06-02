@@ -9,8 +9,6 @@ import flickrRequestUrl from '../utils/flickrRequestUrl'
 
 export default function getDetail(req, res) {
 
-	console.log(req.path)
-
 	var url = flickrRequestUrl(req.query)
 
 	request(url, function(err, resp, body) {
@@ -90,5 +88,5 @@ function savePhoto(data) {
 }
 
 function handleError(err) {
-	console.log(err)
+	throw err
 }

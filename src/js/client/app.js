@@ -5,10 +5,11 @@ import { Parse } from 'parse'
 import React from 'react'
 import Promise from 'bluebird'
 import Iso from 'iso'
+import Router from 'react-router'
 
-import router from './router/router'
+import routes from './router/routes'
 import AltApp from './alt-app'
-import giveAltContext from './giveAltContext'
+import AltContext from './components/AltContext'
 
 window.onload = app
 
@@ -23,11 +24,10 @@ function app() {
 
 		alt.bootstrap(state)
 
-		router.run(function(Handler, state) {
+		Router.run(routes, Router.HistoryLocation, function(Handler, state) {
 			var { params } = state
 
-			var HandlerWithContext = giveAltContext(Handler, alt)
-			React.render(<HandlerWithContext params={params} />, document.querySelector('#container'))
+			React.render(<AltContext alt={alt} childComponent={Handler} childComponentProps={params} />, document.querySelector('#container'))
 		})
 	})
 }

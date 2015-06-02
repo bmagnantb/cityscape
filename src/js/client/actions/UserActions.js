@@ -1,5 +1,7 @@
 import { Parse } from 'parse'
 
+var storeName = 'user'
+
 class UserActions {
 	current() {
 		var user = Parse.User.current()
@@ -50,4 +52,4 @@ class UserActions {
 	}
 }
 
-export default { actions: UserActions, name: 'user' }
+export default { actions: UserActions, name: storeName }

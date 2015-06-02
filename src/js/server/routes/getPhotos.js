@@ -79,7 +79,7 @@ function mergeDbData(data) {
 	var flickrData = data.flickr.photos
 	var mongoDb = data.mongoData
 	var mongoIds = getMongoIds(mongoDb)
-	var mongoUpdateKeys = Object.keys(flickrData.photo[0])
+	// var mongoUpdateKeys = Object.keys(flickrData.photo[0])
 	var newPhotos = []
 	var updatePhotos = []
 
@@ -210,5 +210,5 @@ function savePhotos(data) {
 }
 
 function handleError(err) {
-	console.log(err)
+	throw err
 }

@@ -82,5 +82,5 @@ function savePhoto(data) {
 }
 
 function handleError(err) {
-	console.log(err)
+	throw err
 }

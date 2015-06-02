@@ -1,7 +1,5 @@
 import React from 'react'
 
-import DataEventEmitter from '../../server/utils/DataEventEmitter'
-
 class GalleryStore {
 
 	constructor() {
@@ -37,12 +35,9 @@ class GalleryStore {
 
 
 	getPhotos(action) {
-		action.request.then((res) => {
-			var data = res.body.photos
-			this.requestParams.push(action.routerParams)
-			this._dataToState(data, action.params)
-			DataEventEmitter.emit('storeData')
-		})
+		var data = action.res.body.photos
+		this.requestParams.push(action.routerParams)
+		this._dataToState(data, action.params)
 	}
 
 
@@ -77,8 +72,7 @@ class GalleryStore {
 		this.isSearch = routerParams.tags ? true : false
 
 		// cache ids
-		if (!routerParams.tags) routerParams.tags = ['default-Request']
-		this.searchId = routerParams.tags.join('')
+		this.searchId = routerParams.tags ? routerParams.tags : 'default-Request'
 
 		// current params
 		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest) + 1
@@ -100,8 +94,7 @@ class GalleryStore {
 		this.isSearch = routerParams.tags ? true : false
 
 		// cache ids
-		if (!routerParams.tags) routerParams.tags = ['default-Request']
-		this.searchId = routerParams.tags.join('')
+		this.searchId = routerParams.tags ? routerParams.tags : 'default-Request'
 		this.requests[this.searchId] = []
 
 		// save data in search-based cache and Flickr page-based

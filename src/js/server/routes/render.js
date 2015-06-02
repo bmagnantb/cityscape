@@ -4,11 +4,12 @@ import React from 'react'
 import Router from 'react-router'
 import _ from 'lodash'
 import Iso from 'iso'
+import Promise from 'bluebird'
 
 import routes from '../../client/router/routes'
 import AltApp from '../../client/alt-app'
-import giveAltContext from '../../client/giveAltContext'
-import DataEventEmitter from '../utils/DataEventEmitter'
+import AltContext from '../../client/components/AltContext'
+import DataEventEmitter from '../../client/actions/DataEventEmitter'
 
 var template
 
@@ -38,27 +39,18 @@ export default function render(req, res) {
 		var actionRequests = []
 		var completedRequests = 0
 
-		var HandlerWithContext = giveAltContext(Handler, alt)
-
-		alt.dispatcher.register((action) => {
-			if (action.data && action.data.request) {
-				actionRequests.push(action)
-			}
+		DataEventEmitter.on('asyncAction', (promise) => {
+			actionRequests.push(promise)
 		})
 
-		DataEventEmitter.on('storeData', () => {
-			completedRequests++
-			if (actionRequests.length === completedRequests) {
-				console.log('router state params 2', state.params)
-				DataEventEmitter.off('storeData')
-				var content = React.renderToString(<HandlerWithContext />)
-				iso.add('', alt.takeSnapshot())
-				var html = template({content, staticUrl: process.env.SERVER_URL, iso: iso.render()})
-				res.send(html)
-			}
-		})
+		React.renderToString(<AltContext alt={alt} childComponent={Handler} />)
 
-		console.log('router state params', state.params)
-		React.renderToString(<HandlerWithContext />)
+		Promise.all(actionRequests).then(() => {
+			console.log('2nd request params', state.params)
+			var content = React.renderToString(<AltContext alt={alt} childComponent={Handler} />)
+			iso.add('', alt.takeSnapshot())
+			var html = template({content, staticUrl: process.env.SERVER_URL, iso: iso.render()})
+			res.send(html)
+		})
 	})
 }

@@ -2,9 +2,10 @@ import React from 'react'
 import { RouteHandler } from 'react-router'
 
 import AutobindComponent from './AutobindComponent'
+
 import Header from './Header'
 
-class AppView extends AutobindComponent {
+export default class AppView extends AutobindComponent {
 
 	constructor(props, context) {
 		super(props, context)
@@ -43,5 +44,3 @@ class AppView extends AutobindComponent {
 AppView.contextTypes = {
 	alt: React.PropTypes.object.isRequired
 }
-
-export default AppView

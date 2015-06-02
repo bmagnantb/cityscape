@@ -1,11 +1,16 @@
 import { DetailApi } from '../api'
 
-class DetailActions {
+import EventEmittingActions from './EventEmittingActions'
+
+var storeName = 'detail'
+
+class DetailActions extends EventEmittingActions {
 	getDetail(photoId, tags) {
-		var request = DetailApi.requestPhoto({photo_id: photoId,}, tags)
-		console.log('action fired')
-		this.dispatch({request})
+		var request = DetailApi.requestPhoto({photo_id: photoId}, tags).then((res) => {
+			this.dispatch(res)
+		})
+		super.emit(request)
 	}
 }
 
-export default { actions: DetailActions, name: 'detail' }
+export default { actions: DetailActions, name: storeName }

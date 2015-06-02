@@ -10,6 +10,7 @@ import putVote from './routes/putVote'
 import render from './routes/render'
 
 export default function addRoutes(app) {
+
 	app.get('/api/photos', getPhotos)
 
 	app.get('/api/photo/:tags?', getDetail)

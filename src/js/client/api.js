@@ -1,7 +1,7 @@
 import request from 'superbird'
 import _ from 'lodash'
 
-var API_URL = process.env.SERVER_URL ? process.env.SERVER_URL + '/api' : '/api'
+var API_URL = 'http://localhost:3000/api'
 
 export default class ServerApi {
 	constructor(options) {
@@ -9,7 +9,6 @@ export default class ServerApi {
 	}
 
 	requestPhotos(settings) {
-		console.log('options', this.options)
 		console.log('settings', settings)
 		return request.get(`${API_URL}/photos`).query(_.assign({}, this.options, settings)).end()
 	}
@@ -34,7 +33,7 @@ var gallerySettings = {
 		'url_m',
 		'owner_name',
 		'date_upload'
-	],
+		].join(','),
 	per_page: '500',
 	sort: 'relevance',
 	tag_mode: 'all'
@@ -44,7 +43,7 @@ var detailSettings = {
 	method: 'flickr.photos.getInfo',
 	extras: [
 		'url_m'
-	]
+	].join(',')
 }
 
 export var GalleryApi = new ServerApi(gallerySettings)
