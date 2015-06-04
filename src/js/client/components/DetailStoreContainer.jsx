@@ -10,7 +10,7 @@ export default function injectDetailStore(Component) {
 
 			this._store = context.alt.getStore('detail')
 			this._routerParams = context.router.getCurrentParams()
-			this.state = this._store.getState()[this._routerParams.id]
+			this.state = this._store.getState()[props.params.id]
 
 			this._actions = context.alt.getActions('detail')
 			this._galleryActions = context.alt.getActions('gallery')
@@ -31,7 +31,7 @@ export default function injectDetailStore(Component) {
 		}
 
 		componentWillReceiveProps(nextProps) {
-			this._shouldStoreFetch(nextProps)
+			this._shouldStoreFetch(nextProps.params)
 		}
 
 		render() {

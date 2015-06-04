@@ -27,7 +27,6 @@ class GalleryActions extends EventEmittingActions {
 	vote(photoId, user, tags) {
 		var request = GalleryApi.vote(photoId, user, tags)
 			.then((resp) => {
-				console.log('voted', resp)
 				this.dispatch(resp.body)
 			})
 		super.emit(request)

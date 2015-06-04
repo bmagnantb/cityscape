@@ -68,11 +68,8 @@ class GalleryStore {
 
 
 	cachedLoad(routerParams) {
-		console.log('cachedLoad params', routerParams)
 		// for creating route string
 		this.isSearch = routerParams.tags ? true : false
-
-		console.log(this.isSearch)
 
 		// cache ids
 		this.searchId = routerParams.tags ? routerParams.tags : 'default-Request'
@@ -81,8 +78,6 @@ class GalleryStore {
 		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest) + 1
 		this.requestPages = this.requests[this.searchId][this.requestPage].requestPages
 		this.tags = this.requests[this.searchId][this.requestPage].tags.slice()
-
-		console.log('cachedLoad store tags', this.tags)
 
 		this._paginate(routerParams.page)
 		this.isLoading = false

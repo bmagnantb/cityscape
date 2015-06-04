@@ -13,9 +13,6 @@ class DetailStore {
 	getInfo(res) {
 		var data = res.body
 		this[data.photo_id] = data
-		this[data.photo_id]._photoUrl = {
-			b: photoUrl(data, 'b')
-		}
 		this[data.photo_id]._ownerUrl = `https://www.flickr.com/people/${data.owner}`
 	}
 

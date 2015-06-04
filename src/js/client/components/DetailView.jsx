@@ -20,31 +20,32 @@ export default class Detail extends AutobindComponent {
 
 		var photoHeight = `${this.props.storeData.maxSize.height}px`
 		var photoWidth = `${this.props.storeData.maxSize.width}px`
+		var votesMarkup = this._votesMarkup()
 		return (
 			<main className="photo-detail">
 				<img src={this.props.storeData.maxSize.source} style={{height: photoHeight, width: photoWidth}} />
 				<div className="info">
-					{this._votesMarkup()}
+					{votesMarkup}
 
 					<a href={this.props.storeData.urls.url[0]._content} target="_blank"><h3>{this.props.storeData.title}</h3></a>
 
 					{this.props.storeData.owner
-						? <a href={this.props.storeData._owner_url} target="_blank">{this.props.storeData.ownername}</a>
+						? <a href={this.props.storeData._ownerUrl} target="_blank">{this.props.storeData.ownername}</a>
 						: <h4>{this.props.storeData.ownername}</h4>}
 
-					{this.props.storeData.description ? <h6>{this.props.storeData.description}</h6> : null}
+					{this.props.storeData.description ? <h6>{this.props.storeData.description._content}</h6> : <span/>}
 
 					{this.props.storeData.location && this.props.storeData.location.locality
 						? <h6>{this.props.storeData.location.locality._content}</h6>
-						: null}
+						: <span/>}
 
 					{this.props.storeData.location && this.props.storeData.location.country
 						? <h6>{this.props.storeData.location.country._content}</h6>
-						: null}
+						: <span/>}
 
 					<h6>Taken {this.props.storeData.dates && this.props.storeData.dates.taken
 						? <span>{this.props.storeData.dates.taken.slice(0, 10).replace(/-/g, '.')}</span>
-						: null}</h6>
+						: <span/>}</h6>
 				</div>
 			</main>
 		)
@@ -61,7 +62,7 @@ export default class Detail extends AutobindComponent {
 			}
 			return <h6 className="voted">(upvoted)</h6>
 		}
-		return false
+		return <span/>
 	}
 
 	_votesMarkup() {
@@ -71,7 +72,7 @@ export default class Detail extends AutobindComponent {
 			if (this.props.storeData.weighted_votes != null && this._routerParams.tags.length) {
 				return (
 					<div className="votes">
-						{voteAllowed ? voteAllowed : null}
+						{voteAllowed}
 						<h6>(search-weighted) {this.props.storeData.weighted_votes}</h6>
 						<h6>(total) {this.props.storeData.total_votes}</h6>
 					</div>
@@ -80,14 +81,14 @@ export default class Detail extends AutobindComponent {
 			else if (this.props.storeData.total_votes != null) {
 				return (
 					<div className="votes">
-						{voteAllowed ? voteAllowed : null}
+						{voteAllowed}
 						<h6>{this.props.storeData.total_votes}</h6>
 					</div>
 				)
 			}
 		}
 
-		return null
+		return <span/>
 	}
 }
 

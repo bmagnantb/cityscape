@@ -14,7 +14,7 @@ import DataEventEmitter from '../../client/actions/DataEventEmitter'
 var template
 
 fs.readFile(__dirname + '/../index.html', (err, buffer) => {
-	if (err) console.log(err)
+	if (err) throw err
 	template = _.template(buffer.toString())
 })
 
@@ -46,7 +46,6 @@ export default function render(req, res) {
 		React.renderToString(<AltContext alt={alt} childComponent={Handler} />)
 
 		Promise.all(actionRequests).then(() => {
-			console.log('2nd request params', state.params)
 			var content = React.renderToString(<AltContext alt={alt} childComponent={Handler} />)
 			iso.add('', alt.takeSnapshot())
 			var html = template({content, staticUrl: process.env.SERVER_URL, iso: iso.render()})

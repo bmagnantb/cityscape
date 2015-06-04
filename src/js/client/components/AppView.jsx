@@ -13,14 +13,14 @@ export default class AppView extends AutobindComponent {
 		this._userStore = context.alt.getStore('user')
 		this._userActions = context.alt.getActions('user')
 
-		this._userActions.current()
-		this.state = this._userStore.getState()
+		this.state = {}
 
 		this._bind('_setUser')
 	}
 
 	componentDidMount() {
 		this._userStore.listen(this._setUser)
+		this._userActions.current()
 	}
 
 	componentWillUnmount() {

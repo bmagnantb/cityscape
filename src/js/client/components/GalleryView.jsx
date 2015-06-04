@@ -82,7 +82,6 @@ export default class GalleryView extends AutobindComponent {
 	}
 
 	_getTags() {
-		console.log(this.props.storeData.isSearch)
 		var tags
 		this.props.storeData.isSearch
 			? tags =

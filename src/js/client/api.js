@@ -9,7 +9,6 @@ export default class ServerApi {
 	}
 
 	requestPhotos(settings) {
-		console.log('settings', settings)
 		return request.get(`${API_URL}/photos`).query(_.assign({}, this.options, settings)).end()
 	}
 
