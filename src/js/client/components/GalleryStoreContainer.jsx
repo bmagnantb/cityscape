@@ -21,6 +21,7 @@ export default function injectGalleryStore(Component) {
 
 		componentWillMount() {
 			this._shouldStoreFetch(this.props.params)
+			this.setState(this._store.getState())
 		}
 
 		componentDidMount() {
@@ -40,6 +41,7 @@ export default function injectGalleryStore(Component) {
 		}
 
 		_onStoreChange() {
+			console.log('store change', this._store.getState())
 			this.setState(this._store.getState())
 		}
 
@@ -53,6 +55,7 @@ export default function injectGalleryStore(Component) {
 
 			// cached load
 			if (prevParamsMatch.length) {
+				console.log('cached load')
 				this._actions.cachedLoad(params)
 			}
 

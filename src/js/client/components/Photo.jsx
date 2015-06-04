@@ -7,9 +7,6 @@ export default class Photo extends AutobindComponent {
 
 	constructor(props, context) {
 		super()
-
-		this._galleryActions = context.alt.getActions('gallery')
-
 		this._bind('_vote')
 	}
 
@@ -50,7 +47,7 @@ export default class Photo extends AutobindComponent {
 	}
 
 	_vote() {
-		this._galleryActions.vote(this.props.photo.photo_id, this.props.user, this.props.tags)
+		this.props.actions.vote(this.props.photo.photo_id, this.props.user, this.props.tags)
 	}
 }
 

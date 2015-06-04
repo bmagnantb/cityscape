@@ -75,15 +75,16 @@ export default class GalleryView extends AutobindComponent {
 
 	_getCurrentPhotos() {
 		var currentPhotos = this.props.storeData.paginate.currentPhotos.map((photo) => {
-			return <Photo tags={this.props.storeData.tags} photo={photo} user={this.props.user} key={photo.photo_id} />
+			return <Photo tags={this.props.storeData.tags} photo={photo} user={this.props.user} key={photo.photo_id} actions={this.props.actions} />
 		})
 		if (!currentPhotos.length && !this.props.storeData.isLoading) return <h2>No results</h2>
 		return currentPhotos
 	}
 
 	_getTags() {
+		console.log(this.props.storeData.isSearch)
 		var tags
-		this.props.storeData.tags.length
+		this.props.storeData.isSearch
 			? tags =
 				<div className="tags">
 					{this.props.storeData.tags.map((tag) => {

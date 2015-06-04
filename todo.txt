@@ -1,6 +1,8 @@
-finish isomorphizing
-	- catch hand typed url changes if app is initialized, prevent request to server and continue as SPA
+fix pagination
 
 TESTING
 
-fix pagination
+fix initial render of user info -- currently client receives html with login/register before getting user and rerendering
+
+finish isomorphizing
+	- catch hand typed url changes if app is initialized, prevent request to server and continue as SPA

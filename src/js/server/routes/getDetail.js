@@ -9,16 +9,41 @@ import flickrRequestUrl from '../utils/flickrRequestUrl'
 
 export default function getDetail(req, res) {
 
-	var url = flickrRequestUrl(req.query)
+	var detailReq = new Promise(function(resolve, reject) {
+		var url = flickrRequestUrl(req.query)
 
-	request(url, function(err, resp, body) {
-		if (err != null) {
-			console.log(err)
-			res.send(err)
-			return
-		}
+		request(url, function(err, resp, body) {
+			if (err) {
+				res.send(err)
+				reject()
+			}
+			else resolve(trimPhoto(JSON.parse(body)))
+		})
+	})
 
-		var flickrResponse = trimPhoto(JSON.parse(body))
+	var photoSizesReq = new Promise(function(resolve, reject) {
+		var query = _.pick(req.query, [
+			'photo_id',
+			'format',
+			'nojsoncallback'
+		])
+		query.method = 'flickr.photos.getSizes'
+
+		var url = flickrRequestUrl(query)
+		request(url, function(err, resp, body) {
+			resolve(JSON.parse(body))
+		})
+	})
+
+	Promise.join(detailReq, photoSizesReq, function(detail, photoSizes) {
+		var flickrResponse = detail
+		flickrResponse.maxSize = photoSizes.sizes.size.reduce((prev, current) => {
+			return +current.width < 1025
+				? +current.width > +prev.width
+					? current
+					: prev
+				: prev
+		})
 
 		connectMongo(req.params, flickrResponse)
 			.then(getDbMatch)

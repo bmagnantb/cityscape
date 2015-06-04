@@ -21,10 +21,12 @@ class DetailStore {
 
 	vote(data) {
 		var photo = this[data.photo_id]
-		photo.total_votes = data.total_votes
-		photo.user_votes = data.user_votes
-		photo.tag_votes = data.tag_votes
-		photo.weighted_votes =  data.weighted_votes
+		if (photo) {
+			photo.total_votes = data.total_votes
+			photo.user_votes = data.user_votes
+			photo.tag_votes = data.tag_votes
+			photo.weighted_votes =  data.weighted_votes
+		}
 	}
 }
 

@@ -17,9 +17,12 @@ export default class Detail extends AutobindComponent {
 
 	render() {
 		if (_.isEmpty(this.props.storeData)) return <span></span>
+
+		var photoHeight = `${this.props.storeData.maxSize.height}px`
+		var photoWidth = `${this.props.storeData.maxSize.width}px`
 		return (
 			<main className="photo-detail">
-				<img src={this.props.storeData._photoUrl.b} />
+				<img src={this.props.storeData.maxSize.source} style={{height: photoHeight, width: photoWidth}} />
 				<div className="info">
 					{this._votesMarkup()}
 
