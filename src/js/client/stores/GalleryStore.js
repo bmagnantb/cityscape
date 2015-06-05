@@ -1,10 +1,11 @@
 import React from 'react'
+import _ from 'lodash'
 
 class GalleryStore {
-
 	constructor() {
 		this.actions = this.alt.getActions('gallery')
-		this.requestParams = []
+		this.requestParamsCurrent = {}
+		this.requestParamsHistory = []
 		this.requests = {}
 		this.isLoading = <h2>Loading...</h2>
 		this.tags = []
@@ -21,8 +22,8 @@ class GalleryStore {
 			currentPhotos: [],
 			nextPageExists: false,
 			prevPageExists: false,
-			nextPageRoute: null,
-			prevPageRoute: null
+			nextPageParams: null,
+			prevPageParams: null
 		}
 
 		this.bindListeners({
@@ -33,27 +34,26 @@ class GalleryStore {
 		})
 	}
 
-
 	getPhotos(action) {
 		var data = action.res.body.photos
-		this.requestParams.push(action.routerParams)
+		console.log(data)
+		this.requestParamsCurrent = action.routerParams
+		this.requestParamsHistory.push(action.routerParams)
 		this._dataToState(data, action.params)
 	}
-
 
 	changePage(routerParams) {
 		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest) + 1
 
 		// if requestPage is cached
 		if (this.requests[this.searchId][this.requestPage]) {
-			this._paginate(routerPage)
+			this._paginate(routerParams.page)
 			this.isLoading = false
 		}
 		else {
-			this.actions.getPhotos(params)
+			this.actions.getPhotos(routerParams)
 		}
 	}
-
 
 	vote(resp) {
 		this.paginate.currentPhotos.forEach((val) => {
@@ -66,8 +66,9 @@ class GalleryStore {
 		})
 	}
 
-
 	cachedLoad(routerParams) {
+		this.requestParamsCurrent = routerParams
+
 		// for creating route string
 		this.isSearch = routerParams.tags ? true : false
 
@@ -83,7 +84,6 @@ class GalleryStore {
 		this.isLoading = false
 	}
 
-
 	_dataToState(data, routerParams) {
 		// create owner url
 		data.photo.forEach((val) => {
@@ -97,7 +97,7 @@ class GalleryStore {
 		this.searchId = routerParams.tags ? routerParams.tags : 'default-Request'
 		this.requests[this.searchId] = []
 
-		// save data in search-based cache and Flickr page-based
+		// save data in search-based and Flickr page-based cache
 		this.requests[this.searchId][data.page] = {}
 		this.requests[this.searchId][data.page] = data
 
@@ -112,18 +112,16 @@ class GalleryStore {
 		this.isLoading = false
 	}
 
-
-
 	_paginate(routerPage) {
 		this.paginate.maxPossiblePages = this._paginateTotalPages(true)
 		this.paginate.availablePages = this._paginateTotalPages(false)
-		this.paginate.currentPage = routerPage
-		this.paginate.currentPhotos = this._paginateCurrentPhotos(routerPage),
-		this.paginate.nextPageRoute = this._paginatePageRoute(routerPage + 1)
-		this.paginate.prevPageRoute = this._paginatePageRoute(routerPage - 1)
+		this.paginate.currentPage = +routerPage
+		this.paginate.currentPhotos = this._paginateCurrentPhotos(+routerPage)
+		this.paginate.nextPageExists = this._paginatePageExists(+routerPage + 1)
+		this.paginate.prevPageExists = this._paginatePageExists(+routerPage - 1)
+		this.paginate.nextPageParams = this._paginatePageParams(+routerPage + 1)
+		this.paginate.prevPageParams = this._paginatePageParams(+routerPage - 1)
 	}
-
-
 
 	// calc both maximum possible pages based on Flickr's page result and actually available pages in cache
 	_paginateTotalPages(bool) {
@@ -132,16 +130,16 @@ class GalleryStore {
 		//get number of requests with full 500 results
 		var numFullRequests
 
-		// if true, get number of full requests that may exist -- up to largest index in requests
+		// if true, get number of full requests that may exist -- up to but not including largest index in requests
 		if (bool) {
-			numFullRequests = this.requests[this.searchId].length - 1
+			numFullRequests = this.requests[this.searchId].length - 2
 		}
 
-		// if false, get actual number of full requests -- filter out any empty indices
+		// if false, get actual number of full requests -- filter out any empty indices and don't include last request
 		else {
 			numFullRequests = this.requests[this.searchId].filter(function(val) {
 				return val !== undefined
-			}).length - 1
+			}).length - 2
 		}
 
 		var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest
@@ -157,8 +155,6 @@ class GalleryStore {
 
 		return pagesInAllRequests
 	}
-
-
 
 	_paginateCurrentPhotos(routerPage) {
 		var pageConst = this.paginate.constants
@@ -178,11 +174,15 @@ class GalleryStore {
 		)
 	}
 
+	_paginatePageExists(newPage) {
+		if (newPage === 0) return false
+		if (newPage > this.paginate.maxPossiblePages) return false
+		return true
+	}
 
-
-	_paginatePageRoute(newPage) {
-		if (this.isSearch) return `/gallery/${this.tags.join(',')}/page${newPage}`
-		else return `/gallery/page${newPage}`
+	_paginatePageParams(newPage) {
+		var params = _.assign({}, this.requestParamsCurrent, {page: newPage})
+		return params
 	}
 }
 

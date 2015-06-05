@@ -43,21 +43,26 @@ export default function injectGalleryStore(Component) {
 		}
 
 		_shouldStoreFetch(params) {
-			var prevParams = this.state.requestParams
+			var prevParams = this.state.requestParamsHistory
 
 			// check if exact request has happened
-			var prevParamsMatch = prevParams.filter(function(val) {
+			var prevParamsMatch = prevParams.filter((val) => {
 				return _.isEqual(val, params)
+			})
+
+			// check if request has happened with same search / no search
+			var prevTagsMatch = prevParams.filter((val) => {
+				return val.tags === params.tags
 			})
 
 			// cached load
 			if (prevParamsMatch.length) {
+				console.log('cached load')
 				this._actions.cachedLoad(params)
 			}
 
 			// page change?
-			else if (params.tags !== undefined && prevParams[0] && params.tags === prevParams[0].tags) {
-				console.log('page change')
+			else if (prevTagsMatch.length) {
 				this._actions.changePage(params)
 			}
 

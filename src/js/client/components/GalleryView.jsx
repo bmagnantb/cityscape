@@ -10,13 +10,14 @@ export default class GalleryView extends AutobindComponent {
 	constructor(props, context) {
 		super()
 
-		this._bind('_search', '_changePage', '_removeTag')
+		this._bind('_search', '_removeTag')
 	}
 
 	render() {
-		var tags = this._getTags()
+		var tags = this._tagsMarkup()
 		if (this.props.storeData.isLoading) return this._loadingMarkup()
-		var photos = this._getCurrentPhotos()
+		var photos = this._currentPhotosMarkup()
+		var galleryRoute = this.props.storeData.isSearch ? 'gallerysearch' : 'gallerynosearch'
 
 		return (
 			<main className="gallery">
@@ -29,13 +30,13 @@ export default class GalleryView extends AutobindComponent {
 				</div>
 				<div className="pages">
 					{this.props.storeData.paginate.prevPageExists
-						? <Link to={this.props.storeData.paginate.prevPageRoute} onClick={this._changePage}><h6 className="prev">Prev</h6></Link>
+						? <Link to={galleryRoute} params={this.props.storeData.paginate.prevPageParams}><h6 className="prev">Prev</h6></Link>
 						: <h6></h6>}
 
 					<h6 className="current">{this.props.storeData.paginate.currentPage}</h6>
 
 					{this.props.storeData.paginate.nextPageExists
-						? <Link to={this.props.storeData.paginate.nextPageRoute} onClick={this._changePage}><h6 className="next">Next</h6></Link>
+						? <Link to={galleryRoute} params={this.props.storeData.paginate.nextPageParams}><h6 className="next">Next</h6></Link>
 						: <h6></h6>}
 				</div>
 			</main>
@@ -70,10 +71,7 @@ export default class GalleryView extends AutobindComponent {
 		return tags.sort()
 	}
 
-	_changePage() {
-	}
-
-	_getCurrentPhotos() {
+	_currentPhotosMarkup() {
 		var currentPhotos = this.props.storeData.paginate.currentPhotos.map((photo) => {
 			return <Photo tags={this.props.storeData.tags} photo={photo} user={this.props.user} key={photo.photo_id} actions={this.props.actions} />
 		})
@@ -81,7 +79,7 @@ export default class GalleryView extends AutobindComponent {
 		return currentPhotos
 	}
 
-	_getTags() {
+	_tagsMarkup() {
 		var tags
 		this.props.storeData.isSearch
 			? tags =
@@ -102,7 +100,7 @@ export default class GalleryView extends AutobindComponent {
 	}
 
 	_loadingMarkup() {
-		var tags = this._getTags()
+		var tags = this._tagsMarkup()
 		return (
 			<main className="gallery loading">
 				<form onSubmit={this._search}>
