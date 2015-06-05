@@ -4,15 +4,16 @@ import { GalleryApi } from '../api'
 
 import EventEmittingActions from './EventEmittingActions'
 
-var storeName = 'gallery'
+var actionsName = 'gallery'
 
 class GalleryActions extends EventEmittingActions {
 	constructor() {
 		super()
-		this.generateActions('isntLoading', 'cachedLoad', 'changePage')
+		this.generateActions('cachedLoad', 'changePage', 'setLoading')
 	}
 
 	getPhotos(params) {
+		this.actions.setLoading()
 		var routerParams = _.clone(params)
 		params = _.clone(params)
 		if (params.page) {
@@ -33,4 +34,4 @@ class GalleryActions extends EventEmittingActions {
 	}
 }
 
-export default { actions: GalleryActions, name: storeName }
+export default { actions: GalleryActions, name: actionsName }

@@ -1,3 +1,6 @@
+GalleryView loading screen renders after transition jump, flash of unchanged content before Loading... renders
+	- add property to GalleryStore to allow component to know if it should call action to change GalleryStore's isLoading
+
 GalleryView rendering several times on initial load
 
 TESTING

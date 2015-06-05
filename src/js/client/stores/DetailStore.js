@@ -1,6 +1,4 @@
-var photoUrl = function(data, size) {
-	return `https://farm${data.farm}.staticflickr.com/${data.server}/${data.photo_id}_${data.secret}_${size}.${data.originalformat ? data.originalformat : 'jpg'}`
-}
+var storeName = 'detail'
 
 class DetailStore {
 	constructor(alt) {
@@ -27,4 +25,4 @@ class DetailStore {
 	}
 }
 
-export default { store: DetailStore, name: 'detail' }
+export default { store: DetailStore, name: storeName }

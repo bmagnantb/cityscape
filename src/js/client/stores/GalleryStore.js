@@ -1,6 +1,8 @@
 import React from 'react'
 import _ from 'lodash'
 
+var storeName = 'gallery'
+
 class GalleryStore {
 	constructor() {
 		this.actions = this.alt.getActions('gallery')
@@ -30,13 +32,13 @@ class GalleryStore {
 			getPhotos: this.actions.getPhotos,
 			changePage: this.actions.changePage,
 			vote: this.actions.vote,
-			cachedLoad: this.actions.cachedLoad
+			cachedLoad: this.actions.cachedLoad,
+			setLoading: this.actions.setLoading
 		})
 	}
 
 	getPhotos(action) {
 		var data = action.res.body.photos
-		console.log(data)
 		this.requestParamsCurrent = action.routerParams
 		this.requestParamsHistory.push(action.routerParams)
 		this._dataToState(data, action.params)
@@ -48,10 +50,9 @@ class GalleryStore {
 		// if requestPage is cached
 		if (this.requests[this.searchId][this.requestPage]) {
 			this._paginate(routerParams.page)
-			this.isLoading = false
 		}
 		else {
-			this.actions.getPhotos(routerParams)
+			this.alt.getActions('gallery').getPhotos.defer(routerParams)
 		}
 	}
 
@@ -84,6 +85,10 @@ class GalleryStore {
 		this.isLoading = false
 	}
 
+	setLoading() {
+		this.isLoading = true
+	}
+
 	_dataToState(data, routerParams) {
 		// create owner url
 		data.photo.forEach((val) => {
@@ -113,8 +118,8 @@ class GalleryStore {
 	}
 
 	_paginate(routerPage) {
-		this.paginate.maxPossiblePages = this._paginateTotalPages(true)
-		this.paginate.availablePages = this._paginateTotalPages(false)
+		this.paginate.maxPossiblePages = this._paginateMaxPages()
+		this.paginate.availablePages = this._paginateAvailablePages()
 		this.paginate.currentPage = +routerPage
 		this.paginate.currentPhotos = this._paginateCurrentPhotos(+routerPage)
 		this.paginate.nextPageExists = this._paginatePageExists(+routerPage + 1)
@@ -123,24 +128,23 @@ class GalleryStore {
 		this.paginate.prevPageParams = this._paginatePageParams(+routerPage - 1)
 	}
 
-	// calc both maximum possible pages based on Flickr's page result and actually available pages in cache
-	_paginateTotalPages(bool) {
+	_paginateMaxPages() {
 		var pageConst = this.paginate.constants
 
-		//get number of requests with full 500 results
-		var numFullRequests
+		// get number of pages that could exist -- based on total pic count from Flickr
+		var maxPossiblePics = +this.requests[this.searchId][this.requestPage].total
+		var maxPossiblePages = maxPossiblePics / pageConst.photosPerPage
 
-		// if true, get number of full requests that may exist -- up to but not including largest index in requests
-		if (bool) {
-			numFullRequests = this.requests[this.searchId].length - 2
-		}
+		return maxPossiblePages
+	}
 
-		// if false, get actual number of full requests -- filter out any empty indices and don't include last request
-		else {
-			numFullRequests = this.requests[this.searchId].filter(function(val) {
-				return val !== undefined
-			}).length - 2
-		}
+	_paginateAvailablePages() {
+		var pageConst = this.paginate.constants
+
+		// filter out any empty indices and don't include last request
+		var numFullRequests = this.requests[this.searchId].filter(function(val) {
+			return val !== undefined
+		}).length - 2
 
 		var pagesInFullRequests = numFullRequests * pageConst.pagesPerRequest
 
@@ -175,6 +179,7 @@ class GalleryStore {
 	}
 
 	_paginatePageExists(newPage) {
+		// page zero doesn't exist
 		if (newPage === 0) return false
 		if (newPage > this.paginate.maxPossiblePages) return false
 		return true
@@ -186,4 +191,4 @@ class GalleryStore {
 	}
 }
 
-export default { store: GalleryStore, name: 'gallery' }
+export default { store: GalleryStore, name: storeName }

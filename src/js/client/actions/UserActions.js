@@ -1,6 +1,6 @@
 import { Parse } from 'parse'
 
-var storeName = 'user'
+var actionsName = 'user'
 
 class UserActions {
 	current() {
@@ -52,4 +52,4 @@ class UserActions {
 	}
 }
 
-export default { actions: UserActions, name: storeName }
+export default { actions: UserActions, name: actionsName }

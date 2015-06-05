@@ -57,7 +57,6 @@ export default function injectGalleryStore(Component) {
 
 			// cached load
 			if (prevParamsMatch.length) {
-				console.log('cached load')
 				this._actions.cachedLoad(params)
 			}
 

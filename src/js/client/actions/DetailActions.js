@@ -2,7 +2,7 @@ import { DetailApi } from '../api'
 
 import EventEmittingActions from './EventEmittingActions'
 
-var storeName = 'detail'
+var actionsName = 'detail'
 
 class DetailActions extends EventEmittingActions {
 	getDetail(photoId, tags) {
@@ -13,4 +13,4 @@ class DetailActions extends EventEmittingActions {
 	}
 }
 
-export default { actions: DetailActions, name: storeName }
+export default { actions: DetailActions, name: actionsName }

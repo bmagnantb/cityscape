@@ -1,3 +1,5 @@
+var storeName = 'user'
+
 class UserStore {
 	constructor() {
 		this.user = null
@@ -17,5 +19,5 @@ class UserStore {
 	}
 }
 
-export default { store: UserStore, name: 'user' }
+export default { store: UserStore, name: storeName }
 
