@@ -1,24 +1,17 @@
 "use strict"
 
-function startServer() {
-	var express = require('express')
-	var app = express()
-	var getPhotos = require('./server-routes/GetPhotos')
-	var getDetail = require('./server-routes/GetDetail')
-	var putVote = require('./server-routes/PutVote')
+if (!require('piping')({hook: true})) return false
+
+require('babel/register')
+
+var express = require('express')
+var app = express()
+
+app.use(express.static(__dirname + '/build'))
+
+require('./src/js/server/server.js')(app)
 
 
-	app.use(express.static(__dirname + '/public'))
-
-	app.get('/photos', getPhotos)
-
-	app.get('/photo/:tags?', getDetail)
-
-	app.post('/:user/photo/:id/:tags?', putVote)
-
-	app.listen(process.env.PORT || 3000, function() {
-		console.log('skylines w/ server')
-	})
-}
-
-startServer();
+app.listen(process.env.PORT || 3000, function() {
+	console.log('skylines w/ server')
+})

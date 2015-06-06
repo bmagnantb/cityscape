@@ -1,5 +1,11 @@
+GalleryView loading screen renders after transition, causing flash of unchanged content before Loading... renders
+	- add property to GalleryStore to allow component to know if it should call action to change GalleryStore's isLoading before transition
+
 TESTING
 
-fix pagination
+initial render of user info -- currently client receives html with login/register before getting user and rerendering
 
-finish mongoizing
+finish isomorphizing
+	- catch hand typed url changes if app is initialized, prevent new page request to server and continue as SPA but make sure to allow refreshes
+
+add user-initiated cache refresh or cache expiration
