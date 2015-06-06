@@ -78,7 +78,6 @@ class GalleryStore {
 
 		// current params
 		this.requestPage = Math.floor((routerParams.page - 1) / this.paginate.constants.pagesPerRequest) + 1
-		this.requestPages = this.requests[this.searchId][this.requestPage].requestPages
 		this.tags = this.requests[this.searchId][this.requestPage].tags.slice()
 
 		this._paginate(routerParams.page)
@@ -108,7 +107,6 @@ class GalleryStore {
 
 		// set current info for easy access
 		this.requestPage = data.page
-		this.requestPages = data.pages
 		this.tags = data.tags.slice()
 
 		// paginate results for current page
