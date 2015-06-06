@@ -12,15 +12,18 @@
     "watch:css": "watch 'npm run build:css' ./src/scss/",
     "watchify:js": "watchify ./src/js/client/app.js --extension=.jsx -t babelify -o ./build/app.js -v",
     "build:css": "node-sass ./src/scss/style.scss ./build/style.css; autoprefixer ./build/style.css; csso ./build/style.css ./build/style.min.css; echo '------sassy------'",
+    "build:js": "browserify ./src/js/client/app.js --extension=.jsx -t babelify -o ./build/app.js"
     "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'modules_other' >> .gitignore; echo 'flickrKey.js' >> .gitignore",
     "test": "mocha --compilers js:babel/register ./src/js/test/test.js",
     "env": "env",
-    "postinstall": "npm run ignores"
+    "postinstall": "npm run ignores; npm run build:css; npm run build:js"
   },
   "dependencies": {
     "alt": "^0.16.6",
     "babel": "^5.4.7",
+    "babelify": "^6.0.2",
     "bluebird": "^2.9.24",
+    "browserify": "^10.2.4",
     "engine-lodash": "^0.6.3",
     "express": "^4.12.3",
     "iso": "^4.1.0",
@@ -36,7 +39,6 @@
   },
   "devDependencies": {
     "autoprefixer": "^5.1.0",
-    "babelify": "^6.0.2",
     "chai": "^2.2.0",
     "chai-as-promised": "^5.0.0",
     "chai-things": "^0.2.0",
