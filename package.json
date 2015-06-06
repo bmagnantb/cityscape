@@ -12,7 +12,7 @@
     "watch:css": "watch 'npm run build:css' ./src/scss/",
     "watchify:js": "watchify ./src/js/client/app.js --extension=.jsx -t babelify -o ./build/app.js -v",
     "build:css": "node-sass ./src/scss/style.scss ./build/style.css; autoprefixer ./build/style.css; csso ./build/style.css ./build/style.min.css; echo '------sassy------'",
-    "build:js": "browserify ./src/js/client/app.js --extension=.jsx -t babelify -o ./build/app.js"
+    "build:js": "browserify ./src/js/client/app.js --extension=.jsx -t babelify -o ./build/app.js",
     "ignores": "echo 'node_modules' > .gitignore; echo '.DS_Store' >> .gitignore; echo 'modules_other' >> .gitignore; echo 'flickrKey.js' >> .gitignore",
     "test": "mocha --compilers js:babel/register ./src/js/test/test.js",
     "env": "env",
