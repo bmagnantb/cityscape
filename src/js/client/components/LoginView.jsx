@@ -1,5 +1,4 @@
 import React from 'react'
-import { Parse } from 'Parse'
 import { Link } from 'react-router'
 
 import AutobindComponent from './AutobindComponent'
