@@ -1,5 +1,5 @@
 node_modules
 .DS_Store
-modules_other
-flickrKey.js
+data
+keys
 build
