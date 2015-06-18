@@ -4,12 +4,12 @@ import React from 'react'
 import Router from 'react-router'
 import _ from 'lodash'
 import Iso from 'iso'
-import Promise from 'bluebird'
+import Bluebird from 'bluebird'
 
 import routes from '../../client/router/routes'
 import AltApp from '../../client/alt-app'
 import AltContext from '../../client/components/AltContext'
-import DataEventEmitter from '../../client/actions/DataEventEmitter'
+import EventEmitter from 'nano-event-emitter'
 
 var template
 
@@ -35,17 +35,18 @@ export default function render(req, res) {
 	router.run((Handler, state) => {
 
 		var alt = new AltApp()
+		alt.dataEmitter = new EventEmitter()
 		var iso = new Iso()
 		var actionRequests = []
 		var completedRequests = 0
 
-		DataEventEmitter.on('asyncAction', (promise) => {
+		alt.dataEmitter.on('asyncAction', (promise) => {
 			actionRequests.push(promise)
 		})
 
 		React.renderToString(<AltContext alt={alt} childComponent={Handler} />)
 
-		Promise.all(actionRequests).then(() => {
+		Bluebird.all(actionRequests).then(() => {
 			var content = React.renderToString(<AltContext alt={alt} childComponent={Handler} />)
 			iso.add('', alt.takeSnapshot())
 			var html = template({content, staticUrl: process.env.SERVER_URL, iso: iso.render()})
