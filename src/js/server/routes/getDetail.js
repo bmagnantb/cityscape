@@ -9,7 +9,10 @@ import flickrRequestUrl from '../utils/flickrRequestUrl'
 
 export default function getDetail(req, res) {
 
+	// get image data from flickr
 	var detailReq = new Promise(function(resolve, reject) {
+
+		// produce flickr request url from query
 		var url = flickrRequestUrl(req.query)
 
 		request(url, function(err, resp, body) {
@@ -21,6 +24,7 @@ export default function getDetail(req, res) {
 		})
 	})
 
+	// get available photo sizes from flickr
 	var photoSizesReq = new Promise(function(resolve, reject) {
 		var query = _.pick(req.query, [
 			'photo_id',
@@ -36,7 +40,10 @@ export default function getDetail(req, res) {
 	})
 
 	Promise.join(detailReq, photoSizesReq, function(detail, photoSizes) {
+
 		var flickrResponse = detail
+
+		// find largest available photo size 1024px or smaller
 		flickrResponse.maxSize = photoSizes.sizes.size.reduce((prev, current) => {
 			return +current.width < 1025
 				? +current.width > +prev.width
@@ -45,6 +52,7 @@ export default function getDetail(req, res) {
 				: prev
 		})
 
+		// retrieve upvoting data and send response
 		connectMongo(req.params, flickrResponse)
 			.then(getDbMatch)
 			.then(mergeDbData)
@@ -58,13 +66,14 @@ export default function getDetail(req, res) {
 	})
 }
 
+// find mongo entry for flickr photo
 function getDbMatch(data) {
 	var mongoPhotos = data.mongo.collection('photos')
 	var promise = new Promise(function(resolve, reject) {
 		mongoPhotos.findOne(
 			{ photo_id: data.flickr.photo_id },
 			function(err, doc) {
-				if (err != null) reject(err)
+				if (err) reject(err)
 				else {
 					data.match = doc
 					resolve(data)
@@ -75,6 +84,10 @@ function getDbMatch(data) {
 	return promise
 }
 
+// add mongo data to response from flickr, then copy flickr response with mongo data
+// or initialize upvoting data and make copy
+// copy is made for later saving to mongo without weighted votes
+// weighted votes are produced per-request as they depend on client-side state (search terms)
 function mergeDbData(data) {
 	if (data.match) {
 		data.flickr.total_votes = data.match.total_votes
@@ -91,6 +104,7 @@ function mergeDbData(data) {
 	return data
 }
 
+// calculate weighted votes via active search terms
 function calcWeightedVotes(data) {
 	if (!data.req.tags) data.req.tags = []
 	else data.req.tags = data.req.tags.split(',')
@@ -101,6 +115,7 @@ function calcWeightedVotes(data) {
 
 }
 
+// save photo data to mongo
 function savePhoto(data) {
 	var mongoPhotos = data.mongo.collection('photos')
 	mongoPhotos.update(
@@ -112,6 +127,7 @@ function savePhoto(data) {
 	return data
 }
 
+// throw errors in development
 function handleError(err) {
 	throw err
 }

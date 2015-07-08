@@ -10,13 +10,18 @@ export default class GalleryView extends AutobindComponent {
 	constructor(props, context) {
 		super()
 
+		// bind methods to instance in es6 classes
 		this._bind('_search', '_removeTag')
 	}
 
 	render() {
-		var tags = this._tagsMarkup()
+		// render loading screen if waiting for request
 		if (this.props.storeData.isLoading) return this._loadingMarkup()
+
+		var tags = this._tagsMarkup()
 		var photos = this._currentPhotosMarkup()
+
+		// get route name for Link elements
 		var galleryRoute = this.props.storeData.isSearch ? 'gallerysearch' : 'gallerynosearch'
 
 		return (
@@ -43,8 +48,10 @@ export default class GalleryView extends AutobindComponent {
 		)
 	}
 
-	_search(e) {
-		e.preventDefault()
+	// route to gallery search with search tags
+	_search(evt) {
+		evt.preventDefault()
+
 		var newTags = React.findDOMNode(this.refs.search).value.split(' ')
 		if (newTags.length) {
 			React.findDOMNode(this.refs.search).value = ''
@@ -53,8 +60,9 @@ export default class GalleryView extends AutobindComponent {
 		}
 	}
 
-	_removeTag(e) {
-		var tag = e.target.parentNode.id.slice(3)
+	// route to gallery search with remaining tags or non-search if no tags remaining
+	_removeTag(evt) {
+		var tag = evt.target.parentNode.id.slice(3)
 		var tags = this.props.storeData.tags
 		tags.splice(tags.indexOf(tag), 1)
 		tags = this._sortTags(tags)
@@ -67,18 +75,21 @@ export default class GalleryView extends AutobindComponent {
 		}
 	}
 
+	// sort tags for easy comparison and caching in store
 	_sortTags(tags) {
 		return tags.sort()
 	}
 
+	// create markup for photos in gallery via Photo component or no results indication if no photos
 	_currentPhotosMarkup() {
 		var currentPhotos = this.props.storeData.paginate.currentPhotos.map((photo) => {
 			return <Photo tags={this.props.storeData.tags} photo={photo} user={this.props.user} key={photo.photo_id} actions={this.props.actions} />
 		})
-		if (!currentPhotos.length && !this.props.storeData.isLoading) return <h2>No results</h2>
+		if (!currentPhotos.length) return <h2>No results</h2>
 		return currentPhotos
 	}
 
+	// create markup for tags
 	_tagsMarkup() {
 		var tags
 		this.props.storeData.isSearch
@@ -99,6 +110,7 @@ export default class GalleryView extends AutobindComponent {
 		return tags
 	}
 
+	// create markup for loading screen
 	_loadingMarkup() {
 		var tags = this._tagsMarkup()
 		return (
