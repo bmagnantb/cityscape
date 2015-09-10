@@ -62,7 +62,7 @@ export default function render(req, res) {
 			iso.add('', alt.takeSnapshot())
 
 			// render from template -- include base server url for serving static files
-			var html = template({content, staticUrl: process.env.SERVER_URL, iso: iso.render()})
+			var html = template({content, iso: iso.render()})
 			res.send(html)
 		})
 	})
