@@ -9,7 +9,7 @@ export default class RegisterView extends AutobindComponent {
 		super()
 
 		this._userStore = context.alt.getStore('user')
-		this._userActions = contex.alt.getActions('user')
+		this._userActions = context.alt.getActions('user')
 
 		this._bind('_register')
 	}
